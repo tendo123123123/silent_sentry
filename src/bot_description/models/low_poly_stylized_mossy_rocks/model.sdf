@@ -11,7 +11,9 @@
           </mesh>
         </geometry>
       </visual>
-                  <collision name="collision">
+      <!-- COLLISION: full mesh — rock cluster is entirely below 0.6m (1.2× robot height).
+           1,494 faces. Accurate to actual mesh shape. -->
+      <collision name="collision">
         <geometry>
           <mesh>
             <uri>model://low_poly_stylized_mossy_rocks/Untitled.obj</uri>

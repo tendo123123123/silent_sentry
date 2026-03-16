@@ -11,12 +11,11 @@
           </mesh>
         </geometry>
       </visual>
-                  <collision name="collision">
+      <!-- COLLISION: trunk cylinder capped to 0.6m (1.2× robot height 0.5m). -->
+      <collision name="collision">
+        <pose>0 0 0.30 0 0 0</pose>
         <geometry>
-          <mesh>
-            <uri>model://lowpoly_tree/Untitled.obj</uri>
-            <scale>1.627216 1.627216 1.627216</scale>
-          </mesh>
+          <cylinder><radius>0.20</radius><length>0.60</length></cylinder>
         </geometry>
       </collision>
     </link>
