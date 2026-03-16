@@ -11,7 +11,9 @@
           </mesh>
         </geometry>
       </visual>
-                  <collision name="collision">
+      <!-- COLLISION: full mesh — plant is entirely below 0.6m (1.2× robot height).
+           2,000 faces. Accurate to actual mesh shape. -->
+      <collision name="collision">
         <geometry>
           <mesh>
             <uri>model://low_poly_shrub/Untitled.obj</uri>

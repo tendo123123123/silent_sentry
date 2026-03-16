@@ -56,13 +56,14 @@
         </material>
       </visual>
 
-      <!-- Collision simplified to one box -->
-            <collision name="collision">
-        <pose>0 0 0.400 0 0 0</pose>
+      <!-- COLLISION: cylinder capped to 0.6m (1.2× robot height 0.5m).
+           Desert scrub bush is ~0.87m — lower 0.6m is the solid stem region. -->
+      <collision name="collision">
+        <pose>0 0 0.30 0 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.180</radius>
-            <length>0.800</length>
+            <radius>0.35</radius>
+            <length>0.60</length>
           </cylinder>
         </geometry>
       </collision>

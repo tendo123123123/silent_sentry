@@ -2,11 +2,12 @@
   <model name="Pine_Tree">
     <static>true</static>
     <link name="link">
+      <!-- COLLISION: trunk cylinder capped to 0.6m (1.2× robot height 0.5m).
+           Visual Branch/Bark submeshes + PBR textures untouched on GPU. -->
       <collision name="collision">
+        <pose>0 0 0.30 0 0 0</pose>
         <geometry>
-          <mesh>
-            <uri>model://Pine_Tree/meshes/pine_tree.dae</uri>
-          </mesh>
+          <cylinder><radius>0.15</radius><length>0.60</length></cylinder>
         </geometry>
       </collision>
       <visual name="branch">

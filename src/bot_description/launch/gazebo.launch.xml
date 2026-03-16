@@ -1,11 +1,8 @@
 <launch>
-    <!-- ── Vegetation control ───────────────────────────────────────────────
+    <!-- Vegetation control:
          num_vegetation : 0-1790  (default=1790, i.e. full world)
          Each instance costs ~5-15 MB RAM.  Use 0 for bare-terrain nav tests.
-         Examples:
-           ros2 launch bot_description gazebo.launch.xml num_vegetation:=0
-           ros2 launch bot_description gazebo.launch.xml num_vegetation:=200
-    ── -->
+    -->
     <arg name="num_vegetation" default="1790"
          description="Vegetation instances to load (0-1790). Lower = less RAM." />
 
@@ -22,6 +19,15 @@
              value="$(var pkg_share):$(var pkg_share)/models" />
     <!-- gz_ros2_control plugin lives here in Jazzy -->
     <set_env name="GZ_SIM_SYSTEM_PLUGIN_PATH" value="/opt/ros/jazzy/lib" />
+    <!-- Bullet-Featherstone physics engine (best solver in gz-physics7) -->
+    <set_env name="GZ_SIM_PHYSICS_ENGINE"
+             value="gz-physics7-bullet-featherstone-plugin" />
+    <set_env name="GZ_SIM_PHYSICS_ENGINE_PATH"
+             value="/opt/ros/jazzy/opt/gz_physics_vendor/lib" />
+    <!-- OGRE2 GPU: async GL dispatch eliminates CPU->GPU stalls -->
+    <set_env name="__GL_THREADED_OPTIMIZATIONS" value="1" />
+    <set_env name="__GL_MaxFramesAllowed" value="1" />
+    <set_env name="GZ_RENDERING_BACKEND" value="ogre2" />
 
     <node pkg="robot_state_publisher" exec="robot_state_publisher">
         <param name="robot_description" value="$(command 'xacro $(var urdf_path)')" />
@@ -29,13 +35,12 @@
     </node>
 
     <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
-        <arg name="gz_args" value="-r --headless-rendering $(var world_path)" />
+        <arg name="gz_args" value="-r $(var world_path)" />
         <arg name="on_exit_shutdown" value="true" />
     </include>
 
-    <!-- Spawn robot at shadow-region centroid (elev=56m, +0.5m clearance) -->
     <node pkg="ros_gz_sim" exec="create"
-          args="-topic robot_description -name autobot -x -50.5 -y -23.2 -z 56.5" />
+          args="-world thar_desert -topic robot_description -name autobot -x -50.5 -y -23.2 -z 18" />
 
     <node pkg="ros_gz_bridge" exec="parameter_bridge">
         <param name="config_file" value="$(var gazebo_config_path)" />
