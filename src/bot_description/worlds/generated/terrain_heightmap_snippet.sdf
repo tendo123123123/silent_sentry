@@ -1,0 +1,15 @@
+<!-- collision heightmap -->
+<heightmap>
+  <uri>file://worlds/dem/physics_ready_dem.tif</uri>
+  <size>900.0 300.0 27.133198</size>
+  <pos>0 0 0 0 0 0</pos>
+  <sampling>2</sampling>
+</heightmap>
+
+<!-- visual heightmap -->
+<heightmap>
+  <uri>file://worlds/dem/visual_dem.png</uri>
+  <size>900.0 300.0 27.133198</size>
+  <pos>0 0 0 0 0 0</pos>
+  <sampling>2</sampling>
+</heightmap>
