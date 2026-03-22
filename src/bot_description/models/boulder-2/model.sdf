@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="boulder-2">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <pose>0 0 0.373990 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.080748</radius>
+            <length>0.747979</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://boulder-2/meshes/boulder-2.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

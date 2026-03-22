@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="long-bush-3">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <pose>0 0 0.236054 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.063805</radius>
+            <length>0.472109</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://long-bush-3/meshes/long-bush-3.glb</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

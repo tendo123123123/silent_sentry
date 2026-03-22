@@ -16,11 +16,14 @@
            has no collision since the robot cannot reach it. The cylinder
            accurately represents the mesh trunk/base shape at ground level. -->
       <collision name="collision">
-        <pose>0 0 0.30 0 0 0</pose>
-        <geometry>
-          <cylinder><radius>0.85</radius><length>0.60</length></cylinder>
-        </geometry>
-      </collision>
+  <pose>0 0 0.599998 0 0 0</pose>
+  <geometry>
+    <cylinder>
+      <radius>0.196848</radius>
+      <length>1.199995</length>
+    </cylinder>
+  </geometry>
+</collision>
     </link>
   </model>
 </sdf>

@@ -13,11 +13,14 @@
       </visual>
       <!-- COLLISION: trunk cylinder capped to 0.6m (1.2× robot height 0.5m). -->
       <collision name="collision">
-        <pose>0 0 0.30 0 0 0</pose>
-        <geometry>
-          <cylinder><radius>0.12</radius><length>0.60</length></cylinder>
-        </geometry>
-      </collision>
+  <pose>0 0 2.999998 0 0 0</pose>
+  <geometry>
+    <cylinder>
+      <radius>0.456531</radius>
+      <length>5.999997</length>
+    </cylinder>
+  </geometry>
+</collision>
     </link>
   </model>
 </sdf>

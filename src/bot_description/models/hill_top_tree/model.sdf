@@ -14,11 +14,14 @@
       <!-- COLLISION: trunk cylinder capped to 0.6m (1.2× robot height 0.5m).
            Above 0.6m is foliage/canopy — robot passes under it. -->
       <collision name="collision">
-        <pose>0 0 0.30 0 0 0</pose>
-        <geometry>
-          <cylinder><radius>0.18</radius><length>0.60</length></cylinder>
-        </geometry>
-      </collision>
+  <pose>0 0 2.500027 0 0 0</pose>
+  <geometry>
+    <cylinder>
+      <radius>0.657067</radius>
+      <length>5.000054</length>
+    </cylinder>
+  </geometry>
+</collision>
     </link>
   </model>
 </sdf>

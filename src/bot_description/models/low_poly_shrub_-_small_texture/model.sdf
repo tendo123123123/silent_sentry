@@ -14,13 +14,14 @@
       <!-- COLLISION: full mesh — plant is entirely below 0.6m (1.2× robot height).
            1,534 faces. Accurate to actual mesh shape. -->
       <collision name="collision">
-        <geometry>
-          <mesh>
-            <uri>model://low_poly_shrub_-_small_texture/Untitled.obj</uri>
-            <scale>0.001029 0.001029 0.001029</scale>
-          </mesh>
-        </geometry>
-      </collision>
+  <pose>0 0 0.749869 0 0 0</pose>
+  <geometry>
+    <cylinder>
+      <radius>0.145102</radius>
+      <length>1.499738</length>
+    </cylinder>
+  </geometry>
+</collision>
     </link>
   </model>
 </sdf>

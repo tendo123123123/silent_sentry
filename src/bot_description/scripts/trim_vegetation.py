@@ -16,7 +16,7 @@ import re
 import sys
 import tempfile
 
-MAX_VEGETATION = 1790
+MAX_VEGETATION = 1500
 
 
 def main():
@@ -28,17 +28,15 @@ def main():
     except ValueError:
         n_veg = MAX_VEGETATION
 
-    n_veg = max(0, min(n_veg, MAX_VEGETATION))
     world_path = sys.argv[2]
-
-    # Full vegetation requested — return the original unchanged (no disk write)
-    if n_veg >= MAX_VEGETATION:
-        print(world_path, end="")
-        return
 
     # Read original SDF
     with open(world_path, "r") as f:
         original = f.read()
+
+    if "<include>" not in original:
+        print(world_path, end="")
+        return
 
     # ── Locate all <include>…</include> blocks ────────────────────────────
     # Find the position of the first <include> — everything before it is
@@ -55,6 +53,14 @@ def main():
     vegetation_blocks = re.findall(
         r"<include>.*?</include>", veg_section, re.DOTALL
     )
+
+    max_veg = len(vegetation_blocks)
+    n_veg = max(0, min(n_veg, max_veg))
+
+    # Full vegetation requested — return the original unchanged (no disk write)
+    if n_veg >= max_veg:
+        print(world_path, end="")
+        return
 
     # Keep only the requested number of blocks.
     # Use a fixed seed derived from n_veg so the sample is reproducible

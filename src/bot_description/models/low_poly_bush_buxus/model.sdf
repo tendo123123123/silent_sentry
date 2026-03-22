@@ -14,11 +14,14 @@
       <!-- COLLISION: cylinder capped to 0.6m (1.2× robot height 0.5m).
            Buxus bush is ~0.9m — cylinder matches the dense base cross-section. -->
       <collision name="collision">
-        <pose>0 0 0.30 0 0 0</pose>
-        <geometry>
-          <cylinder><radius>0.40</radius><length>0.60</length></cylinder>
-        </geometry>
-      </collision>
+  <pose>0 0 0.400014 0 0 0</pose>
+  <geometry>
+    <cylinder>
+      <radius>0.077431</radius>
+      <length>0.800029</length>
+    </cylinder>
+  </geometry>
+</collision>
     </link>
   </model>
 </sdf>

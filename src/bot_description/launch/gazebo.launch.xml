@@ -1,10 +1,10 @@
 <launch>
     <!-- Vegetation control:
-         num_vegetation : 0-1790  (default=1790, i.e. full world)
+         num_vegetation : 0-1500  (default=1500, i.e. full world)
          Each instance costs ~5-15 MB RAM.  Use 0 for bare-terrain nav tests.
     -->
-    <arg name="num_vegetation" default="1790"
-         description="Vegetation instances to load (0-1790). Lower = less RAM." />
+    <arg name="num_vegetation" default="1500"
+         description="Vegetation instances to load (0-1500). Lower = less RAM." />
 
     <let name="urdf_path" value="$(find-pkg-share bot_description)/urdf/bot.urdf.xacro" />
     <let name="gazebo_config_path" value="$(find-pkg-share bot_description)/config/gazebo_bridge.yaml" />
@@ -40,7 +40,7 @@
     </include>
 
     <node pkg="ros_gz_sim" exec="create"
-          args="-world thar_desert -topic robot_description -name autobot -x -50.5 -y -23.2 -z 18" />
+          args="-world thar_desert -topic robot_description -name autobot -x 0 -y 0 -z 18" />
 
     <node pkg="ros_gz_bridge" exec="parameter_bridge">
         <param name="config_file" value="$(var gazebo_config_path)" />
