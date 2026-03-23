@@ -4,6 +4,7 @@
     <static>true</static>
     <link name="link">
       <visual name="visual">
+                <pose>0 0 0 1.5708 0 0</pose>
         <geometry>
           <mesh>
             <uri>model://long-bush-1/meshes/long-bush-1.glb</uri>
