@@ -18,7 +18,7 @@
         <geometry>
           <mesh>
             <uri>model://plant-4/meshes/plant-4.glb</uri>
-            <scale>0.008101 0.008101 0.008101</scale>
+            <scale>0.810110 0.810110 0.810110</scale>
           </mesh>
         </geometry>
       </visual>

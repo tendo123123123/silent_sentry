@@ -118,10 +118,14 @@
 
 
 
+
+
+
+
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0000</name>
-      <pose>-342.03 67.63 19.176 0.029459 0.165587 1.541146</pose>
+      <pose>-342.03 67.63 19.042 0.029459 0.165587 1.541146</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -141,7 +145,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0004</name>
-      <pose>177.17 -22.53 11.096 0.103187 0.091858 2.827210</pose>
+      <pose>177.17 -22.53 10.961 0.103187 0.091858 2.827210</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -151,17 +155,17 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0006</name>
-      <pose>-68.10 -62.20 13.500 0.001264 -0.235600 1.352707</pose>
+      <pose>-68.10 -62.20 13.239 0.001264 -0.235600 1.352707</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0007</name>
-      <pose>-143.80 -114.03 16.253 -0.432723 0.326758 0.535250</pose>
+      <pose>-143.80 -114.03 16.104 -0.432723 0.326758 0.535250</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0008</name>
-      <pose>-137.32 -65.93 12.235 0.285215 -0.009288 0.271674</pose>
+      <pose>-137.32 -65.93 11.991 0.285215 -0.009288 0.271674</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -186,7 +190,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0013</name>
-      <pose>-351.12 -62.17 16.595 0.010485 -0.083370 -2.289499</pose>
+      <pose>-351.12 -62.17 16.341 0.010485 -0.083370 -2.289499</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -196,7 +200,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0015</name>
-      <pose>384.26 41.45 14.931 0.016500 0.016042 -2.455770</pose>
+      <pose>384.26 41.45 14.662 0.016500 0.016042 -2.455770</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -211,12 +215,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0018</name>
-      <pose>-154.63 75.13 13.342 0.072738 0.001197 0.351512</pose>
+      <pose>-154.63 75.13 13.206 0.072738 0.001197 0.351512</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0019</name>
-      <pose>-411.75 -51.67 17.345 0.026484 0.094671 1.683520</pose>
+      <pose>-411.75 -51.67 17.092 0.026484 0.094671 1.683520</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -251,7 +255,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0026</name>
-      <pose>-299.22 50.53 17.993 -0.001777 -0.018463 -2.535820</pose>
+      <pose>-299.22 50.53 17.857 -0.001777 -0.018463 -2.535820</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -266,7 +270,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0029</name>
-      <pose>338.61 70.25 15.735 0.034499 -0.044126 -1.454698</pose>
+      <pose>338.61 70.25 15.599 0.034499 -0.044126 -1.454698</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -276,7 +280,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0031</name>
-      <pose>330.75 -66.25 10.871 -0.122196 -0.040458 -3.135435</pose>
+      <pose>330.75 -66.25 10.605 -0.122196 -0.040458 -3.135435</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -286,12 +290,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0033</name>
-      <pose>122.28 30.51 9.466 -0.147472 0.209883 0.944757</pose>
+      <pose>122.28 30.51 9.220 -0.147472 0.209883 0.944757</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0034</name>
-      <pose>-297.84 126.98 11.451 -0.312203 -0.311782 -0.437901</pose>
+      <pose>-297.84 126.98 11.294 -0.312203 -0.311782 -0.437901</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -311,12 +315,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0038</name>
-      <pose>-12.33 -120.62 14.182 -0.047256 0.282416 -1.510900</pose>
+      <pose>-12.33 -120.62 13.924 -0.047256 0.282416 -1.510900</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0039</name>
-      <pose>-329.33 44.73 18.832 -0.337282 -0.091587 -0.318356</pose>
+      <pose>-329.33 44.73 18.669 -0.337282 -0.091587 -0.318356</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -331,7 +335,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0042</name>
-      <pose>-165.69 138.64 10.463 -0.067501 0.214255 -2.207143</pose>
+      <pose>-165.69 138.64 10.201 -0.067501 0.214255 -2.207143</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -361,22 +365,22 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0048</name>
-      <pose>383.25 19.89 17.861 -0.078061 0.103950 2.965817</pose>
+      <pose>383.25 19.89 17.594 -0.078061 0.103950 2.965817</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0049</name>
-      <pose>-23.78 -26.02 13.259 -0.228185 0.089616 0.582391</pose>
+      <pose>-23.78 -26.02 13.091 -0.228185 0.089616 0.582391</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0050</name>
-      <pose>-60.67 -21.40 12.521 -0.157350 -0.094881 2.941888</pose>
+      <pose>-60.67 -21.40 12.387 -0.157350 -0.094881 2.941888</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0051</name>
-      <pose>-392.33 42.97 18.924 0.098169 0.001746 -2.223032</pose>
+      <pose>-392.33 42.97 18.657 0.098169 0.001746 -2.223032</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -401,12 +405,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0056</name>
-      <pose>439.37 94.09 22.438 -0.103349 -0.029062 -0.193299</pose>
+      <pose>439.37 94.09 22.302 -0.103349 -0.029062 -0.193299</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0057</name>
-      <pose>306.85 -93.43 11.053 0.155625 -0.018270 3.049949</pose>
+      <pose>306.85 -93.43 10.882 0.155625 -0.018270 3.049949</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -426,7 +430,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0061</name>
-      <pose>49.08 61.15 6.365 -0.010328 0.050285 0.972357</pose>
+      <pose>49.08 61.15 6.192 -0.010328 0.050285 0.972357</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -451,12 +455,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0066</name>
-      <pose>318.40 -26.94 12.454 0.084352 0.003556 -0.366812</pose>
+      <pose>318.40 -26.94 12.318 0.084352 0.003556 -0.366812</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0067</name>
-      <pose>-223.33 26.47 15.627 -0.175005 0.153040 -2.404948</pose>
+      <pose>-223.33 26.47 15.238 -0.175005 0.153040 -2.404948</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -476,12 +480,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0071</name>
-      <pose>383.45 -137.39 8.910 0.044562 -0.049863 -2.381438</pose>
+      <pose>383.45 -137.39 8.738 0.044562 -0.049863 -2.381438</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0072</name>
-      <pose>436.56 -119.49 13.117 0.039569 -0.248746 1.334341</pose>
+      <pose>436.56 -119.49 12.730 0.039569 -0.248746 1.334341</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -496,7 +500,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0075</name>
-      <pose>-173.78 135.48 9.537 0.044457 -0.060298 -1.213368</pose>
+      <pose>-173.78 135.48 9.269 0.044457 -0.060298 -1.213368</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -506,7 +510,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0077</name>
-      <pose>-348.84 105.88 15.702 -0.055786 0.239289 1.654980</pose>
+      <pose>-348.84 105.88 15.569 -0.055786 0.239289 1.654980</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -556,17 +560,17 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0087</name>
-      <pose>415.53 -128.83 9.274 -0.122580 -0.118712 2.255475</pose>
+      <pose>415.53 -128.83 9.103 -0.122580 -0.118712 2.255475</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0088</name>
-      <pose>-220.41 -111.22 15.219 -0.111339 -0.374798 -1.360437</pose>
+      <pose>-220.41 -111.22 15.093 -0.111339 -0.374798 -1.360437</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0089</name>
-      <pose>-82.39 33.79 12.450 0.120020 -0.188124 0.959751</pose>
+      <pose>-82.39 33.79 12.202 0.120020 -0.188124 0.959751</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -606,7 +610,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0097</name>
-      <pose>-378.91 76.53 16.682 -0.037378 0.088357 2.204664</pose>
+      <pose>-378.91 76.53 16.428 -0.037378 0.088357 2.204664</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -626,7 +630,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0101</name>
-      <pose>-163.96 29.74 13.487 -0.016114 -0.020686 -3.069653</pose>
+      <pose>-163.96 29.74 13.314 -0.016114 -0.020686 -3.069653</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -641,7 +645,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0104</name>
-      <pose>387.43 66.37 18.963 -0.116480 0.161231 1.228587</pose>
+      <pose>387.43 66.37 18.699 -0.116480 0.161231 1.228587</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -686,7 +690,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0113</name>
-      <pose>353.04 82.89 20.089 -0.002002 -0.038176 1.066241</pose>
+      <pose>353.04 82.89 19.916 -0.002002 -0.038176 1.066241</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -711,7 +715,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0118</name>
-      <pose>66.59 61.14 6.107 0.013365 0.000369 2.412610</pose>
+      <pose>66.59 61.14 5.971 0.013365 0.000369 2.412610</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -721,7 +725,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0120</name>
-      <pose>317.19 107.93 22.985 0.070335 0.355552 -1.379583</pose>
+      <pose>317.19 107.93 22.823 0.070335 0.355552 -1.379583</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -741,12 +745,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0124</name>
-      <pose>-160.78 71.47 13.681 0.114413 -0.000641 2.780734</pose>
+      <pose>-160.78 71.47 13.285 0.114413 -0.000641 2.780734</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0125</name>
-      <pose>192.96 1.34 13.609 -0.118230 -0.261463 -1.049002</pose>
+      <pose>192.96 1.34 13.365 -0.118230 -0.261463 -1.049002</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -761,7 +765,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0128</name>
-      <pose>244.35 -4.31 11.855 -0.013462 -0.137503 1.504153</pose>
+      <pose>244.35 -4.31 11.683 -0.013462 -0.137503 1.504153</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -786,12 +790,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0133</name>
-      <pose>-70.27 113.35 10.333 -0.034269 0.038574 -2.613967</pose>
+      <pose>-70.27 113.35 10.079 -0.034269 0.038574 -2.613967</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0134</name>
-      <pose>-422.81 106.58 8.339 0.106985 -0.035793 -2.667933</pose>
+      <pose>-422.81 106.58 8.073 0.106985 -0.035793 -2.667933</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -801,12 +805,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0136</name>
-      <pose>344.64 94.00 20.364 -0.081751 -0.014992 -2.900833</pose>
+      <pose>344.64 94.00 20.111 -0.081751 -0.014992 -2.900833</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0137</name>
-      <pose>40.60 28.91 13.301 0.028658 -0.201313 1.382791</pose>
+      <pose>40.60 28.91 13.038 0.028658 -0.201313 1.382791</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -816,7 +820,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0139</name>
-      <pose>157.64 -26.79 10.197 -0.172257 0.112899 1.027248</pose>
+      <pose>157.64 -26.79 10.063 -0.172257 0.112899 1.027248</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -846,7 +850,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0145</name>
-      <pose>-367.92 -134.57 19.178 0.350604 -0.030241 -2.899272</pose>
+      <pose>-367.92 -134.57 18.939 0.350604 -0.030241 -2.899272</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -871,12 +875,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0150</name>
-      <pose>-115.37 29.65 12.187 0.078110 0.043471 -0.226162</pose>
+      <pose>-115.37 29.65 12.015 0.078110 0.043471 -0.226162</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0151</name>
-      <pose>-339.21 89.40 17.133 -0.298613 -0.095384 -0.207307</pose>
+      <pose>-339.21 89.40 16.878 -0.298613 -0.095384 -0.207307</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -891,7 +895,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0154</name>
-      <pose>290.90 -72.00 11.596 -0.040413 0.076759 -1.904144</pose>
+      <pose>290.90 -72.00 11.328 -0.040413 0.076759 -1.904144</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -901,7 +905,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0156</name>
-      <pose>248.72 -42.78 12.608 0.441601 0.227290 2.742806</pose>
+      <pose>248.72 -42.78 12.257 0.441601 0.227290 2.742806</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -916,7 +920,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0159</name>
-      <pose>344.59 -11.27 15.972 -0.225420 0.164124 0.942653</pose>
+      <pose>344.59 -11.27 15.841 -0.225420 0.164124 0.942653</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -926,22 +930,22 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0161</name>
-      <pose>369.26 76.90 18.972 -0.430514 -0.037005 2.928980</pose>
+      <pose>369.26 76.90 18.815 -0.430514 -0.037005 2.928980</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0162</name>
-      <pose>203.30 -64.85 14.084 -0.048845 0.025401 -0.932334</pose>
+      <pose>203.30 -64.85 13.830 -0.048845 0.025401 -0.932334</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0163</name>
-      <pose>382.47 -61.90 10.365 -0.000089 0.001984 2.832472</pose>
+      <pose>382.47 -61.90 10.110 -0.000089 0.001984 2.832472</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0164</name>
-      <pose>-31.06 30.89 12.995 -0.224509 -0.260587 2.410801</pose>
+      <pose>-31.06 30.89 12.832 -0.224509 -0.260587 2.410801</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -956,7 +960,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0167</name>
-      <pose>334.49 15.62 13.788 0.463834 0.000130 -3.037090</pose>
+      <pose>334.49 15.62 13.548 0.463834 0.000130 -3.037090</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -966,7 +970,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0169</name>
-      <pose>-228.51 -6.69 9.688 -0.061015 0.097729 -1.813532</pose>
+      <pose>-228.51 -6.69 9.516 -0.061015 0.097729 -1.813532</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -976,7 +980,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0171</name>
-      <pose>-225.89 45.91 15.774 -0.048310 -0.128458 2.321732</pose>
+      <pose>-225.89 45.91 15.508 -0.048310 -0.128458 2.321732</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1001,7 +1005,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0176</name>
-      <pose>-13.91 62.88 9.185 -0.139710 0.063665 -0.151439</pose>
+      <pose>-13.91 62.88 8.919 -0.139710 0.063665 -0.151439</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1036,7 +1040,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0183</name>
-      <pose>-19.60 90.19 7.751 -0.025910 -0.035471 2.518179</pose>
+      <pose>-19.60 90.19 7.497 -0.025910 -0.035471 2.518179</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1046,7 +1050,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0185</name>
-      <pose>55.30 -54.93 16.288 -0.182307 -0.021319 -0.036265</pose>
+      <pose>55.30 -54.93 16.118 -0.182307 -0.021319 -0.036265</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1056,7 +1060,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0187</name>
-      <pose>-241.40 6.32 12.542 -0.098480 -0.091000 2.835153</pose>
+      <pose>-241.40 6.32 12.147 -0.098480 -0.091000 2.835153</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1066,12 +1070,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0189</name>
-      <pose>106.50 30.70 9.631 0.001641 -0.363947 -1.633369</pose>
+      <pose>106.50 30.70 9.258 0.001641 -0.363947 -1.633369</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0190</name>
-      <pose>-257.15 -80.91 9.437 0.019011 -0.022758 -2.133809</pose>
+      <pose>-257.15 -80.91 9.264 0.019011 -0.022758 -2.133809</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -1096,7 +1100,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0195</name>
-      <pose>79.01 85.09 8.358 -0.004599 -0.035179 1.243016</pose>
+      <pose>79.01 85.09 8.222 -0.004599 -0.035179 1.243016</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1106,12 +1110,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0197</name>
-      <pose>-314.83 -123.30 18.886 -0.012853 -0.374618 -1.300517</pose>
+      <pose>-314.83 -123.30 18.649 -0.012853 -0.374618 -1.300517</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0198</name>
-      <pose>219.08 19.38 12.199 -0.005330 -0.007375 1.813413</pose>
+      <pose>219.08 19.38 11.800 -0.005330 -0.007375 1.813413</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1136,12 +1140,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0203</name>
-      <pose>76.67 -134.19 14.449 0.034581 -0.039666 -1.478740</pose>
+      <pose>76.67 -134.19 14.051 0.034581 -0.039666 -1.478740</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0204</name>
-      <pose>-202.83 -128.74 24.470 -0.025461 -0.047229 -1.530807</pose>
+      <pose>-202.83 -128.74 24.216 -0.025461 -0.047229 -1.530807</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1151,7 +1155,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0206</name>
-      <pose>-56.42 87.99 8.400 -0.034000 0.012443 -0.194643</pose>
+      <pose>-56.42 87.99 8.001 -0.034000 0.012443 -0.194643</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1161,12 +1165,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0208</name>
-      <pose>-298.47 -24.74 10.919 -0.179116 -0.039871 3.116704</pose>
+      <pose>-298.47 -24.74 10.669 -0.179116 -0.039871 3.116704</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0209</name>
-      <pose>391.77 87.80 20.705 0.057045 0.044315 -2.825562</pose>
+      <pose>391.77 87.80 20.569 0.057045 0.044315 -2.825562</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1176,12 +1180,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0211</name>
-      <pose>-84.33 4.09 9.862 0.097401 -0.013705 -0.075317</pose>
+      <pose>-84.33 4.09 9.690 0.097401 -0.013705 -0.075317</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0212</name>
-      <pose>325.04 -10.65 14.205 -0.200577 0.000733 0.340501</pose>
+      <pose>325.04 -10.65 14.071 -0.200577 0.000733 0.340501</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1191,7 +1195,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0214</name>
-      <pose>-394.58 -65.22 16.443 0.419451 -0.402199 0.736452</pose>
+      <pose>-394.58 -65.22 16.297 0.419451 -0.402199 0.736452</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1201,7 +1205,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0216</name>
-      <pose>95.81 -73.00 13.247 -0.053818 0.072342 0.993171</pose>
+      <pose>95.81 -73.00 13.111 -0.053818 0.072342 0.993171</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1211,17 +1215,17 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0218</name>
-      <pose>363.38 -10.79 17.355 -0.189658 0.107408 0.727836</pose>
+      <pose>363.38 -10.79 17.106 -0.189658 0.107408 0.727836</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0219</name>
-      <pose>-304.51 121.14 13.019 -0.028465 0.414751 1.827831</pose>
+      <pose>-304.51 121.14 12.786 -0.028465 0.414751 1.827831</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0220</name>
-      <pose>-199.39 93.72 15.136 -0.084657 -0.103649 -0.119733</pose>
+      <pose>-199.39 93.72 14.870 -0.084657 -0.103649 -0.119733</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1231,7 +1235,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0222</name>
-      <pose>7.25 106.21 8.916 0.156207 0.163849 -0.841492</pose>
+      <pose>7.25 106.21 8.528 0.156207 0.163849 -0.841492</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1241,7 +1245,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0224</name>
-      <pose>6.81 89.75 7.312 -0.008693 -0.069232 1.777431</pose>
+      <pose>6.81 89.75 7.139 -0.008693 -0.069232 1.777431</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1251,7 +1255,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0226</name>
-      <pose>-309.24 10.80 14.352 -0.210090 -0.205505 2.190220</pose>
+      <pose>-309.24 10.80 14.109 -0.210090 -0.205505 2.190220</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1261,7 +1265,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0228</name>
-      <pose>-273.99 55.30 15.352 0.223246 -0.182019 -2.710933</pose>
+      <pose>-273.99 55.30 15.108 0.223246 -0.182019 -2.710933</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1276,7 +1280,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0231</name>
-      <pose>257.31 42.57 8.774 -0.020666 -0.038983 0.956109</pose>
+      <pose>257.31 42.57 8.638 -0.020666 -0.038983 0.956109</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -1301,17 +1305,17 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0236</name>
-      <pose>169.58 41.95 9.411 -0.379006 -0.392223 -0.855213</pose>
+      <pose>169.58 41.95 9.069 -0.379006 -0.392223 -0.855213</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0237</name>
-      <pose>153.43 9.41 12.451 0.245935 0.095835 -0.276296</pose>
+      <pose>153.43 9.41 12.205 0.245935 0.095835 -0.276296</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0238</name>
-      <pose>192.47 72.63 10.251 0.151808 0.048479 -0.798154</pose>
+      <pose>192.47 72.63 10.116 0.151808 0.048479 -0.798154</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -1336,7 +1340,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0243</name>
-      <pose>-390.62 -39.63 14.883 0.275359 0.124446 2.723349</pose>
+      <pose>-390.62 -39.63 14.718 0.275359 0.124446 2.723349</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1351,7 +1355,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0246</name>
-      <pose>-228.07 115.59 13.864 -0.095768 0.150175 0.892025</pose>
+      <pose>-228.07 115.59 13.730 -0.095768 0.150175 0.892025</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1361,7 +1365,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0248</name>
-      <pose>-30.58 -59.46 15.105 -0.268876 0.058217 -2.856684</pose>
+      <pose>-30.58 -59.46 14.938 -0.268876 0.058217 -2.856684</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1371,7 +1375,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0250</name>
-      <pose>406.59 53.29 17.364 -0.224842 0.030162 2.866979</pose>
+      <pose>406.59 53.29 17.231 -0.224842 0.030162 2.866979</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1386,7 +1390,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0253</name>
-      <pose>-180.20 133.82 9.489 0.140205 -0.181737 -2.160202</pose>
+      <pose>-180.20 133.82 9.227 0.140205 -0.181737 -2.160202</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1411,7 +1415,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0258</name>
-      <pose>235.37 50.64 8.541 0.052480 -0.126836 0.856076</pose>
+      <pose>235.37 50.64 8.274 0.052480 -0.126836 0.856076</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1431,7 +1435,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0262</name>
-      <pose>34.68 132.02 12.848 -0.065947 0.026236 -2.948607</pose>
+      <pose>34.68 132.02 12.675 -0.065947 0.026236 -2.948607</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1446,7 +1450,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0265</name>
-      <pose>-338.65 129.61 9.069 0.183527 -0.132214 0.872218</pose>
+      <pose>-338.65 129.61 8.900 0.183527 -0.132214 0.872218</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1456,7 +1460,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0267</name>
-      <pose>268.04 -37.58 11.727 -0.002996 -0.085251 -1.315056</pose>
+      <pose>268.04 -37.58 11.473 -0.002996 -0.085251 -1.315056</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -1466,7 +1470,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0269</name>
-      <pose>151.66 23.68 11.210 -0.153443 -0.255620 -1.096028</pose>
+      <pose>151.66 23.68 10.953 -0.153443 -0.255620 -1.096028</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -1481,7 +1485,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0272</name>
-      <pose>284.99 114.63 23.150 0.047041 0.254524 1.904737</pose>
+      <pose>284.99 114.63 23.018 0.047041 0.254524 1.904737</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -1541,7 +1545,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0284</name>
-      <pose>56.83 -120.79 13.017 0.008158 0.409152 -1.473867</pose>
+      <pose>56.83 -120.79 12.858 0.008158 0.409152 -1.473867</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1551,17 +1555,17 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0286</name>
-      <pose>-310.15 112.15 15.767 -0.217967 -0.000670 0.017890</pose>
+      <pose>-310.15 112.15 15.598 -0.217967 -0.000670 0.017890</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0287</name>
-      <pose>425.94 136.51 18.314 0.198844 -0.083395 -2.897235</pose>
+      <pose>425.94 136.51 18.065 0.198844 -0.083395 -2.897235</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0288</name>
-      <pose>-286.44 45.10 19.023 -0.255566 0.046017 0.156068</pose>
+      <pose>-286.44 45.10 18.856 -0.255566 0.046017 0.156068</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -1586,7 +1590,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0293</name>
-      <pose>-401.84 79.30 16.095 0.111842 0.077960 -0.831417</pose>
+      <pose>-401.84 79.30 15.700 0.111842 0.077960 -0.831417</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1601,17 +1605,17 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0296</name>
-      <pose>360.54 -119.42 11.315 0.198279 -0.131555 0.494518</pose>
+      <pose>360.54 -119.42 11.054 0.198279 -0.131555 0.494518</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0297</name>
-      <pose>-309.47 -104.67 13.644 -0.265841 0.329848 -2.404983</pose>
+      <pose>-309.47 -104.67 13.280 -0.265841 0.329848 -2.404983</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0298</name>
-      <pose>42.55 -48.95 15.094 0.045489 0.011338 -0.033497</pose>
+      <pose>42.55 -48.95 14.696 0.045489 0.011338 -0.033497</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1621,12 +1625,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0300</name>
-      <pose>177.57 98.78 17.349 -0.205929 0.431347 -2.238623</pose>
+      <pose>177.57 98.78 17.195 -0.205929 0.431347 -2.238623</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0301</name>
-      <pose>45.18 102.34 8.971 0.024654 0.043097 2.702741</pose>
+      <pose>45.18 102.34 8.798 0.024654 0.043097 2.702741</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1636,7 +1640,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0303</name>
-      <pose>-356.32 -20.51 14.550 -0.074713 0.101870 -2.108000</pose>
+      <pose>-356.32 -20.51 14.284 -0.074713 0.101870 -2.108000</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -1651,7 +1655,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0306</name>
-      <pose>-112.07 -103.57 13.586 0.064891 -0.083086 0.374173</pose>
+      <pose>-112.07 -103.57 13.319 0.064891 -0.083086 0.374173</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1661,12 +1665,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0308</name>
-      <pose>145.50 70.08 7.794 0.110487 0.076777 -0.824554</pose>
+      <pose>145.50 70.08 7.542 0.110487 0.076777 -0.824554</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0309</name>
-      <pose>-394.73 -59.46 18.038 0.047177 0.062357 1.964646</pose>
+      <pose>-394.73 -59.46 17.771 0.047177 0.062357 1.964646</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1686,32 +1690,32 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0313</name>
-      <pose>53.65 74.88 7.670 -0.244572 0.193898 -2.400683</pose>
+      <pose>53.65 74.88 7.427 -0.244572 0.193898 -2.400683</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0314</name>
-      <pose>125.58 -132.65 11.977 0.078743 0.101084 -0.441591</pose>
+      <pose>125.58 -132.65 11.842 0.078743 0.101084 -0.441591</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0315</name>
-      <pose>170.25 -131.89 10.552 0.006119 -0.084241 1.716751</pose>
+      <pose>170.25 -131.89 10.299 0.006119 -0.084241 1.716751</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0316</name>
-      <pose>-168.09 -44.85 12.701 -0.037013 -0.081518 0.039873</pose>
+      <pose>-168.09 -44.85 12.528 -0.037013 -0.081518 0.039873</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0317</name>
-      <pose>-313.94 44.06 19.098 -0.357153 0.155741 0.409052</pose>
+      <pose>-313.94 44.06 18.863 -0.357153 0.155741 0.409052</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0318</name>
-      <pose>117.19 -131.42 12.436 -0.028340 -0.191097 -1.592511</pose>
+      <pose>117.19 -131.42 12.172 -0.028340 -0.191097 -1.592511</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1746,7 +1750,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0325</name>
-      <pose>81.96 7.54 13.755 -0.100307 -0.233177 1.949614</pose>
+      <pose>81.96 7.54 13.624 -0.100307 -0.233177 1.949614</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1776,7 +1780,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0331</name>
-      <pose>213.00 -17.86 11.246 -0.044116 0.007909 2.888547</pose>
+      <pose>213.00 -17.86 10.992 -0.044116 0.007909 2.888547</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1786,7 +1790,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0333</name>
-      <pose>123.32 -58.94 12.924 -0.083547 -0.105188 2.549294</pose>
+      <pose>123.32 -58.94 12.658 -0.083547 -0.105188 2.549294</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -1796,7 +1800,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0335</name>
-      <pose>369.40 -115.32 12.495 0.141556 0.176078 -0.964618</pose>
+      <pose>369.40 -115.32 12.233 0.141556 0.176078 -0.964618</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -1806,7 +1810,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0337</name>
-      <pose>-166.96 -44.94 12.965 -0.049502 0.090732 2.090484</pose>
+      <pose>-166.96 -44.94 12.712 -0.049502 0.090732 2.090484</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -1821,7 +1825,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0340</name>
-      <pose>127.99 -98.65 16.981 -0.165641 0.131957 0.634970</pose>
+      <pose>127.99 -98.65 16.732 -0.165641 0.131957 0.634970</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1831,7 +1835,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0342</name>
-      <pose>-373.69 126.36 8.681 -0.267215 0.245170 -2.370783</pose>
+      <pose>-373.69 126.36 8.554 -0.267215 0.245170 -2.370783</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1841,17 +1845,17 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0344</name>
-      <pose>125.83 136.23 16.010 -0.038248 -0.012720 2.031021</pose>
+      <pose>125.83 136.23 15.611 -0.038248 -0.012720 2.031021</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0345</name>
-      <pose>-161.80 -16.87 8.459 -0.141015 -0.015517 2.947414</pose>
+      <pose>-161.80 -16.87 8.324 -0.141015 -0.015517 2.947414</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0346</name>
-      <pose>-173.52 -63.09 11.723 0.197382 -0.198058 0.333266</pose>
+      <pose>-173.52 -63.09 11.592 0.197382 -0.198058 0.333266</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1866,12 +1870,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0349</name>
-      <pose>-360.54 26.34 19.242 -0.169526 -0.153023 2.428802</pose>
+      <pose>-360.54 26.34 18.994 -0.169526 -0.153023 2.428802</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0350</name>
-      <pose>47.80 81.71 8.806 -0.095979 -0.084240 -0.650177</pose>
+      <pose>47.80 81.71 8.410 -0.095979 -0.084240 -0.650177</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -1881,7 +1885,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0352</name>
-      <pose>-21.45 -97.76 16.471 -0.437302 0.124115 0.361151</pose>
+      <pose>-21.45 -97.76 16.113 -0.437302 0.124115 0.361151</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -1921,7 +1925,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0360</name>
-      <pose>328.49 -46.66 14.385 0.147948 -0.130670 -2.631423</pose>
+      <pose>328.49 -46.66 13.993 0.147948 -0.130670 -2.631423</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -1931,7 +1935,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0362</name>
-      <pose>-95.08 26.61 11.658 -0.027128 -0.011648 -0.389386</pose>
+      <pose>-95.08 26.61 11.522 -0.027128 -0.011648 -0.389386</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -1946,7 +1950,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0365</name>
-      <pose>362.95 -113.83 12.569 -0.066111 0.158674 -2.075844</pose>
+      <pose>362.95 -113.83 12.434 -0.066111 0.158674 -2.075844</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -1976,12 +1980,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0371</name>
-      <pose>-108.49 -94.57 12.338 -0.082874 -0.173782 -1.052467</pose>
+      <pose>-108.49 -94.57 11.946 -0.082874 -0.173782 -1.052467</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0372</name>
-      <pose>109.77 112.74 14.900 0.056364 0.046926 -1.750536</pose>
+      <pose>109.77 112.74 14.727 0.056364 0.046926 -1.750536</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2006,7 +2010,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0377</name>
-      <pose>426.31 -10.73 21.263 -0.087384 -0.205777 1.779452</pose>
+      <pose>426.31 -10.73 20.874 -0.087384 -0.205777 1.779452</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -2021,22 +2025,22 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0380</name>
-      <pose>-17.08 -36.06 16.461 -0.391155 -0.164498 -0.380186</pose>
+      <pose>-17.08 -36.06 16.336 -0.391155 -0.164498 -0.380186</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0381</name>
-      <pose>304.39 98.33 18.507 -0.150011 -0.177191 1.804454</pose>
+      <pose>304.39 98.33 18.245 -0.150011 -0.177191 1.804454</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0382</name>
-      <pose>-298.93 -14.19 12.443 -0.298463 0.020373 -3.060758</pose>
+      <pose>-298.93 -14.19 12.277 -0.298463 0.020373 -3.060758</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0383</name>
-      <pose>-55.02 125.00 9.987 0.015757 -0.050534 1.394708</pose>
+      <pose>-55.02 125.00 9.733 0.015757 -0.050534 1.394708</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2056,7 +2060,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0387</name>
-      <pose>131.97 81.59 9.827 -0.137451 0.093617 0.858115</pose>
+      <pose>131.97 81.59 9.562 -0.137451 0.093617 0.858115</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -2066,7 +2070,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0389</name>
-      <pose>180.87 -14.39 11.475 0.137202 0.033098 0.035269</pose>
+      <pose>180.87 -14.39 11.303 0.137202 0.033098 0.035269</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -2076,7 +2080,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0391</name>
-      <pose>95.81 -21.49 9.031 -0.043980 -0.016295 -1.405990</pose>
+      <pose>95.81 -21.49 8.763 -0.043980 -0.016295 -1.405990</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -2086,7 +2090,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0393</name>
-      <pose>108.07 -122.41 12.456 0.207903 0.383433 -0.985627</pose>
+      <pose>108.07 -122.41 12.299 0.207903 0.383433 -0.985627</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2131,7 +2135,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0402</name>
-      <pose>206.96 -46.89 14.827 -0.341928 0.099270 0.261417</pose>
+      <pose>206.96 -46.89 14.453 -0.341928 0.099270 0.261417</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2141,12 +2145,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0404</name>
-      <pose>-31.13 54.71 10.710 -0.075791 0.027074 -2.314898</pose>
+      <pose>-31.13 54.71 10.574 -0.075791 0.027074 -2.314898</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0405</name>
-      <pose>-321.33 60.49 17.952 -0.021141 0.084437 -0.355232</pose>
+      <pose>-321.33 60.49 17.779 -0.021141 0.084437 -0.355232</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2161,7 +2165,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0408</name>
-      <pose>37.87 -69.07 14.648 -0.027601 0.387359 -1.555533</pose>
+      <pose>37.87 -69.07 14.413 -0.027601 0.387359 -1.555533</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -2171,7 +2175,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0410</name>
-      <pose>-147.91 -105.15 12.594 0.066803 0.057640 2.314259</pose>
+      <pose>-147.91 -105.15 12.458 0.066803 0.057640 2.314259</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -2211,7 +2215,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0418</name>
-      <pose>438.37 -63.12 14.224 -0.314560 -0.130862 -0.104710</pose>
+      <pose>438.37 -63.12 13.847 -0.314560 -0.130862 -0.104710</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2221,12 +2225,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0420</name>
-      <pose>219.91 -95.20 14.571 -0.147804 0.082286 0.189567</pose>
+      <pose>219.91 -95.20 14.401 -0.147804 0.082286 0.189567</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0421</name>
-      <pose>94.66 78.77 8.830 0.179614 -0.065264 0.212769</pose>
+      <pose>94.66 78.77 8.580 0.179614 -0.065264 0.212769</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -2236,7 +2240,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0423</name>
-      <pose>-411.50 -97.04 17.109 0.444782 0.117744 2.853602</pose>
+      <pose>-411.50 -97.04 16.751 0.444782 0.117744 2.853602</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -2276,17 +2280,17 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0431</name>
-      <pose>411.45 136.24 18.806 0.137998 -0.343401 -2.110991</pose>
+      <pose>411.45 136.24 18.679 0.137998 -0.343401 -2.110991</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0432</name>
-      <pose>-382.85 11.81 17.254 0.122638 0.111244 -0.675946</pose>
+      <pose>-382.85 11.81 16.989 0.122638 0.111244 -0.675946</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0433</name>
-      <pose>-301.40 58.68 16.590 -0.030554 -0.151305 -1.881262</pose>
+      <pose>-301.40 58.68 16.339 -0.030554 -0.151305 -1.881262</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2316,7 +2320,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0439</name>
-      <pose>-79.70 20.97 12.372 0.052543 -0.119751 0.784301</pose>
+      <pose>-79.70 20.97 12.200 0.052543 -0.119751 0.784301</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -2331,12 +2335,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0442</name>
-      <pose>-279.87 130.55 12.253 0.375965 0.271712 2.770217</pose>
+      <pose>-279.87 130.55 11.895 0.375965 0.271712 2.770217</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0443</name>
-      <pose>-391.24 -105.23 15.122 0.146586 -0.047005 0.957973</pose>
+      <pose>-391.24 -105.23 14.871 0.146586 -0.047005 0.957973</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2351,37 +2355,37 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0446</name>
-      <pose>401.59 -63.15 10.772 0.170888 -0.102519 -2.364843</pose>
+      <pose>401.59 -63.15 10.638 0.170888 -0.102519 -2.364843</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0447</name>
-      <pose>29.46 0.72 12.784 -0.050193 0.129582 1.056313</pose>
+      <pose>29.46 0.72 12.389 -0.050193 0.129582 1.056313</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0448</name>
-      <pose>-304.31 44.45 19.158 0.090598 -0.343898 -1.771060</pose>
+      <pose>-304.31 44.45 18.784 0.090598 -0.343898 -1.771060</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0449</name>
-      <pose>-142.89 118.70 11.602 0.045085 0.073754 0.260495</pose>
+      <pose>-142.89 118.70 11.205 0.045085 0.073754 0.260495</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0450</name>
-      <pose>-415.03 -127.27 13.095 0.205150 -0.227453 -2.276326</pose>
+      <pose>-415.03 -127.27 12.852 0.205150 -0.227453 -2.276326</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0451</name>
-      <pose>-207.10 -80.97 9.357 0.031577 -0.011388 -2.688521</pose>
+      <pose>-207.10 -80.97 8.958 0.031577 -0.011388 -2.688521</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0452</name>
-      <pose>122.31 -0.55 11.368 -0.239016 0.249506 -2.372713</pose>
+      <pose>122.31 -0.55 10.993 -0.239016 0.249506 -2.372713</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -2391,7 +2395,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0454</name>
-      <pose>162.79 -56.72 14.161 0.302012 -0.195781 0.428619</pose>
+      <pose>162.79 -56.72 13.999 0.302012 -0.195781 0.428619</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2406,12 +2410,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0457</name>
-      <pose>429.46 -43.30 15.714 -0.495587 -0.191546 2.553809</pose>
+      <pose>429.46 -43.30 15.482 -0.495587 -0.191546 2.553809</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0458</name>
-      <pose>-113.92 17.26 11.716 -0.019347 -0.052580 2.005573</pose>
+      <pose>-113.92 17.26 11.543 -0.019347 -0.052580 2.005573</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2431,7 +2435,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0462</name>
-      <pose>194.59 -86.85 14.988 -0.019972 0.047203 1.000706</pose>
+      <pose>194.59 -86.85 14.590 -0.019972 0.047203 1.000706</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2451,7 +2455,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0466</name>
-      <pose>336.46 43.19 15.375 -0.023124 0.040320 2.956318</pose>
+      <pose>336.46 43.19 14.976 -0.023124 0.040320 2.956318</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2491,7 +2495,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0474</name>
-      <pose>8.03 0.02 12.549 -0.090232 -0.024554 0.285758</pose>
+      <pose>8.03 0.02 12.151 -0.090232 -0.024554 0.285758</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2506,12 +2510,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0477</name>
-      <pose>-159.69 -29.97 9.509 0.287281 -0.302978 -2.453751</pose>
+      <pose>-159.69 -29.97 9.143 0.287281 -0.302978 -2.453751</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0478</name>
-      <pose>-176.67 -45.82 12.354 -0.009166 -0.122998 -1.078325</pose>
+      <pose>-176.67 -45.82 12.101 -0.009166 -0.122998 -1.078325</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2526,17 +2530,17 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0481</name>
-      <pose>-169.24 111.65 12.472 0.121684 0.212396 -0.790638</pose>
+      <pose>-169.24 111.65 12.085 0.121684 0.212396 -0.790638</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0482</name>
-      <pose>-416.55 -7.11 14.710 0.183792 0.055115 -0.201821</pose>
+      <pose>-416.55 -7.11 14.577 0.183792 0.055115 -0.201821</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0483</name>
-      <pose>415.41 21.97 18.821 0.049721 -0.198027 1.424756</pose>
+      <pose>415.41 21.97 18.651 0.049721 -0.198027 1.424756</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2546,7 +2550,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0485</name>
-      <pose>241.65 -33.55 9.878 0.056237 0.009325 -1.120273</pose>
+      <pose>241.65 -33.55 9.479 0.056237 0.009325 -1.120273</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -2566,7 +2570,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0489</name>
-      <pose>306.57 63.67 17.721 0.054618 -0.189844 -1.853870</pose>
+      <pose>306.57 63.67 17.471 0.054618 -0.189844 -1.853870</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2586,7 +2590,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0493</name>
-      <pose>159.06 85.02 11.137 -0.077689 0.111671 1.656692</pose>
+      <pose>159.06 85.02 10.871 -0.077689 0.111671 1.656692</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2601,7 +2605,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0496</name>
-      <pose>-257.60 57.40 14.051 0.046410 0.014028 1.992351</pose>
+      <pose>-257.60 57.40 13.782 0.046410 0.014028 1.992351</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -2631,7 +2635,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0502</name>
-      <pose>33.95 121.25 12.082 -0.044422 0.068154 -1.910527</pose>
+      <pose>33.95 121.25 11.828 -0.044422 0.068154 -1.910527</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2651,7 +2655,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0506</name>
-      <pose>238.27 -138.55 9.904 -0.030860 0.001900 -2.825247</pose>
+      <pose>238.27 -138.55 9.767 -0.030860 0.001900 -2.825247</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2671,7 +2675,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0510</name>
-      <pose>-235.65 66.83 15.793 -0.002489 -0.067601 -0.940301</pose>
+      <pose>-235.65 66.83 15.395 -0.002489 -0.067601 -0.940301</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -2686,7 +2690,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0513</name>
-      <pose>-4.06 122.25 11.373 -0.004845 -0.083439 -0.237733</pose>
+      <pose>-4.06 122.25 11.200 -0.004845 -0.083439 -0.237733</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -2701,12 +2705,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0516</name>
-      <pose>38.10 -1.70 12.847 -0.192935 -0.065460 -0.379699</pose>
+      <pose>38.10 -1.70 12.714 -0.192935 -0.065460 -0.379699</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0517</name>
-      <pose>3.71 -63.61 15.376 0.005024 -0.137711 -1.201604</pose>
+      <pose>3.71 -63.61 15.123 0.005024 -0.137711 -1.201604</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -2721,7 +2725,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0520</name>
-      <pose>226.41 -90.86 13.404 -0.132959 -0.072037 -0.899060</pose>
+      <pose>226.41 -90.86 13.269 -0.132959 -0.072037 -0.899060</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -2731,7 +2735,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0522</name>
-      <pose>-356.06 134.87 11.612 -0.257970 -0.087418 3.011278</pose>
+      <pose>-356.06 134.87 11.481 -0.257970 -0.087418 3.011278</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -2751,7 +2755,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0526</name>
-      <pose>-335.96 -54.09 15.281 0.114561 0.072531 2.551469</pose>
+      <pose>-335.96 -54.09 15.146 0.114561 0.072531 2.551469</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2761,12 +2765,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0528</name>
-      <pose>-336.67 116.52 11.028 0.030772 0.522814 1.862009</pose>
+      <pose>-336.67 116.52 10.795 0.030772 0.522814 1.862009</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0529</name>
-      <pose>-245.65 128.06 14.781 0.250835 0.021849 3.007260</pose>
+      <pose>-245.65 128.06 14.394 0.250835 0.021849 3.007260</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2781,12 +2785,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0532</name>
-      <pose>-247.80 -70.71 9.279 -0.011427 0.092405 -1.541545</pose>
+      <pose>-247.80 -70.71 9.026 -0.011427 0.092405 -1.541545</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0533</name>
-      <pose>252.89 7.14 13.523 -0.009975 -0.014903 -2.964501</pose>
+      <pose>252.89 7.14 13.268 -0.009975 -0.014903 -2.964501</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -2826,12 +2830,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0541</name>
-      <pose>-248.25 -119.55 21.204 0.326682 0.191034 2.693747</pose>
+      <pose>-248.25 -119.55 20.954 0.326682 0.191034 2.693747</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0542</name>
-      <pose>-383.89 138.35 10.641 -0.324909 -0.278546 -0.365086</pose>
+      <pose>-383.89 138.35 10.396 -0.324909 -0.278546 -0.365086</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -2846,7 +2850,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0545</name>
-      <pose>408.13 -35.15 17.428 0.335961 0.128544 -0.660944</pose>
+      <pose>408.13 -35.15 17.300 0.335961 0.128544 -0.660944</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -2856,12 +2860,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0547</name>
-      <pose>408.45 104.88 22.703 0.177834 -0.251028 0.813103</pose>
+      <pose>408.45 104.88 22.574 0.177834 -0.251028 0.813103</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0548</name>
-      <pose>-133.96 -90.03 11.931 -0.072793 0.035317 -2.908777</pose>
+      <pose>-133.96 -90.03 11.678 -0.072793 0.035317 -2.908777</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2871,7 +2875,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0550</name>
-      <pose>-419.99 -56.46 17.927 0.079766 -0.170830 -2.058294</pose>
+      <pose>-419.99 -56.46 17.757 0.079766 -0.170830 -2.058294</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -2886,12 +2890,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0553</name>
-      <pose>233.63 -130.98 10.221 -0.004182 -0.007420 -2.135025</pose>
+      <pose>233.63 -130.98 9.952 -0.004182 -0.007420 -2.135025</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0554</name>
-      <pose>234.13 107.45 19.077 -0.093890 -0.048050 0.100563</pose>
+      <pose>234.13 107.45 18.680 -0.093890 -0.048050 0.100563</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -2901,7 +2905,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0556</name>
-      <pose>178.89 -126.37 11.067 -0.046189 0.242815 -1.635865</pose>
+      <pose>178.89 -126.37 10.935 -0.046189 0.242815 -1.635865</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -2911,17 +2915,17 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0558</name>
-      <pose>-390.33 1.09 15.889 -0.047112 -0.130377 1.820572</pose>
+      <pose>-390.33 1.09 15.718 -0.047112 -0.130377 1.820572</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0559</name>
-      <pose>366.43 21.31 15.907 -0.060773 0.170753 -2.660007</pose>
+      <pose>366.43 21.31 15.657 -0.060773 0.170753 -2.660007</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0560</name>
-      <pose>151.83 -50.21 15.979 -0.079274 -0.136967 1.901482</pose>
+      <pose>151.83 -50.21 15.808 -0.079274 -0.136967 1.901482</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -2976,17 +2980,17 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0571</name>
-      <pose>289.88 -125.57 9.399 -0.129100 -0.139391 2.378841</pose>
+      <pose>289.88 -125.57 9.135 -0.129100 -0.139391 2.378841</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0572</name>
-      <pose>90.57 104.61 11.020 -0.041731 -0.047862 1.183264</pose>
+      <pose>90.57 104.61 10.622 -0.041731 -0.047862 1.183264</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0573</name>
-      <pose>77.07 48.01 7.582 0.032865 -0.109862 1.361748</pose>
+      <pose>77.07 48.01 7.409 0.032865 -0.109862 1.361748</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3001,12 +3005,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0576</name>
-      <pose>439.62 -5.90 20.511 -0.018381 0.407765 1.520457</pose>
+      <pose>439.62 -5.90 20.264 -0.018381 0.407765 1.520457</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0577</name>
-      <pose>179.32 -28.94 12.246 0.012118 0.004074 1.503785</pose>
+      <pose>179.32 -28.94 11.847 0.012118 0.004074 1.503785</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3026,7 +3030,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0581</name>
-      <pose>-158.19 -83.12 11.534 -0.168838 -0.198254 1.982978</pose>
+      <pose>-158.19 -83.12 11.288 -0.168838 -0.198254 1.982978</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3046,7 +3050,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0585</name>
-      <pose>-223.76 14.18 13.243 0.220550 0.104593 -0.343631</pose>
+      <pose>-223.76 14.18 12.996 0.220550 0.104593 -0.343631</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3056,7 +3060,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0587</name>
-      <pose>210.84 -10.97 11.149 -0.004538 0.042348 -1.679138</pose>
+      <pose>210.84 -10.97 11.013 -0.004538 0.042348 -1.679138</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3071,12 +3075,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0590</name>
-      <pose>305.09 124.65 23.855 -0.048408 0.162959 -2.088617</pose>
+      <pose>305.09 124.65 23.604 -0.048408 0.162959 -2.088617</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0591</name>
-      <pose>-434.38 -101.50 18.683 -0.063149 0.031534 -2.321366</pose>
+      <pose>-434.38 -101.50 18.510 -0.063149 0.031534 -2.321366</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3106,7 +3110,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0597</name>
-      <pose>386.95 -89.81 8.547 -0.100910 -0.078169 -0.510965</pose>
+      <pose>386.95 -89.81 8.375 -0.100910 -0.078169 -0.510965</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -3116,7 +3120,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0599</name>
-      <pose>-128.09 82.58 11.366 0.093876 0.011979 0.497055</pose>
+      <pose>-128.09 82.58 11.113 0.093876 0.011979 0.497055</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3131,7 +3135,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0602</name>
-      <pose>131.91 -131.13 12.018 -0.025521 -0.059411 2.547197</pose>
+      <pose>131.91 -131.13 11.764 -0.025521 -0.059411 2.547197</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3156,7 +3160,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0607</name>
-      <pose>341.05 -6.86 14.667 -0.045191 -0.056846 0.293843</pose>
+      <pose>341.05 -6.86 14.400 -0.045191 -0.056846 0.293843</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3166,7 +3170,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0609</name>
-      <pose>-411.05 120.05 7.992 -0.055142 -0.253271 1.982988</pose>
+      <pose>-411.05 120.05 7.861 -0.055142 -0.253271 1.982988</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3181,7 +3185,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0612</name>
-      <pose>294.49 -31.04 11.961 0.122260 0.128431 -0.642276</pose>
+      <pose>294.49 -31.04 11.568 0.122260 0.128431 -0.642276</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3191,7 +3195,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0614</name>
-      <pose>197.26 0.22 13.882 -0.161319 -0.034074 -0.158577</pose>
+      <pose>197.26 0.22 13.617 -0.161319 -0.034074 -0.158577</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3201,12 +3205,12 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0616</name>
-      <pose>236.72 127.36 20.099 -0.332351 -0.199710 2.526163</pose>
+      <pose>236.72 127.36 19.729 -0.332351 -0.199710 2.526163</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0617</name>
-      <pose>-152.79 37.55 14.075 0.027320 0.111463 -1.358483</pose>
+      <pose>-152.79 37.55 13.903 0.027320 0.111463 -1.358483</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -3221,7 +3225,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0620</name>
-      <pose>104.38 83.46 8.775 0.026768 -0.027940 -1.802966</pose>
+      <pose>104.38 83.46 8.602 0.026768 -0.027940 -1.802966</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3261,12 +3265,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0628</name>
-      <pose>353.00 113.46 23.997 0.348560 0.049001 -0.128514</pose>
+      <pose>353.00 113.46 23.745 0.348560 0.049001 -0.128514</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0629</name>
-      <pose>18.57 51.89 9.230 0.074026 -0.084980 1.061862</pose>
+      <pose>18.57 51.89 8.834 0.074026 -0.084980 1.061862</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -3286,7 +3290,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0633</name>
-      <pose>102.67 -11.80 9.525 0.062772 -0.045597 0.849874</pose>
+      <pose>102.67 -11.80 9.127 0.062772 -0.045597 0.849874</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3296,12 +3300,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0635</name>
-      <pose>318.73 -16.74 13.588 -0.208050 -0.042957 2.710127</pose>
+      <pose>318.73 -16.74 13.419 -0.208050 -0.042957 2.710127</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0636</name>
-      <pose>316.37 132.78 23.464 -0.101685 0.132055 0.848566</pose>
+      <pose>316.37 132.78 23.213 -0.101685 0.132055 0.848566</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3316,7 +3320,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0639</name>
-      <pose>116.95 130.97 16.332 -0.000169 -0.073733 -1.369889</pose>
+      <pose>116.95 130.97 16.064 -0.000169 -0.073733 -1.369889</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3341,7 +3345,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0644</name>
-      <pose>169.70 89.31 12.465 0.172857 0.211195 -1.265559</pose>
+      <pose>169.70 89.31 12.220 0.172857 0.211195 -1.265559</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3371,17 +3375,17 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0650</name>
-      <pose>32.48 38.69 10.944 -0.472134 0.312575 0.458185</pose>
+      <pose>32.48 38.69 10.797 -0.472134 0.312575 0.458185</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0651</name>
-      <pose>-221.56 46.11 15.496 0.110863 -0.090427 1.040114</pose>
+      <pose>-221.56 46.11 15.324 0.110863 -0.090427 1.040114</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0652</name>
-      <pose>-401.02 135.41 9.806 0.411709 -0.474634 -2.127431</pose>
+      <pose>-401.02 135.41 9.481 0.411709 -0.474634 -2.127431</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3416,7 +3420,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0659</name>
-      <pose>-315.33 -52.67 14.984 -0.099817 -0.074258 2.864650</pose>
+      <pose>-315.33 -52.67 14.718 -0.099817 -0.074258 2.864650</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3426,12 +3430,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0661</name>
-      <pose>173.15 -50.71 15.908 0.015807 -0.074039 1.886029</pose>
+      <pose>173.15 -50.71 15.640 0.015807 -0.074039 1.886029</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0662</name>
-      <pose>185.49 -133.68 10.184 0.006946 0.002253 2.155630</pose>
+      <pose>185.49 -133.68 10.011 0.006946 0.002253 2.155630</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3456,7 +3460,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0667</name>
-      <pose>100.41 -84.75 15.212 0.246882 -0.112893 -2.576285</pose>
+      <pose>100.41 -84.75 14.953 0.246882 -0.112893 -2.576285</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3466,12 +3470,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0669</name>
-      <pose>271.68 -122.48 10.343 0.228789 -0.165604 0.620257</pose>
+      <pose>271.68 -122.48 10.084 0.228789 -0.165604 0.620257</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0670</name>
-      <pose>32.46 -37.58 15.764 0.009572 -0.016530 1.238175</pose>
+      <pose>32.46 -37.58 15.510 0.009572 -0.016530 1.238175</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3481,7 +3485,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0672</name>
-      <pose>-164.20 -31.18 10.104 0.426262 0.258453 2.522659</pose>
+      <pose>-164.20 -31.18 9.985 0.426262 0.258453 2.522659</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3491,12 +3495,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0674</name>
-      <pose>152.76 84.17 10.791 -0.073239 -0.130905 -0.506130</pose>
+      <pose>152.76 84.17 10.540 -0.073239 -0.130905 -0.506130</pose>
     </include>
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0675</name>
-      <pose>-365.42 -102.49 14.322 0.247806 -0.179997 0.718070</pose>
+      <pose>-365.42 -102.49 13.942 0.247806 -0.179997 0.718070</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -3541,7 +3545,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0684</name>
-      <pose>-412.84 73.10 16.375 0.080893 0.223250 1.844327</pose>
+      <pose>-412.84 73.10 15.987 0.080893 0.223250 1.844327</pose>
     </include>
     <include>
       <uri>model://long-bush-3</uri>
@@ -3551,7 +3555,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0686</name>
-      <pose>213.42 74.46 12.551 -0.057830 0.116781 -2.832535</pose>
+      <pose>213.42 74.46 12.155 -0.057830 0.116781 -2.832535</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3571,7 +3575,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0690</name>
-      <pose>135.23 -70.69 13.707 -0.039243 -0.100982 -0.784610</pose>
+      <pose>135.23 -70.69 13.454 -0.039243 -0.100982 -0.784610</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3591,12 +3595,12 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0694</name>
-      <pose>97.03 -20.11 8.971 -0.018105 -0.024965 -2.411567</pose>
+      <pose>97.03 -20.11 8.703 -0.018105 -0.024965 -2.411567</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0695</name>
-      <pose>-258.17 -82.06 9.469 -0.034219 0.008692 0.372808</pose>
+      <pose>-258.17 -82.06 9.296 -0.034219 0.008692 0.372808</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3606,7 +3610,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0697</name>
-      <pose>-182.48 20.37 13.117 0.037202 0.039782 -0.298356</pose>
+      <pose>-182.48 20.37 12.849 0.037202 0.039782 -0.298356</pose>
     </include>
     <include>
       <uri>model://boulder-2</uri>
@@ -3616,12 +3620,12 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0699</name>
-      <pose>251.41 117.26 21.228 -0.040689 -0.061702 -0.045955</pose>
+      <pose>251.41 117.26 21.055 -0.040689 -0.061702 -0.045955</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0700</name>
-      <pose>137.19 56.40 6.555 0.064402 -0.082216 0.831071</pose>
+      <pose>137.19 56.40 6.301 0.064402 -0.082216 0.831071</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -3631,17 +3635,17 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0702</name>
-      <pose>-94.42 -100.19 14.486 0.201654 -0.144865 -2.324368</pose>
+      <pose>-94.42 -100.19 14.354 0.201654 -0.144865 -2.324368</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0703</name>
-      <pose>-75.48 -13.44 12.494 0.164655 -0.087121 -2.309178</pose>
+      <pose>-75.48 -13.44 12.360 0.164655 -0.087121 -2.309178</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0704</name>
-      <pose>-358.08 4.37 15.407 0.062733 -0.085090 1.745472</pose>
+      <pose>-358.08 4.37 15.235 0.062733 -0.085090 1.745472</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3651,7 +3655,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0706</name>
-      <pose>241.24 65.16 12.487 0.059051 0.314876 -1.681227</pose>
+      <pose>241.24 65.16 12.245 0.059051 0.314876 -1.681227</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -3661,7 +3665,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0708</name>
-      <pose>30.29 -79.01 12.589 0.012996 0.006341 2.699568</pose>
+      <pose>30.29 -79.01 12.416 0.012996 0.006341 2.699568</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3681,12 +3685,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0712</name>
-      <pose>249.82 -11.32 11.560 0.099731 -0.094097 0.775906</pose>
+      <pose>249.82 -11.32 11.425 0.099731 -0.094097 0.775906</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0713</name>
-      <pose>-300.97 -12.17 13.071 0.081612 0.013124 -0.050746</pose>
+      <pose>-300.97 -12.17 12.817 0.081612 0.013124 -0.050746</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -3696,7 +3700,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0715</name>
-      <pose>-174.36 104.84 12.525 -0.333719 -0.216031 -0.738853</pose>
+      <pose>-174.36 104.84 12.400 -0.333719 -0.216031 -0.738853</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3706,12 +3710,12 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0717</name>
-      <pose>-294.34 -29.02 9.488 -0.058879 -0.233361 1.926475</pose>
+      <pose>-294.34 -29.02 9.355 -0.058879 -0.233361 1.926475</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0718</name>
-      <pose>224.60 -19.82 10.892 0.144957 -0.063969 0.568375</pose>
+      <pose>224.60 -19.82 10.627 0.144957 -0.063969 0.568375</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3736,7 +3740,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0723</name>
-      <pose>-349.86 -52.26 14.914 -0.076610 -0.077997 -0.744778</pose>
+      <pose>-349.86 -52.26 14.742 -0.076610 -0.077997 -0.744778</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -3746,7 +3750,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0725</name>
-      <pose>433.79 -100.00 10.988 -0.035536 0.059864 -2.950968</pose>
+      <pose>433.79 -100.00 10.852 -0.035536 0.059864 -2.950968</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3761,7 +3765,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0728</name>
-      <pose>-50.70 -79.17 11.343 0.061201 0.029855 -0.648812</pose>
+      <pose>-50.70 -79.17 11.207 0.061201 0.029855 -0.648812</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -3786,7 +3790,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0733</name>
-      <pose>330.73 -82.48 8.763 -0.087907 0.068591 -2.472769</pose>
+      <pose>330.73 -82.48 8.627 -0.087907 0.068591 -2.472769</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3796,7 +3800,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0735</name>
-      <pose>400.11 -1.43 20.131 -0.039861 0.053397 0.707325</pose>
+      <pose>400.11 -1.43 19.958 -0.039861 0.053397 0.707325</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -3811,7 +3815,7 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0738</name>
-      <pose>298.30 -22.16 12.490 -0.153166 0.069098 -2.855632</pose>
+      <pose>298.30 -22.16 12.239 -0.153166 0.069098 -2.855632</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -3831,7 +3835,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0742</name>
-      <pose>0.92 -23.68 14.222 -0.001457 0.088066 -1.873643</pose>
+      <pose>0.92 -23.68 13.954 -0.001457 0.088066 -1.873643</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3846,17 +3850,17 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0745</name>
-      <pose>-303.27 -48.51 14.617 0.046762 -0.089074 -2.600576</pose>
+      <pose>-303.27 -48.51 14.445 0.046762 -0.089074 -2.600576</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0746</name>
-      <pose>294.38 50.70 11.925 0.272292 -0.218246 0.385398</pose>
+      <pose>294.38 50.70 11.762 0.272292 -0.218246 0.385398</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0747</name>
-      <pose>-55.01 126.96 9.897 -0.001941 0.077905 1.499327</pose>
+      <pose>-55.01 126.96 9.629 -0.001941 0.077905 1.499327</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -3866,7 +3870,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0749</name>
-      <pose>-391.57 46.50 19.132 0.034698 0.099678 -2.146789</pose>
+      <pose>-391.57 46.50 18.735 0.034698 0.099678 -2.146789</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
@@ -3881,12 +3885,12 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0752</name>
-      <pose>194.27 -93.25 15.529 -0.052710 0.105374 0.794748</pose>
+      <pose>194.27 -93.25 15.276 -0.052710 0.105374 0.794748</pose>
     </include>
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0753</name>
-      <pose>328.64 65.22 16.506 -0.192700 0.194894 0.722877</pose>
+      <pose>328.64 65.22 16.340 -0.192700 0.194894 0.722877</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3911,7 +3915,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0758</name>
-      <pose>153.23 -107.71 15.922 0.006917 0.135301 -1.628259</pose>
+      <pose>153.23 -107.71 15.527 0.006917 0.135301 -1.628259</pose>
     </include>
     <include>
       <uri>model://bush-6</uri>
@@ -3926,17 +3930,17 @@
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0761</name>
-      <pose>-408.88 84.87 15.176 0.147373 -0.075950 -1.802470</pose>
+      <pose>-408.88 84.87 14.925 0.147373 -0.075950 -1.802470</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0762</name>
-      <pose>-70.96 -49.90 16.410 -0.295016 -0.093447 2.629312</pose>
+      <pose>-70.96 -49.90 16.280 -0.295016 -0.093447 2.629312</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0763</name>
-      <pose>-158.46 91.28 13.817 0.034818 -0.140594 -2.694571</pose>
+      <pose>-158.46 91.28 13.551 0.034818 -0.140594 -2.694571</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -3946,7 +3950,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0765</name>
-      <pose>13.88 -127.14 12.998 -0.118743 -0.136563 2.527215</pose>
+      <pose>13.88 -127.14 12.828 -0.118743 -0.136563 2.527215</pose>
     </include>
     <include>
       <uri>model://boulder-1</uri>
@@ -3961,7 +3965,7 @@
     <include>
       <uri>model://plant-1</uri>
       <name>plant-1_0768</name>
-      <pose>250.37 67.08 14.126 -0.094719 -0.327913 1.539882</pose>
+      <pose>250.37 67.08 13.750 -0.094719 -0.327913 1.539882</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -3991,7 +3995,7 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0774</name>
-      <pose>-169.39 -82.55 10.670 0.269553 -0.053477 -0.113340</pose>
+      <pose>-169.39 -82.55 10.411 0.269553 -0.053477 -0.113340</pose>
     </include>
     <include>
       <uri>model://long-bush-5</uri>
@@ -4001,27 +4005,27 @@
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0776</name>
-      <pose>-193.75 -127.71 24.068 0.025813 0.066733 1.455247</pose>
+      <pose>-193.75 -127.71 23.801 0.025813 0.066733 1.455247</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0777</name>
-      <pose>17.39 56.24 9.128 0.191550 0.129043 2.352850</pose>
+      <pose>17.39 56.24 8.880 0.191550 0.129043 2.352850</pose>
     </include>
     <include>
       <uri>model://plant-3</uri>
       <name>plant-3_0778</name>
-      <pose>-365.29 -113.24 14.858 -0.250745 0.333850 0.796427</pose>
+      <pose>-365.29 -113.24 14.612 -0.250745 0.333850 0.796427</pose>
     </include>
     <include>
       <uri>model://plant-5</uri>
       <name>plant-5_0779</name>
-      <pose>-92.97 25.73 11.907 -0.063036 0.012669 0.390935</pose>
+      <pose>-92.97 25.73 11.653 -0.063036 0.012669 0.390935</pose>
     </include>
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0780</name>
-      <pose>408.51 -73.70 10.342 -0.035938 -0.055254 1.640848</pose>
+      <pose>408.51 -73.70 10.206 -0.035938 -0.055254 1.640848</pose>
     </include>
     <include>
       <uri>model://long-bush-4</uri>
@@ -4056,7 +4060,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0787</name>
-      <pose>-172.29 57.32 14.574 -0.237915 0.067758 -2.500626</pose>
+      <pose>-172.29 57.32 14.442 -0.237915 0.067758 -2.500626</pose>
     </include>
     <include>
       <uri>model://bush-9</uri>
@@ -4096,7 +4100,7 @@
     <include>
       <uri>model://plant-2</uri>
       <name>plant-2_0795</name>
-      <pose>-366.05 24.11 18.589 0.197156 0.140015 -0.504942</pose>
+      <pose>-366.05 24.11 18.456 0.197156 0.140015 -0.504942</pose>
     </include>
     <include>
       <uri>model://bush-7</uri>
@@ -4111,7 +4115,7 @@
     <include>
       <uri>model://plant-4</uri>
       <name>plant-4_0798</name>
-      <pose>-148.24 -128.05 20.661 -0.172060 -0.149419 2.909427</pose>
+      <pose>-148.24 -128.05 20.493 -0.172060 -0.149419 2.909427</pose>
     </include>
     <include>
       <uri>model://bush-8</uri>
