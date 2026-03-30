@@ -1,9 +1,10 @@
-<?xml version="1.0" ?>
+<?xml version='1.0' encoding='utf-8'?>
 <sdf version="1.6">
   <model name="low_poly_shrub_-_small_texture">
     <static>true</static>
     <link name="link">
       <visual name="visual">
+        <cast_shadows>false</cast_shadows>
         <geometry>
           <mesh>
             <uri>model://low_poly_shrub_-_small_texture/Untitled.obj</uri>
@@ -11,8 +12,7 @@
           </mesh>
         </geometry>
       </visual>
-      <!-- COLLISION: full mesh — plant is entirely below 0.6m (1.2× robot height).
-           1,534 faces. Accurate to actual mesh shape. -->
+      
       <collision name="collision">
   <pose>0 0 0.749869 0 0 0</pose>
   <geometry>
