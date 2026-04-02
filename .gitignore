@@ -6,6 +6,7 @@
 build/
 install/
 log/
+**__pycache__/
 #Cache folder
 .alcache/
 #Symbols folder
