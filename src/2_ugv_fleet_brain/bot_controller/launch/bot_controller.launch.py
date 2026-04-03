@@ -22,8 +22,15 @@ def generate_launch_description():
         description='Use simulation time'
     )
 
+    namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Robot namespace (empty for single-robot, e.g. "alpha" for fleet)'
+    )
+
     diff_drive_controller = LaunchConfiguration('diff_drive_controller')
     use_sim_time = LaunchConfiguration('use_sim_time')
+    namespace = LaunchConfiguration('namespace')
 
     joint_state_broadcaster = Node(
         package='controller_manager',
@@ -66,7 +73,6 @@ def generate_launch_description():
         condition=UnlessCondition(diff_drive_controller),
     )
 
-
     forward_velocity_controller = Node(
         package='controller_manager',
         executable='spawner',
@@ -80,7 +86,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
         condition=UnlessCondition(diff_drive_controller),
     )
-
 
     ackermann_twist_controller_node = Node(
         package='custom_ackermann_controller',
@@ -145,6 +150,7 @@ def generate_launch_description():
     return LaunchDescription([
         diff_drive_controller_arg,
         use_sim_time_arg,
+        namespace_arg,
 
         joint_state_broadcaster,
 

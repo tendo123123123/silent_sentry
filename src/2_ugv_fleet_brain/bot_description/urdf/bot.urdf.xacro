@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot name="autobot" xmlns:xacro="http://ros.org/wiki/xacro">
 
+  <!-- EMCON: bot_name scopes all gz-transport sensor topics per robot instance -->
+  <xacro:arg name="bot_name" default="autobot" />
+
   <xacro:include filename="bot_ros2_control.xacro"/>
 
   <!-- Base Footprint (reference frame) -->
@@ -432,12 +435,12 @@
           <stddev>0.007</stddev>
         </noise>
         <optical_frame_id>camera_link_optical</optical_frame_id>
-        <camera_info_topic>camera/camera_info</camera_info_topic>
+        <camera_info_topic>$(arg bot_name)/camera/camera_info</camera_info_topic>
       </camera>
       <always_on>1</always_on>
       <update_rate>10</update_rate>
       <visualize>true</visualize>
-      <topic>camera/image_raw</topic>
+      <topic>$(arg bot_name)/camera/image_raw</topic>
     </sensor>
     </gazebo>
 
@@ -547,7 +550,7 @@
     <sensor name="lidar" type="gpu_lidar">
       <always_on>true</always_on>
       <visualize>true</visualize>
-      <topic>scan</topic>
+      <topic>$(arg bot_name)/scan</topic>
       <update_rate>10</update_rate>
       <gz_frame_id>laser_link</gz_frame_id>
       <lidar>
@@ -603,7 +606,7 @@
       <always_on>true</always_on>
       <update_rate>400</update_rate>  <!-- 400 Hz for LIO-SAM odometry sync -->
       <visualize>true</visualize>
-      <topic>/imu</topic>         <!-- Standard IMU topic -->
+      <topic>$(arg bot_name)/imu</topic>
       <enable_metrics>true</enable_metrics>
       <gz_frame_id>imu_link</gz_frame_id>
       
@@ -657,7 +660,7 @@
     <sensor name="navsat" type="navsat">
       <always_on>1</always_on>
       <update_rate>1</update_rate>
-      <topic>navsat</topic>
+      <topic>$(arg bot_name)/navsat</topic>
       <gz_frame_id>navsat_link</gz_frame_id>
     </sensor>
   </gazebo> 
