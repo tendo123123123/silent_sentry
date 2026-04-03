@@ -159,19 +159,7 @@ def generate_launch_description():
         ],
     )
 
-    chain_after_jsb = RegisterEventHandler(
-        OnProcessExit(
-            target_action=joint_state_broadcaster,
-            on_exit=[forward_position_controller],
-        )
-    )
 
-    chain_after_position = RegisterEventHandler(
-        OnProcessExit(
-            target_action=forward_position_controller,
-            on_exit=[forward_velocity_controller],
-        )
-    )
 
     return LaunchDescription([
         use_sim_time_arg,
@@ -182,9 +170,8 @@ def generate_launch_description():
         ros2_control_node,
 
         joint_state_broadcaster,
-
-        chain_after_jsb,
-        chain_after_position,
+        forward_position_controller,
+        forward_velocity_controller,
 
         ackermann_twist_controller_node,
         wheel_odometry_node,
