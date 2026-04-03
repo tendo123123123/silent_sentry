@@ -556,7 +556,7 @@
       <lidar>
         <scan>
           <horizontal>
-            <samples>900</samples>
+            <samples>360</samples>
             <resolution>1.00000</resolution>
             <min_angle>0.000000</min_angle>
             <max_angle>6.283185</max_angle>
@@ -604,7 +604,7 @@
   <gazebo reference="imu_link">
     <sensor name="imu" type="imu">
       <always_on>true</always_on>
-      <update_rate>400</update_rate>  <!-- 400 Hz for LIO-SAM odometry sync -->
+      <update_rate>50</update_rate>
       <visualize>true</visualize>
       <topic>$(arg bot_name)/imu</topic>
       <enable_metrics>true</enable_metrics>
@@ -764,22 +764,34 @@
     <!-- Native Gazebo Sim motors to respond to EMCON Data Diode commands -->
     <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>base_front_left_steering_joint</joint_name>
-      <p_gain>10.0</p_gain>
-      <i_gain>0.0</i_gain>
-      <d_gain>0.1</d_gain>
-    </plugin>
-    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
-      <joint_name>base_front_right_steering_joint</joint_name>
-      <p_gain>10.0</p_gain>
-      <i_gain>0.0</i_gain>
-      <d_gain>0.1</d_gain>
+      <topic>/model/$(arg bot_name)/joint/base_front_left_steering_joint/cmd_pos</topic>
+      <p_gain>50.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>1.0</d_gain>
     </plugin>
 
-    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
-      <joint_name>base_back_left_wheel_joint</joint_name>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>base_front_right_steering_joint</joint_name>
+      <topic>/model/$(arg bot_name)/joint/base_front_right_steering_joint/cmd_pos</topic>
+      <p_gain>50.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>1.0</d_gain>
     </plugin>
-    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+
+    <plugin filename="gz-sim-joint-velocity-controller-system" name="gz::sim::systems::JointVelocityController">
+      <joint_name>base_back_left_wheel_joint</joint_name>
+      <topic>/model/$(arg bot_name)/joint/base_back_left_wheel_joint/cmd_vel</topic>
+      <p_gain>20.0</p_gain>
+      <i_gain>0.5</i_gain>
+      <d_gain>0.0</d_gain>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-velocity-controller-system" name="gz::sim::systems::JointVelocityController">
       <joint_name>base_back_right_wheel_joint</joint_name>
+      <topic>/model/$(arg bot_name)/joint/base_back_right_wheel_joint/cmd_vel</topic>
+      <p_gain>20.0</p_gain>
+      <i_gain>0.5</i_gain>
+      <d_gain>0.0</d_gain>
     </plugin>
 
     <!-- Sensors, Imu, NavSat system plugins are in the world SDF — do NOT duplicate here -->

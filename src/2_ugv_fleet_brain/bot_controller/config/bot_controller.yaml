@@ -119,14 +119,14 @@ joint_state_broadcaster:
 forward_position_controller:
   ros__parameters:
     joints:
-      - base_front_right_steering_joint
       - base_front_left_steering_joint
+      - base_front_right_steering_joint
     interface_name: position
 
 
 forward_velocity_controller:
   ros__parameters:
     joints:
-      - base_back_right_wheel_joint
       - base_back_left_wheel_joint
+      - base_back_right_wheel_joint
     interface_name: velocity

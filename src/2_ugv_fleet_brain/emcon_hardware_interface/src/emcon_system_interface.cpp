@@ -203,11 +203,13 @@ hardware_interface::return_type EmconSystemInterface::write(
       continue;
     }
 
-    gz::msgs::Double msg;
-    msg.set_data(joint.command);
+    if (!std::isnan(joint.command)) {
+      gz::msgs::Double msg;
+      msg.set_data(joint.command);
 
-    // Non-blocking publish
-    joint.pub.Publish(msg);
+      // Non-blocking publish
+      joint.pub.Publish(msg);
+    }
   }
 
   return hardware_interface::return_type::OK;

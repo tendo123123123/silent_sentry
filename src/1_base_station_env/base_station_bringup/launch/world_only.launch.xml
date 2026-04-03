@@ -26,8 +26,10 @@
       output="screen" />
 
     <!-- Gazebo GUI (cores 4-5, delayed 3 s for server readiness) -->
+    <!--
     <executable
       cmd="bash -c 'sleep 3 &amp;&amp; taskset -c 4,5 gz sim -g'"
       output="screen" />
+    -->
 
 </launch>
