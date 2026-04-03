@@ -1,4 +1,4 @@
-/**/controller_manager:
+controller_manager:
   ros__parameters:
     update_rate: 100  # Hz
     switch_timeout: 30.0  # seconds — increased for heavy scene (736 vegetation models)
@@ -106,7 +106,7 @@
 
 
 # Joint State Broadcaster
-/**/joint_state_broadcaster:
+joint_state_broadcaster:
   ros__parameters:
     joints:
       - base_front_left_steering_joint
@@ -116,7 +116,7 @@
       - base_back_left_wheel_joint
       - base_back_right_wheel_joint
 
-/**/forward_position_controller:
+forward_position_controller:
   ros__parameters:
     joints:
       - base_front_right_steering_joint
@@ -124,7 +124,7 @@
     interface_name: position
 
 
-/**/forward_velocity_controller:
+forward_velocity_controller:
   ros__parameters:
     joints:
       - base_back_right_wheel_joint
