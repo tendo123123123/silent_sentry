@@ -42,6 +42,7 @@
         <include file="$(find-pkg-share bot_controller)/launch/bot_controller.launch.py">
             <arg name="use_sim_time" value="True" />
             <arg name="namespace"    value="$(var bot_name)" />
+            <arg name="diff_drive_controller" value="False" />
         </include>
 
         <!-- RViz2 (optional) -->

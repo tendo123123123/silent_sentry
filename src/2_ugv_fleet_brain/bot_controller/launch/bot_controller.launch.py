@@ -9,7 +9,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    # ── Declare launch arguments ──────────────────────────────────────
+     
     diff_drive_controller_arg = DeclareLaunchArgument(
         'diff_drive_controller',
         default_value='False',
@@ -126,7 +126,7 @@ def generate_launch_description():
             PathJoinSubstitution([
                 FindPackageShare('custom_ackermann_controller'),
                 'config',
-                'robot_localization_minimal.yaml',
+                'robot_localization.yaml',
             ]),
             {'use_sim_time': use_sim_time},
         ],
