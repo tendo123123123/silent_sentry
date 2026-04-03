@@ -3,9 +3,11 @@
 
     <ros2_control name="AutoBot" type="system">
 
-    <!-- ros2_control Gazebo -->
+    <!-- EMCON ros2_control: communicates with Gazebo via gz-transport, not DDS -->
     <hardware>
-      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      <plugin>emcon_hardware_interface/EmconSystemInterface</plugin>
+      <param name="bot_name">$(arg bot_name)</param>
+      <param name="world_name">thar_desert</param>
     </hardware>
 
     <!-- Front Steering Joints -->

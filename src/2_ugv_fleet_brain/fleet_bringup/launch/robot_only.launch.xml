@@ -38,10 +38,11 @@
               launch-prefix="bash -c 'sleep 5; taskset -c $(var cpu_cores) $0 $@'"
               args="-world thar_desert -topic robot_description -name $(var bot_name) -x $(var x_pose) -y $(var y_pose) -z 25" />
 
-        <!-- Bot controller stack -->
+        <!-- Bot controller stack (native controller_manager + EMCON hardware interface) -->
         <include file="$(find-pkg-share bot_controller)/launch/bot_controller.launch.py">
             <arg name="use_sim_time" value="True" />
             <arg name="namespace"    value="$(var bot_name)" />
+            <arg name="bot_name"     value="$(var bot_name)" />
             <arg name="diff_drive_controller" value="False" />
         </include>
 

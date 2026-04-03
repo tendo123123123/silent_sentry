@@ -27,3 +27,5 @@ rad.json
 TestResults.xml
 Blender/
 *.glb
+# Per-bot bridge configs generated at launch time
+src/2_ugv_fleet_brain/fleet_bringup/config/gz_bridge_*.yaml

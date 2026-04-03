@@ -757,10 +757,9 @@
   </gazebo>
 
   <gazebo>
-    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>$(find bot_controller)/config/bot_controller.yaml</parameters>
-      <hold_joints_at_controller_startup>false</hold_joints_at_controller_startup>
-    </plugin>
+    <!-- controller_manager runs natively on the robot's ROS_DOMAIN_ID.
+         The EmconSystemInterface plugin handles gz-transport communication.
+         No Gazebo ros2_control plugin is needed. -->
     <!-- Sensors, Imu, NavSat system plugins are in the world SDF — do NOT duplicate here -->
 
     <!-- WheelSlip plugin  Bekker-Wong / Janosi-Hanamoto SOTA
