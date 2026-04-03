@@ -20,11 +20,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     
-    diff_drive_controller_arg = DeclareLaunchArgument(
-        'diff_drive_controller',
-        default_value='False',
-        description='Use differential drive controller'
-    )
+
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
@@ -44,7 +40,7 @@ def generate_launch_description():
         description='Robot name for URDF xacro parameterization'
     )
 
-    diff_drive_controller = LaunchConfiguration('diff_drive_controller')
+
     use_sim_time = LaunchConfiguration('use_sim_time')
     namespace = LaunchConfiguration('namespace')
     bot_name = LaunchConfiguration('bot_name')
@@ -92,19 +88,7 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
-    diff_drive_node = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=[
-            'bot_controller',
-            '--controller-manager', controller_manager_name,
-            '--controller-manager-timeout', '180',
-            '--switch-timeout', '60',
-            '--service-call-timeout', '60',
-        ],
-        parameters=[{'use_sim_time': use_sim_time}],
-        condition=IfCondition(diff_drive_controller),
-    )
+
 
     forward_position_controller = Node(
         package='controller_manager',
@@ -117,7 +101,6 @@ def generate_launch_description():
             '--service-call-timeout', '60',
         ],
         parameters=[{'use_sim_time': use_sim_time}],
-        condition=UnlessCondition(diff_drive_controller),
     )
 
     forward_velocity_controller = Node(
@@ -131,7 +114,6 @@ def generate_launch_description():
             '--service-call-timeout', '60',
         ],
         parameters=[{'use_sim_time': use_sim_time}],
-        condition=UnlessCondition(diff_drive_controller),
     )
 
     ackermann_twist_controller_node = Node(
@@ -140,7 +122,6 @@ def generate_launch_description():
         name='ackermann_twist_controller',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
-        condition=UnlessCondition(diff_drive_controller),
     )
 
     wheel_odometry_node = Node(
@@ -161,7 +142,6 @@ def generate_launch_description():
             {'right_steering_joint': 'base_front_right_steering_joint'},
             {'publish_rate': 50.0},
         ],
-        condition=UnlessCondition(diff_drive_controller),
     )
 
     ekf_node = Node(
@@ -177,13 +157,12 @@ def generate_launch_description():
             ]),
             {'use_sim_time': use_sim_time},
         ],
-        condition=UnlessCondition(diff_drive_controller),
     )
 
     chain_after_jsb = RegisterEventHandler(
         OnProcessExit(
             target_action=joint_state_broadcaster,
-            on_exit=[forward_position_controller, diff_drive_node],
+            on_exit=[forward_position_controller],
         )
     )
 
@@ -195,7 +174,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        diff_drive_controller_arg,
         use_sim_time_arg,
         namespace_arg,
         bot_name_arg,
