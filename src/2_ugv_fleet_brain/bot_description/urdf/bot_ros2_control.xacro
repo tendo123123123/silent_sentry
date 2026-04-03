@@ -3,7 +3,7 @@
 
     <ros2_control name="AutoBot" type="system">
 
-    <!-- EMCON ros2_control: communicates with Gazebo via gz-transport, not DDS -->
+    <!-- EMCON ros2_control communicates with Gazebo via gz-transport, not DDS -->
     <hardware>
       <plugin>emcon_hardware_interface/EmconSystemInterface</plugin>
       <param name="bot_name">$(arg bot_name)</param>

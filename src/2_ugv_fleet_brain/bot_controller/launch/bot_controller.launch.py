@@ -49,6 +49,8 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     bot_name = LaunchConfiguration('bot_name')
 
+    controller_manager_name = ['/', namespace, '/controller_manager']
+
     robot_description_content = Command([
         FindExecutable(name='xacro'), ' ',
         PathJoinSubstitution([
@@ -82,7 +84,7 @@ def generate_launch_description():
         executable='spawner',
         arguments=[
             'joint_state_broadcaster',
-            '--controller-manager', '/controller_manager',
+            '--controller-manager', controller_manager_name,
             '--controller-manager-timeout', '180',
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
@@ -95,7 +97,7 @@ def generate_launch_description():
         executable='spawner',
         arguments=[
             'bot_controller',
-            '--controller-manager', '/controller_manager',
+            '--controller-manager', controller_manager_name,
             '--controller-manager-timeout', '180',
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
@@ -109,7 +111,7 @@ def generate_launch_description():
         executable='spawner',
         arguments=[
             'forward_position_controller',
-            '--controller-manager', '/controller_manager',
+            '--controller-manager', controller_manager_name,
             '--controller-manager-timeout', '180',
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
@@ -123,7 +125,7 @@ def generate_launch_description():
         executable='spawner',
         arguments=[
             'forward_velocity_controller',
-            '--controller-manager', '/controller_manager',
+            '--controller-manager', controller_manager_name,
             '--controller-manager-timeout', '180',
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
