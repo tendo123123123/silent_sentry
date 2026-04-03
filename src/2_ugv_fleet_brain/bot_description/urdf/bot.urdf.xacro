@@ -760,6 +760,28 @@
     <!-- controller_manager runs natively on the robot's ROS_DOMAIN_ID.
          The EmconSystemInterface plugin handles gz-transport communication.
          No Gazebo ros2_control plugin is needed. -->
+    
+    <!-- Native Gazebo Sim motors to respond to EMCON Data Diode commands -->
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>base_front_left_steering_joint</joint_name>
+      <p_gain>10.0</p_gain>
+      <i_gain>0.0</i_gain>
+      <d_gain>0.1</d_gain>
+    </plugin>
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>base_front_right_steering_joint</joint_name>
+      <p_gain>10.0</p_gain>
+      <i_gain>0.0</i_gain>
+      <d_gain>0.1</d_gain>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>base_back_left_wheel_joint</joint_name>
+    </plugin>
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>base_back_right_wheel_joint</joint_name>
+    </plugin>
+
     <!-- Sensors, Imu, NavSat system plugins are in the world SDF — do NOT duplicate here -->
 
     <!-- WheelSlip plugin  Bekker-Wong / Janosi-Hanamoto SOTA
