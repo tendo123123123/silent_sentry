@@ -22,7 +22,7 @@
 
     <!-- Gazebo server (cores 0-3) -->
     <executable
-      cmd="taskset -c 0,1,2,3 gz sim -s -r $(var world_path)"
+      cmd="gz sim -s -r $(var world_path)"
       output="screen" />
 
     <!-- Gazebo GUI (cores 4-5, delayed 3 s for server readiness) -->
