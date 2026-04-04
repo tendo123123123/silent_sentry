@@ -272,8 +272,8 @@
         </contact>
         <friction>
           <ode>
-            <mu>0.4</mu>
-            <mu2>0.3</mu2>
+            <mu>2.0</mu>
+            <mu2>1.5</mu2>
             <fdir1>1 0 0</fdir1>
           </ode>
         </friction>
@@ -327,8 +327,8 @@
         </contact>
         <friction>
           <ode>
-            <mu>0.4</mu>
-            <mu2>0.3</mu2>
+            <mu>2.0</mu>
+            <mu2>1.5</mu2>
             <fdir1>1 0 0</fdir1>
           </ode>
         </friction>
@@ -787,6 +787,8 @@
       <i_gain>0.5</i_gain>
       <d_gain>0.0</d_gain>
       <max_effort>2000.0</max_effort>
+      <max_velocity>3.0</max_velocity>
+      <min_velocity>-3.0</min_velocity>
       <cmd_max>2000.0</cmd_max>
       <cmd_min>-2000.0</cmd_min>
     </plugin>
@@ -798,6 +800,8 @@
       <i_gain>0.5</i_gain>
       <d_gain>0.0</d_gain>
       <max_effort>2000.0</max_effort>
+      <max_velocity>3.0</max_velocity>
+      <min_velocity>-3.0</min_velocity>
       <cmd_max>2000.0</cmd_max>
       <cmd_min>-2000.0</cmd_min>
     </plugin>
