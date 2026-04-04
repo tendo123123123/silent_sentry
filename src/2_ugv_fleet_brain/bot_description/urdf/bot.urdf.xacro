@@ -12,7 +12,7 @@
   <!-- Main Base Link -->
   <link name="base_link">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 -0.1" rpy="0 0 0"/>
       <mass value="5"/>
       <inertia ixx="0.144" ixy="0" ixz="0" iyy="0.857" iyz="0" izz="0.840"/>
     </inertial>
@@ -416,7 +416,7 @@
    <link name="camera_link_optical">
   </link>
 
-    <gazebo reference="camera_link_optical">
+    <!-- <gazebo reference="camera_link_optical">
     <sensor name="camera" type="camera">
       <camera>
         <horizontal_fov>1.3962634</horizontal_fov>
@@ -442,7 +442,7 @@
       <visualize>true</visualize>
       <topic>$(arg bot_name)/camera/image_raw</topic>
     </sensor>
-    </gazebo>
+    </gazebo> -->
 
  
   <link name="laser_link">
@@ -556,7 +556,7 @@
       <lidar>
         <scan>
           <horizontal>
-            <samples>360</samples>
+            <samples>900</samples>
             <resolution>1.00000</resolution>
             <min_angle>0.000000</min_angle>
             <max_angle>6.283185</max_angle>
@@ -604,7 +604,7 @@
   <gazebo reference="imu_link">
     <sensor name="imu" type="imu">
       <always_on>true</always_on>
-      <update_rate>50</update_rate>
+      <update_rate>400</update_rate>
       <visualize>true</visualize>
       <topic>$(arg bot_name)/imu</topic>
       <enable_metrics>true</enable_metrics>
@@ -723,24 +723,24 @@
 
   <!-- Rear drive wheels  higher base slip, lighter static load (36 N each) -->
   <gazebo reference="base_back_left_wheel">
-    <mu1>0.8</mu1>
-    <mu2>0.5</mu2>
+    <mu1>1.0</mu1>
+    <mu2>0.9</mu2>
     <kp>1e6</kp>
     <kd>200.0</kd>
-    <slip1>0.14</slip1>
-    <slip2>0.12</slip2>
+    <slip1>0.0</slip1>
+    <slip2>0.0</slip2>
     <minDepth>0.005</minDepth>
     <maxVel>0.01</maxVel>
     <fdir1>1 0 0</fdir1>
   </gazebo>
 
   <gazebo reference="base_back_right_wheel">
-    <mu1>0.8</mu1>
-    <mu2>0.5</mu2>
+    <mu1>1.0</mu1>
+    <mu2>0.9</mu2>
     <kp>1e6</kp>
     <kd>200.0</kd>
-    <slip1>0.14</slip1>
-    <slip2>0.12</slip2>
+    <slip1>0.0</slip1>
+    <slip2>0.0</slip2>
     <minDepth>0.005</minDepth>
     <maxVel>0.01</maxVel>
     <fdir1>1 0 0</fdir1>
@@ -813,26 +813,26 @@
          wheel_normal_force corrected to actual CG-based static load.  -->
     <plugin filename="gz-sim-wheel-slip-system" name="gz::sim::systems::WheelSlip">
       <wheel link_name="base_front_left_wheel">
-        <slip_compliance_lateral>0.15</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.1</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.005</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.005</slip_compliance_longitudinal>
         <wheel_normal_force>43</wheel_normal_force>
         <wheel_radius>0.175</wheel_radius>
       </wheel>
       <wheel link_name="base_front_right_wheel">
-        <slip_compliance_lateral>0.15</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.1</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.005</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.005</slip_compliance_longitudinal>
         <wheel_normal_force>43</wheel_normal_force>
         <wheel_radius>0.175</wheel_radius>
       </wheel>
       <wheel link_name="base_back_left_wheel">
-        <slip_compliance_lateral>0.15</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.1</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.005</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.005</slip_compliance_longitudinal>
         <wheel_normal_force>36</wheel_normal_force>
         <wheel_radius>0.175</wheel_radius>
       </wheel>
       <wheel link_name="base_back_right_wheel">
-        <slip_compliance_lateral>0.15</slip_compliance_lateral>
-        <slip_compliance_longitudinal>0.1</slip_compliance_longitudinal>
+        <slip_compliance_lateral>0.005</slip_compliance_lateral>
+        <slip_compliance_longitudinal>0.005</slip_compliance_longitudinal>
         <wheel_normal_force>36</wheel_normal_force>
         <wheel_radius>0.175</wheel_radius>
       </wheel>
