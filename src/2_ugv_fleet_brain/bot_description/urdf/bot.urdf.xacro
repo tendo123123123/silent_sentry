@@ -778,7 +778,7 @@
       <d_gain>1.0</d_gain>
     </plugin>
 
-    <plugin filename="gz-sim-joint-velocity-controller-system" name="gz::sim::systems::JointVelocityController">
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>base_back_left_wheel_joint</joint_name>
       <topic>/model/$(arg bot_name)/joint/base_back_left_wheel_joint/cmd_vel</topic>
       <p_gain>20.0</p_gain>
@@ -786,7 +786,7 @@
       <d_gain>0.0</d_gain>
     </plugin>
 
-    <plugin filename="gz-sim-joint-velocity-controller-system" name="gz::sim::systems::JointVelocityController">
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>base_back_right_wheel_joint</joint_name>
       <topic>/model/$(arg bot_name)/joint/base_back_right_wheel_joint/cmd_vel</topic>
       <p_gain>20.0</p_gain>
