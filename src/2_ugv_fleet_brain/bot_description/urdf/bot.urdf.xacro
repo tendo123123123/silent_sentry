@@ -286,6 +286,7 @@
     <child link="base_back_left_wheel"/>
     <origin xyz="-0.51 -0.335 -0.2075" rpy="-1.57079632679 0 0"/>
     <axis xyz="0 0 1"/>
+    <limit effort="2000" velocity="100.0"/>
   </joint>
 
     <!-- ========== BACK RIGHTWHEEL ========== -->
@@ -340,6 +341,7 @@
     <child link="base_back_right_wheel"/>
     <origin xyz="-0.51 0.335 -0.2075" rpy="-1.57079632679 0 0"/>
     <axis xyz="0 0 1"/>
+    <limit effort="2000" velocity="100.0"/>
   </joint>
 
 
