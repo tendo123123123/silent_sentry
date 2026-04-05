@@ -263,6 +263,20 @@ public:
         // get timestamp
         cloudHeader = currentCloudMsg.header;
         timeScanCur = stamp2Sec(cloudHeader.stamp);
+        
+        // Fallback for Gazebo LiDAR missing point timestamps
+        bool pointTimeAvailable = false;
+        for (auto &field : currentCloudMsg.fields) {
+            if (field.name == "time" || field.name == "t") pointTimeAvailable = true;
+        }
+        
+        if (!pointTimeAvailable) {
+            float timeIncrement = 0.1 / (float)laserCloudIn->points.size(); // Assuming 10Hz
+            for (size_t i = 0; i < laserCloudIn->points.size(); ++i) {
+                laserCloudIn->points[i].time = i * timeIncrement;
+            }
+        }
+        
         timeScanEnd = timeScanCur + laserCloudIn->points.back().time;
     
         // remove Nan
@@ -312,8 +326,10 @@ public:
                     break;
                 }
             }
-            if (deskewFlag == -1)
-                RCLCPP_WARN(get_logger(), "Point cloud timestamp not available, deskew function disabled, system will drift significantly!");
+            if (deskewFlag == -1) {
+                RCLCPP_WARN(get_logger(), "Point cloud timestamp not available! Interpolating linearly assuming 10Hz scan to enable deskewing...");
+                deskewFlag = 1; // Force deskew logic since we interpolated
+            }
         }
 
         return true;

@@ -52,8 +52,8 @@ def generate_launch_description():
     
     scan_topic_arg = DeclareLaunchArgument(
         'scan_topic',
-        default_value='/scan',
-        description='Laser scan topic'
+        default_value='/scan/points',
+        description='3D Laser scan topic'
     )
     
     imu_topic_arg = DeclareLaunchArgument(
@@ -123,7 +123,7 @@ def generate_launch_description():
         output='screen',
         condition=launch.conditions.IfCondition(LaunchConfiguration('enable_imu_processing')),
         remappings=[
-            ('/imu/data', LaunchConfiguration('imu_topic')),
+            ('/imu', LaunchConfiguration('imu_topic')),
         ]
     )
     

@@ -15,7 +15,7 @@ class EnhancedIMUProcessorNode(Node):
         super().__init__('enhanced_imu_processor')
         
         # Parameters
-        self.declare_parameter('imu_topic', '/imu/data')
+        self.declare_parameter('imu_topic', '/imu')
         self.declare_parameter('temperature_topic', '/imu/temperature')
         self.declare_parameter('base_frame', 'base_footprint')
         self.declare_parameter('imu_frame', 'imu_link')
