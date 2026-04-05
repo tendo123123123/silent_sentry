@@ -83,16 +83,16 @@ ekf_filter_node:
     
     # Adaptive scan matching odometry (position and orientation source only)
     # Velocity direction is already used in corrected wheel odometry
-    odom1: /scan_matching_odometry/odom
-    odom1_config: [true,  true,  false,     # Position (primary source)
-                   false, false, true,      # Orientation (yaw only)
-                   false, false, false,     # Velocity (used only for direction correction)
-                   false, false, true,      # Angular velocity (yaw rate)
-                   false, false, false]     # Acceleration (not measured)
+    odom1: odometry/lio_sam
+    odom1_config: [true,  true,  true,      # Position (primary source)
+                   true,  true,  true,      # Orientation (RPY)
+                   false, false, false,     # Velocity 
+                   false, false, false,     # Angular velocity 
+                   false, false, false]     # Acceleration 
     odom1_queue_size: 5
     odom1_nodelay: false
     odom1_differential: false                 
-    odom1_relative: false
+    odom1_relative: true
     odom1_pose_rejection_threshold: 2.0      # More sensitive to scan matching jumps
     odom1_twist_rejection_threshold: 0.5
     
