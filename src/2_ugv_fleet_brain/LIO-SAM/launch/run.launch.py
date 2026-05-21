@@ -21,38 +21,40 @@ def generate_launch_description():
 
     print("urdf_file_name : {}".format(xacro_path))
 
+    tf_static_remap = [('/tf_static', '/tf_static_lio_sam')]
+
     return LaunchDescription([
         params_declare,
         Node(
             package='lio_sam',
             executable='lio_sam_imuPreintegration',
             name='lio_sam_imuPreintegration',
-            parameters=[parameter_file],
-            output='screen',
-            remappings=[('/tf', '/tf_lio'), ('/tf_static', '/tf_static_lio')]
+            parameters=[parameter_file, {'use_sim_time': True}],
+            remappings=tf_static_remap,
+            output='screen'
         ),
         Node(
             package='lio_sam',
             executable='lio_sam_imageProjection',
             name='lio_sam_imageProjection',
-            parameters=[parameter_file],
-            output='screen',
-            remappings=[('/tf', '/tf_lio'), ('/tf_static', '/tf_static_lio')]
+            parameters=[parameter_file, {'use_sim_time': True}],
+            remappings=tf_static_remap,
+            output='screen'
         ),
         Node(
             package='lio_sam',
             executable='lio_sam_featureExtraction',
             name='lio_sam_featureExtraction',
-            parameters=[parameter_file],
-            output='screen',
-            remappings=[('/tf', '/tf_lio'), ('/tf_static', '/tf_static_lio')]
+            parameters=[parameter_file, {'use_sim_time': True}],
+            remappings=tf_static_remap,
+            output='screen'
         ),
         Node(
             package='lio_sam',
             executable='lio_sam_mapOptimization',
             name='lio_sam_mapOptimization',
-            parameters=[parameter_file],
-            output='screen',
-            remappings=[('/tf', '/tf_lio'), ('/tf_static', '/tf_static_lio')]
+            parameters=[parameter_file, {'use_sim_time': True}],
+            remappings=tf_static_remap,
+            output='screen'
         )
     ])

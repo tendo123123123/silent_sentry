@@ -2,9 +2,8 @@
 
     <!-- Fleet arguments -->
     <arg name="bot_name"    default="alpha" description="Robot namespace and Gazebo model name" />
-    <arg name="x_pose"      default="0"     description="Spawn X coordinate" />
-    <arg name="y_pose"      default="0"     description="Spawn Y coordinate" />
-    <arg name="cpu_cores"   default="6,7"   description="CPU affinity for all robot nodes" />
+    <arg name="x_pose"      default="0"   description="Spawn X coordinate (DEM center)" />
+    <arg name="y_pose"      default="0"   description="Spawn Y coordinate (DEM center)" />
     <arg name="launch_rviz" default="true" description="Launch RViz2 for this robot" />
 
     <!-- Robot model paths -->
@@ -30,24 +29,27 @@
             <param name="use_sim_time" value="true" />
         </node>
 
-        <!-- Spawn robot into world (delayed 5 s for server readiness) -->
+        <!-- x=0, y=00: DEM center (not corner). Elevation at center is 7.207m. -->
+        <!-- z=8.0: center elevation + 0.7m clearance to avoid collision with terrain on spawn -->
         <node pkg="ros_gz_sim" exec="create"
-              launch-prefix="bash -c 'sleep 5; $0 $@'"
-              args="-world thar_desert -topic robot_description -name $(var bot_name) -x $(var x_pose) -y $(var y_pose) -z 25" />
+              args="-world thar_desert -topic robot_description -name $(var bot_name) -x $(var x_pose) -y $(var y_pose) -z 8.0" />
 
         <!-- Bot controller stack (native controller_manager + EMCON hardware interface) -->
         <include file="$(find-pkg-share bot_controller)/launch/bot_controller.launch.py">
             <arg name="use_sim_time" value="True" />
             <arg name="namespace"    value="" />
             <arg name="bot_name"     value="$(var bot_name)" />
-            <arg name="diff_drive_controller" value="False" />
         </include>
 
         <!-- RViz2 (optional) -->
         <node pkg="rviz2" exec="rviz2"
-              args="-d $(find-pkg-share bot_description)/config/gz.rviz"
-              output="screen"
-              if="$(var launch_rviz)" />
+          args="-d $(find-pkg-share bot_description)/config/gz.rviz"
+          output="screen"
+          if="$(var launch_rviz)">
+        
+        <param name="use_sim_time" value="true"/>
+        
+    </node>
     </group>
 
 </launch>

@@ -1,0 +1,159 @@
+# =============================================================================
+# EKF Configuration for Terramechanics Localization Stack
+# =============================================================================
+# robot_localization EKF node
+# Publishes: odom → base_footprint transform @ 50Hz
+#
+# Sensor Fusion:
+#   odom0 = /terramechanic_odom  (Bekker-Wong wheel odometry: twist vx, vyaw)
+#   imu0  = /imu/data_filtered   (Madgwick-filtered: orientation yaw, angular vel vyaw, linear accel ax)
+#
+# The map → odom transform is published separately by trn_slam_node.
+# =============================================================================
+
+ekf_filter_node:
+  ros__parameters:
+    # --- Core ---
+    frequency: 50.0                     # 50Hz output rate
+    sensor_timeout: 0.2                 # 200ms before declaring sensor dead
+    two_d_mode: true                    # 2D navigation — z, roll, pitch constrained
+    
+    # --- Frame Configuration ---
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint     # REP-105 base frame
+    world_frame: odom                   # EKF operates in odom frame
+                                        # map→odom is handled by TRN SLAM externally
+
+    # --- Transform Publishing ---
+    publish_tf: true                    # Publish odom → base_footprint
+    transform_time_offset: 0.0
+    transform_timeout: 0.0
+    print_diagnostics: true
+    debug: false
+    debug_out_file: /tmp/ekf_terra_debug.txt
+
+    # --- Process Noise Covariance (Q) ---
+    # State: [x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, ayaw]
+    # Desert terrain causes high-frequency disturbances → moderately tuned Q
+    process_noise_covariance: [
+      0.05,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.05,   0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.01,   0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.001,  0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.001,  0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.003,  0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.05,    0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.05,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.01,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.001,  0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.001,  0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.003,  0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.05,   0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.05,   0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.003]
+
+    # --- Initial Estimate Error Covariance (P₀) ---
+    initial_estimate_covariance: [
+      1e-9,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    1e-9,   0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    1e-9,   0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    1e-9,   0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    1e-9,   0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    1e-9,   0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9,    0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     1e-9,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     1e-9,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    1e-9,   0.0,    0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    1e-9,   0.0,    0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    1e-9,   0.0,    0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    1e-9,   0.0,    0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    1e-9,   0.0,
+      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9]
+
+    # =========================================================================
+    # SENSOR 0: Terramechanic Wheel Odometry (twist only)
+    # =========================================================================
+    # We ONLY fuse the twist (velocity) from wheel odometry, NOT pose.
+    # Pose integration is done by the EKF itself; if we also fused raw pose
+    # from odometry, we'd be double-counting.
+    #
+    # The terramechanic node provides dynamic covariance that inflates with
+    # slip ratio — when slip is high, the EKF automatically de-weights this
+    # source and leans on the IMU.
+    #
+    # Config: [x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, ayaw]
+    odom0: /terramechanic_odom
+    odom0_config: [false, false, false,     # Position: NO (EKF integrates internally)
+                   false, false, false,     # Orientation: NO (from IMU)
+                   true,  false, false,     # Linear velocity: vx ONLY
+                   false, false, true,      # Angular velocity: vyaw ONLY
+                   false, false, false]     # Acceleration: NO
+    odom0_queue_size: 5
+    odom0_nodelay: false
+    odom0_differential: false
+    odom0_relative: false
+    odom0_pose_rejection_threshold: 5.0
+    odom0_twist_rejection_threshold: 2.0    # Higher threshold — terramechanics
+                                            # might produce jumpy estimates during
+                                            # slip events, but covariance handles it
+
+    # =========================================================================
+    # SENSOR 1: Madgwick-Filtered IMU
+    # =========================================================================
+    # The Madgwick filter provides:
+    #   - Orientation quaternion (gravity-aligned, no mag → yaw drifts slowly)
+    #   - Angular velocity (gyroscope, bias-corrected by Madgwick)
+    #   - Linear acceleration (raw — EKF removes gravity using the orientation)
+    #
+    # We fuse:
+    #   - Yaw orientation (absolute heading, slowly drifting without mag)
+    #   - Yaw angular velocity (high-quality from Madgwick-compensated gyro)
+    #   - Forward linear acceleration (for velocity estimation during slip)
+    #
+    # remove_gravitational_acceleration: true
+    #   → robot_localization uses the IMU's own orientation quaternion to
+    #     rotate out gravity before fusing linear_acceleration.
+    #     This is WHY we need Madgwick: without a good quaternion, this
+    #     operation leaks gravity into ax/ay (the original problem).
+    imu0: /imu/data_filtered
+    imu0_config: [false, false, false,      # Position: NO
+                  false, false, true,       # Orientation: yaw ONLY
+                  false, false, false,      # Linear velocity: NO (not from IMU)
+                  false, false, true,       # Angular velocity: vyaw ONLY
+                  true,  false, false]      # Linear acceleration: ax ONLY
+    imu0_queue_size: 10
+    imu0_nodelay: false
+    imu0_differential: false
+    imu0_relative: false
+    imu0_pose_rejection_threshold: 0.8
+    imu0_twist_rejection_threshold: 0.8
+    imu0_linear_acceleration_rejection_threshold: 1.5
+    imu0_remove_gravitational_acceleration: true    # CRITICAL: uses Madgwick quaternion
+                                                    # to rotate out [0,0,9.81] before
+                                                    # fusing linear_acceleration
+
+    # =========================================================================
+    # Advanced Filtering
+    # =========================================================================
+    use_control: false
+    stamped_control: false
+    control_timeout: 0.2
+    control_config: [true, false, false, false, false, true]
+
+    # Smooth lagged data: allows the EKF to retroactively correct when
+    # delayed measurements arrive. Critical for TRN SLAM which has ~200ms
+    # latency from FFT computation.
+    smooth_lagged_data: true
+    history_length: 3.0                 # 3 seconds of reprocessable history
+
+    # Reset if sim time jumps (Gazebo restart)
+    reset_on_time_jump: true
+
+    # Dynamic process noise: scales Q based on velocity
+    # Helps during high-speed desert driving where model uncertainty increases
+    dynamic_process_noise_covariance: true
+
+    # Mahalanobis distance threshold for outlier rejection
+    # 3.0 = ~99.7% of Gaussian should pass
+    mahalanobis_threshold: 3.0

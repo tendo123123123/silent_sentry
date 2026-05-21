@@ -16,10 +16,6 @@ def generate_launch_description():
         pkg_share, 'config', 'enhanced_wheel_odometry.yaml'
     ])
     
-    adaptive_scan_config = PathJoinSubstitution([
-        pkg_share, 'config', 'adaptive_scan_matcher.yaml'
-    ])
-    
     enhanced_imu_config = PathJoinSubstitution([
         pkg_share, 'config', 'enhanced_imu_processor.yaml'
     ])
@@ -34,22 +30,13 @@ def generate_launch_description():
         default_value='true',
         description='Use simulation time'
     )
-    
-    enable_scan_matching_arg = DeclareLaunchArgument(
-        'enable_scan_matching',
-        default_value='true',
-        description='Enable adaptive scan matching'
-    )
-    
+
     enable_imu_processing_arg = DeclareLaunchArgument(
         'enable_imu_processing',
         default_value='true',
         description='Enable enhanced IMU processing'
     )
-    
-    
-    
-    
+     
     scan_topic_arg = DeclareLaunchArgument(
         'scan_topic',
         default_value='/scan/points',
@@ -84,26 +71,6 @@ def generate_launch_description():
         remappings=[
             ('/wheel_states', '/wheel_states'),
             ('/cmd_vel', '/cmd_vel'),
-        ]
-    )
-    
-    # Adaptive scan matcher node (conditional)
-    adaptive_scan_matcher_node = Node(
-        package='custom_ackermann_controller',
-        executable='adaptive_scan_matcher',
-        name='adaptive_scan_matcher',
-        parameters=[
-            adaptive_scan_config,
-            {
-                'use_sim_time': LaunchConfiguration('use_sim_time'),
-                'scan_topic': LaunchConfiguration('scan_topic'),
-                'base_frame': LaunchConfiguration('base_frame'),
-            }
-        ],
-        output='screen',
-        condition=launch.conditions.IfCondition(LaunchConfiguration('enable_scan_matching')),
-        remappings=[
-            ('/scan', LaunchConfiguration('scan_topic')),
         ]
     )
     
@@ -149,7 +116,6 @@ def generate_launch_description():
     return LaunchDescription([
         # Launch arguments
         use_sim_time_arg,
-        enable_scan_matching_arg,
         enable_imu_processing_arg,
         scan_topic_arg,
         imu_topic_arg,
@@ -157,35 +123,7 @@ def generate_launch_description():
         
         # Core localization nodes
         enhanced_wheel_odometry_node,
-        adaptive_scan_matcher_node,
         enhanced_imu_processor_node,
         robot_localization_node,
     ])
 
-# Additional launch file for testing individual components
-def generate_test_launch_description():
-    """Generate launch description for testing individual components"""
-    
-    pkg_share = FindPackageShare('custom_ackermann_controller')
-    
-    # Test arguments
-    component_arg = DeclareLaunchArgument(
-        'component',
-        default_value='wheel_odometry',
-        description='Component to test: wheel_odometry, scan_matching, imu_processing, authority_manager'
-    )
-    
-    use_sim_time_arg = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='true',
-        description='Use simulation time for testing'
-    )
-    
-    # Component-specific test nodes would be defined here
-    # This is a framework for individual component testing
-    
-    return LaunchDescription([
-        component_arg,
-        use_sim_time_arg,
-        # Test nodes would be added based on component argument
-    ])

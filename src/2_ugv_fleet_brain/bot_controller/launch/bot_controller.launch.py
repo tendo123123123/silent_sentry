@@ -36,7 +36,7 @@ def generate_launch_description():
 
     bot_name_arg = DeclareLaunchArgument(
         'bot_name',
-        default_value='autobot',
+        default_value='alpha',
         description='Robot name for URDF xacro parameterization'
     )
 
@@ -100,7 +100,6 @@ def generate_launch_description():
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
         ],
-        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     forward_velocity_controller = Node(
@@ -113,7 +112,20 @@ def generate_launch_description():
             '--switch-timeout', '60',
             '--service-call-timeout', '60',
         ],
-        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    forward_position_after_jsb = RegisterEventHandler(
+        OnProcessExit(
+            target_action=joint_state_broadcaster,
+            on_exit=[forward_position_controller],
+        )
+    )
+
+    forward_velocity_after_position = RegisterEventHandler(
+        OnProcessExit(
+            target_action=forward_position_controller,
+            on_exit=[forward_velocity_controller],
+        )
     )
 
     ackermann_twist_controller_node = Node(
@@ -121,43 +133,50 @@ def generate_launch_description():
         executable='ackermann_twist_controller',
         name='ackermann_twist_controller',
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
+        parameters=[{'use_sim_time': True}],
     )
 
-    wheel_odometry_node = Node(
-        package='custom_ackermann_controller',
-        executable='wheel_odometry',
-        name='wheel_odometry_node',
-        output='screen',
-        parameters=[
-            {'use_sim_time': use_sim_time},
-            {'wheelbase': 0.9},
-            {'wheel_radius': 0.175},
-            {'track_width': 0.67},
-            {'odom_frame': 'odom'},
-            {'base_frame': 'base_footprint'},
-            {'left_wheel_joint': 'base_back_left_wheel_joint'},
-            {'right_wheel_joint': 'base_back_right_wheel_joint'},
-            {'left_steering_joint': 'base_front_left_steering_joint'},
-            {'right_steering_joint': 'base_front_right_steering_joint'},
-            {'publish_rate': 50.0},
-        ],
+    ackermann_after_velocity = RegisterEventHandler(
+        OnProcessExit(
+            target_action=forward_velocity_controller,
+            on_exit=[ackermann_twist_controller_node],
+        )
     )
 
-    ekf_node = Node(
-        package='robot_localization',
-        executable='ekf_node',
-        name='ekf_filter_node',
-        output='screen',
-        parameters=[
-            PathJoinSubstitution([
-                FindPackageShare('custom_ackermann_controller'),
-                'config',
-                'robot_localization.yaml',
-            ]),
-            {'use_sim_time': use_sim_time},
-        ],
-    )
+    # wheel_odometry_node = Node(
+    #     package='custom_ackermann_controller',
+    #     executable='wheel_odometry',
+    #     name='wheel_odometry_node',
+    #     output='screen',
+    #     parameters=[
+    #         {'use_sim_time': use_sim_time},
+    #         {'wheelbase': 0.9},
+    #         {'wheel_radius': 0.175},
+    #         {'track_width': 0.67},
+    #         {'odom_frame': 'odom'},
+    #         {'base_frame': 'base_footprint'},
+    #         {'left_wheel_joint': 'base_back_left_wheel_joint'},
+    #         {'right_wheel_joint': 'base_back_right_wheel_joint'},
+    #         {'left_steering_joint': 'base_front_left_steering_joint'},
+    #         {'right_steering_joint': 'base_front_right_steering_joint'},
+    #         {'publish_rate': 50.0},
+    #     ],
+    # )
+
+    # ekf_node = Node(
+    #     package='robot_localization',
+    #     executable='ekf_node',
+    #     name='ekf_filter_node',
+    #     output='screen',
+    #     parameters=[
+    #         PathJoinSubstitution([
+    #             FindPackageShare('custom_ackermann_controller'),
+    #             'config',
+    #             'robot_localization.yaml',
+    #         ]),
+    #         {'use_sim_time': use_sim_time},
+    #     ],
+    # )
 
 
 
@@ -170,10 +189,9 @@ def generate_launch_description():
         ros2_control_node,
 
         joint_state_broadcaster,
-        forward_position_controller,
-        forward_velocity_controller,
-
-        ackermann_twist_controller_node,
-        wheel_odometry_node,
-        ekf_node,
+        forward_position_after_jsb,
+        forward_velocity_after_position,
+        ackermann_after_velocity,
+        # wheel_odometry_node,
+        # ekf_node,
     ])

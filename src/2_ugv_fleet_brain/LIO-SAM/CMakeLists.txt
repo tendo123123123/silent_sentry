@@ -71,6 +71,11 @@ install(
   DESTINATION share/${PROJECT_NAME}/
 )
 
+install(PROGRAMS
+  scripts/tf_qos_relay.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(
   TARGETS ${PROJECT_NAME}_imageProjection
   DESTINATION lib/${PROJECT_NAME}

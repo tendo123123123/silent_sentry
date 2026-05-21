@@ -574,6 +574,16 @@ public:
     void projectPointCloud()
     {
         int cloudSize = laserCloudIn->points.size();
+
+        // URDF-derived XY self-filter in lidar frame to remove robot-body returns.
+        // LiDAR origin in base_link = (0.60, 0.00, 0.6655)
+        // Combined footprint (base_link + bot_storage_base): x[-1.285, 0.085], y[-0.4, 0.4]
+        // Note: intentionally filtering by X/Y only (no Z gating).
+        constexpr float self_x_min = -1.285f;
+        constexpr float self_x_max = 0.085f;
+        constexpr float self_y_min = -0.400f;
+        constexpr float self_y_max = 0.400f;
+
         // range image projection
         for (int i = 0; i < cloudSize; ++i)
         {
@@ -582,6 +592,10 @@ public:
             thisPoint.y = laserCloudIn->points[i].y;
             thisPoint.z = laserCloudIn->points[i].z;
             thisPoint.intensity = laserCloudIn->points[i].intensity;
+
+            if (thisPoint.x >= self_x_min && thisPoint.x <= self_x_max &&
+                thisPoint.y >= self_y_min && thisPoint.y <= self_y_max)
+                continue;
 
             float range = pointDistance(thisPoint);
             if (range < lidarMinRange || range > lidarMaxRange)
