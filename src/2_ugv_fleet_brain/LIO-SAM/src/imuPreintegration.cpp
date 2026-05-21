@@ -337,7 +337,16 @@ public:
             graphValues.insert(V(0), prevVel_);
             graphValues.insert(B(0), prevBias_);
             // optimize once
-            optimizer.update(graphFactors, graphValues);
+            try
+            {
+                optimizer.update(graphFactors, graphValues);
+            }
+            catch (const std::exception &e)
+            {
+                RCLCPP_ERROR(get_logger(), "Optimizer initialization failed: %s", e.what());
+                resetParams();
+                return;
+            }
             graphFactors.resize(0);
             graphValues.clear();
 
@@ -373,7 +382,16 @@ public:
             graphValues.insert(V(0), prevVel_);
             graphValues.insert(B(0), prevBias_);
             // optimize once
-            optimizer.update(graphFactors, graphValues);
+            try
+            {
+                optimizer.update(graphFactors, graphValues);
+            }
+            catch (const std::exception &e)
+            {
+                RCLCPP_ERROR(get_logger(), "Optimizer reset update failed: %s", e.what());
+                resetParams();
+                return;
+            }
             graphFactors.resize(0);
             graphValues.clear();
 
@@ -400,6 +418,13 @@ public:
             else
                 break;
         }
+
+        if (imuIntegratorOpt_->deltaTij() <= 1e-6)
+        {
+            RCLCPP_WARN(get_logger(), "Skipping optimization due to tiny IMU preintegration dt: %.9f", imuIntegratorOpt_->deltaTij());
+            return;
+        }
+
         // add imu factor to graph
         const gtsam::PreintegratedImuMeasurements& preint_imu = dynamic_cast<const gtsam::PreintegratedImuMeasurements&>(*imuIntegratorOpt_);
         gtsam::ImuFactor imu_factor(X(key - 1), V(key - 1), X(key), V(key), B(key - 1), preint_imu);
@@ -417,18 +442,30 @@ public:
         graphValues.insert(V(key), propState_.v());
         graphValues.insert(B(key), prevBias_);
         // optimize
-        optimizer.update(graphFactors, graphValues);
-        optimizer.update();
-        graphFactors.resize(0);
-        graphValues.clear();
-        // Overwrite the beginning of the preintegration for the next step.
-        gtsam::Values result = optimizer.calculateEstimate();
-        prevPose_  = result.at<gtsam::Pose3>(X(key));
-        prevVel_   = result.at<gtsam::Vector3>(V(key));
-        prevState_ = gtsam::NavState(prevPose_, prevVel_);
-        prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
-        // Reset the optimization preintegration object.
-        imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
+        try
+        {
+            optimizer.update(graphFactors, graphValues);
+            optimizer.update();
+            graphFactors.resize(0);
+            graphValues.clear();
+
+            // Overwrite the beginning of the preintegration for the next step.
+            gtsam::Values result = optimizer.calculateEstimate();
+            prevPose_  = result.at<gtsam::Pose3>(X(key));
+            prevVel_   = result.at<gtsam::Vector3>(V(key));
+            prevState_ = gtsam::NavState(prevPose_, prevVel_);
+            prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
+            // Reset the optimization preintegration object.
+            imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
+        }
+        catch (const std::exception &e)
+        {
+            RCLCPP_ERROR(get_logger(), "IMU preintegration optimization failed: %s", e.what());
+            graphFactors.resize(0);
+            graphValues.clear();
+            resetParams();
+            return;
+        }
         // check optimization
         if (failureDetection(prevVel_, prevBias_))
         {

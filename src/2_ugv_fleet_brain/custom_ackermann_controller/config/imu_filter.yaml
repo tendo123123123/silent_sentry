@@ -1,0 +1,62 @@
+# =============================================================================
+# IMU Filter Madgwick Configuration (imu_tools package)
+# =============================================================================
+# GRAVITY LEAKAGE SOLUTION:
+#
+# Problem: On sloped dunes, the raw accelerometer reads:
+#   a_measured = a_true + R(q)^T * [0, 0, g]
+# where R(q) is the rotation from world to body frame.
+# If you naively read accel_x as forward acceleration on a 10° slope,
+# you get ~1.7 m/s² of phantom forward acceleration (gravity leakage).
+#
+# Solution Pipeline:
+# 1. Madgwick fuses gyro + accel (+ optionally mag) to produce a stable
+#    orientation quaternion `q` that tracks the body's attitude relative
+#    to the gravity vector.
+# 2. The terramechanic_odometry node receives this quaternion and:
+#    a) Rotates the raw accel into the world frame: a_world = R(q) * a_body
+#    b) Subtracts gravity: a_linear = a_world - [0, 0, 9.81]
+#    c) Rotates back to body frame for integration: a_body_true = R(q)^T * a_linear
+# 3. Now a_body_true.x is the TRUE forward acceleration with zero gravity
+#    contamination, regardless of slope angle.
+#
+# Why Madgwick over Complementary/Kalman:
+# - O(1) single-step gradient descent — deterministic ~5μs per update
+# - No matrix inversions → no numerical instability at 400Hz
+# - `gain` parameter directly trades noise rejection vs responsiveness
+# =============================================================================
+
+imu_filter_madgwick_node:
+  ros__parameters:
+    # --- Core Filter Parameters ---
+    # Madgwick beta gain. Lower = smoother but slower response.
+    # 0.1 is good for moderate dynamics. Increase to 0.2 for violent maneuvers.
+    gain: 0.1
+
+    # Gyroscope bias estimation gain (zeta).
+    # Compensates for gyro drift. 0.01 is conservative and stable.
+    zeta: 0.01
+
+    # --- Magnetometer ---
+    # DISABLED: Desert environment + steel chassis = unreliable magnetic field.
+    # When disabled, yaw is gyro-integrated only (no absolute heading).
+    # Heading will drift slowly, but TRN SLAM provides absolute correction.
+    use_mag: false
+
+    # --- Frame Conventions ---
+    # NED (North-East-Down) or ENU (East-North-Up).
+    # ROS convention is ENU; use "enu" for REP-103 compliance.
+    world_frame: "enu"
+
+    # Fixed dt mode: let the filter compute dt from message timestamps
+    # (more accurate than assuming fixed rate).
+    fixed_frame: ""
+    constant_dt: 0.0
+
+    # --- Publication ---
+    publish_tf: false  # We do NOT want Madgwick publishing its own TF.
+                       # The EKF is the sole authority for odom→base_footprint.
+
+    # --- Topic Remapping (done in launch file) ---
+    # Subscribes: /imu/data_raw (sensor_msgs/Imu)
+    # Publishes:  /imu/data_filtered (sensor_msgs/Imu) with orientation quaternion

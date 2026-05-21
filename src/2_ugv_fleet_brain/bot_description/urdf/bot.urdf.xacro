@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<robot name="autobot" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="alpha" xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <!-- EMCON: bot_name scopes all gz-transport sensor topics per robot instance -->
-  <xacro:arg name="bot_name" default="autobot" />
+  <!-- EMCON - bot_name scopes all gz-transport sensor topics per robot instance -->
+  <xacro:arg name="bot_name" default="alpha" />
 
   <xacro:include filename="bot_ros2_control.xacro"/>
 
@@ -804,6 +804,31 @@
       <min_velocity>-3.0</min_velocity>
       <cmd_max>2000.0</cmd_max>
       <cmd_min>-2000.0</cmd_min>
+    </plugin>
+
+    <!-- Joint state publisher — REQUIRED for EMCON hardware interface.
+         Without this, Gazebo doesn't publish joint positions/velocities
+         on gz-transport, so the EMCON data diode reads all zeros. -->
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <joint_name>base_back_left_wheel_joint</joint_name>
+      <joint_name>base_back_right_wheel_joint</joint_name>
+      <joint_name>base_front_left_steering_joint</joint_name>
+      <joint_name>base_front_right_steering_joint</joint_name>
+      <joint_name>base_front_left_wheel_joint</joint_name>
+      <joint_name>base_front_right_wheel_joint</joint_name>
+    </plugin>
+
+    <!-- Ground truth pose publisher for odometry benchmarking.
+         Publishes model pose on gz-transport topic /model/<bot_name>/pose
+         Bridged to ROS 2 as /ground_truth/pose for ATE/RPE computation. -->
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_link_pose>false</publish_link_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <publish_sensor_pose>false</publish_sensor_pose>
+      <publish_model_pose>true</publish_model_pose>
+      <publish_nested_model_pose>false</publish_nested_model_pose>
+      <update_frequency>50</update_frequency>
     </plugin>
 
     <!-- Sensors, Imu, NavSat system plugins are in the world SDF — do NOT duplicate here -->

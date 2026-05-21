@@ -1,0 +1,112 @@
+# =============================================================================
+# Slip-Aware Terramechanic Wheel Odometry Configuration
+# =============================================================================
+# Bekker-Wong terramechanics model for soft terrain (desert sand)
+# with understeer gradient correction, IMU gyro Kalman filter fusion,
+# stall detection, and 3D slope awareness.
+#
+# Key additions over v2:
+#   - Stall detection: IMU-vs-encoder disagreement detects obstacle collisions
+#   - Gravity-induced covariance: slope tilt inflates Vy/Vz covariance
+#   - Sand slip coefficient: kinematic gravity slip vector subtraction
+#   - Yaw sign: ENU polarity verification for IMU gyro
+# =============================================================================
+
+terramechanic_odometry_node:
+  ros__parameters:
+    # --- Robot Geometry ---
+    wheelbase: 0.9                      # Front-to-rear axle distance (m)
+    track_width: 0.67                   # Left-to-right wheel distance (m)
+    wheel_radius_nominal: 0.175         # Unloaded tire radius (m)
+    tire_width: 0.10                    # Tire contact patch width (m)
+
+    # --- Vehicle Properties ---
+    vehicle_mass: 85.0                  # Total vehicle mass (kg)
+    wheel_count: 4                      # Number of wheels (for load distribution)
+
+    # --- Bekker Soil Parameters (Dry Desert Sand) ---
+    # Reference: Wong, J.Y. "Theory of Ground Vehicles", 4th Ed., Table 3.1
+    bekker_n: 1.1                       # Sinkage exponent (dimensionless)
+    bekker_kc: 0.9                      # Cohesive modulus (kN/m^(n+1))
+    bekker_kphi: 1528.0                 # Frictional modulus (kN/m^(n+2))
+
+    # --- Wong Slip Model ---
+    slip_covariance_gain: 50.0          # k_slip: covariance inflation at |i|=1
+    max_slip_ratio: 0.95                # Clamp slip ratio
+
+    # --- UNDERSTEER GRADIENT (NEW) ---
+    # K_us [rad·s²/m²]: Corrects the kinematic yaw rate formula from
+    #   ω = v·tan(δ)/L  →  ω = v·tan(δ) / (L·(1 + K_us·v²))
+    # On sand, K_us >> 0 because tires saturate early and the effective
+    # turning radius is much larger than the geometric prediction.
+    # Typical values: asphalt ≈ 0.002, gravel ≈ 0.02, loose sand ≈ 0.05–0.15
+    understeer_gradient: 0.08
+
+    # --- IMU GYRO KALMAN FILTER (NEW) ---
+    # Fuses the (noisy) kinematic yaw rate with the (accurate) IMU gyro.
+    # State: [omega_true, gyro_bias]
+    #
+    # Process noise (how fast the true state can change per second):
+    gyro_kf_process_noise_omega: 0.1    # rad²/s² — allows rapid yaw rate changes
+    gyro_kf_process_noise_bias: 0.001   # rad²/s² — gyro bias drifts slowly
+    #
+    # Measurement noise (how much we trust each source):
+    gyro_kf_meas_noise_kinematic: 0.5   # HIGH — kinematic ω is corrupted by sand slip
+    gyro_kf_meas_noise_imu: 0.01        # LOW — Madgwick-filtered gyro is very accurate
+
+    # --- ZUPT (Zero Velocity Update) ---
+    zupt_omega_threshold: 0.02          # Encoder ω below this = stopped (rad/s)
+    zupt_accel_threshold: 0.3           # IMU accel below this during ZUPT (m/s²)
+
+    # --- IMU Integration for V_true ---
+    imu_accel_bias_alpha: 0.001         # Slow bias learning rate
+    max_imu_velocity: 5.0               # Clamp integrated IMU velocity (m/s)
+
+    # --- Frame Configuration ---
+    odom_frame: "odom"
+    base_frame: "base_footprint"
+
+    # --- Joint Names (must match URDF) ---
+    left_wheel_joint: "base_back_left_wheel_joint"
+    right_wheel_joint: "base_back_right_wheel_joint"
+    left_steering_joint: "base_front_left_steering_joint"
+    right_steering_joint: "base_front_right_steering_joint"
+
+    # --- Publishing ---
+    publish_rate: 50.0                  # Hz (must match or exceed EKF rate)
+
+    # --- Base Covariance (before slip scaling) ---
+    base_position_variance: 0.005       # m²
+    base_orientation_variance: 0.01     # rad²
+    base_velocity_variance: 0.01        # (m/s)²
+
+    # --- Filtering ---
+    velocity_filter_alpha: 0.3          # EMA coefficient for encoder velocities
+    max_wheel_acceleration: 5.0         # m/s²
+    deadzone_threshold: 0.003           # m/s
+
+    # --- STALL DETECTION (NEW) ---
+    # Detects when robot is stuck against an obstacle: encoders spin
+    # (v_encoder > threshold) but IMU shows near-zero velocity
+    # (v_true_imu < threshold) with high slip ratio.
+    # After sustained detection (duration), forces zero velocity and
+    # inflates covariance to de-weight encoder input in UKF.
+    stall_detection_enabled: true
+    stall_imu_velocity_threshold: 0.15  # m/s — IMU vel below = "not moving"
+    stall_encoder_velocity_threshold: 0.1  # m/s — encoder vel above = "wheels spinning"
+    stall_duration_threshold: 0.5       # seconds — must persist to trigger stall
+    stall_slip_ratio_threshold: 0.7     # slip ratio above = high slip zone
+    stall_covariance_multiplier: 100.0  # covariance inflation during stall
+
+    # --- 3D SLOPE AWARENESS (NEW) ---
+    # Sand slip coefficient: on dune slopes, gravity induces lateral/longitudinal
+    # slip. The kinematic slip vector g·sin(angle)·sand_coeff is subtracted
+    # from the velocity estimate.
+    sand_slip_coefficient: 0.4          # dimensionless (0=no correction, 1=full gravity)
+    # Tilt covariance gain: exponentially inflates Vy/Vz covariance with slope angle.
+    # σ² *= exp(tilt_gain · |tilt_angle|)
+    tilt_covariance_gain: 3.0           # rad⁻¹ (higher = more inflation per degree)
+
+    # --- YAW SIGN (ENU POLARITY) ---
+    # Set to -1.0 if IMU gyro Z-axis sign is inverted relative to REP-103 ENU.
+    yaw_sign: 1.0

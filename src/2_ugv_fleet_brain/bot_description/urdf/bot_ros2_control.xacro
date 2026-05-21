@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="autobot">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="alpha">
 
-    <ros2_control name="AutoBot" type="system">
+    <ros2_control name="alpha" type="system">
 
     <!-- EMCON ros2_control communicates with Gazebo via gz-transport, not DDS -->
     <hardware>
