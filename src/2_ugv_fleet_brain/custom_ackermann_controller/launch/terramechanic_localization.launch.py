@@ -102,7 +102,11 @@ def generate_launch_description():
 
     global_dem_path_arg = DeclareLaunchArgument(
         'global_dem_path',
-        default_value='/home/sailesh/silent_sentry/src/2_ugv_fleet_brain/bot_navigation/maps/synthetic_dem.tif',
+        default_value=PathJoinSubstitution([
+            FindPackageShare('bot_navigation'),
+            'maps',
+            'synthetic_dem.tif',
+        ]),
         description='Path to global DEM GeoTIFF file'
     )
 
@@ -151,15 +155,9 @@ def generate_launch_description():
     # Subscribes: /joint_states, /imu/data_filtered
     # Publishes:  /terramechanic_odom (Odometry with slip-scaled covariance)
     #
-    # STARTUP DELAY — 5 seconds, same as UKF:
-    #   The Madgwick filter takes ~2s to converge its quaternion to the true
-    #   gravity vector. Before convergence, the orientation is incorrect and
-    #   the gravity subtraction in imu_callback() produces a phantom linear
-    #   acceleration of up to 9.81 m/s² in the body frame. This gets
-    #   integrated into v_true_imu, causing slip_ratio → 0.95 (stall), which
-    #   then poisons the UKF's first measurements with zero-velocity + huge
-    #   covariance. Delaying 5s ensures the robot has settled and Madgwick
-    #   has converged before any wheel odometry is computed.
+    # STARTUP DELAY — 1 second:
+    #   Terramechanic node now gates internally on /imu/data_filtered.
+    #   Short delay ensures Madgwick has started before terramechanic spins.
     terramech_odom_node = Node(
         package='custom_ackermann_controller',
         executable='terramechanic_odometry',
@@ -172,7 +170,7 @@ def generate_launch_description():
         output='screen',
     )
     terramech_odom_node_delayed = TimerAction(
-        period=5.0,
+        period=1.0,
         actions=[terramech_odom_node],
     )
 
@@ -183,8 +181,8 @@ def generate_launch_description():
     # Publishes:  /elevation_map/local (OccupancyGrid)
     #             /elevation_map/local_float (Float32MultiArray)
     #
-    # STARTUP DELAY — 6 seconds:
-    #   Wait for the factor graph to start publishing odom→base_footprint TF.
+    # STARTUP DELAY — 2 seconds:
+    #   Wait for factor graph to initialize and publish odom→base_footprint TF.
     #   local_dem_builder deskews each sweep, filters self-hits, and accumulates
     #   a rolling odom-frame ground submap before rasterizing the latest DEM.
     local_dem_node = Node(
@@ -224,7 +222,7 @@ def generate_launch_description():
         output='screen',
     )
     local_dem_node_delayed = TimerAction(
-        period=6.0,
+        period=2.0,
         actions=[local_dem_node],
     )
 
@@ -241,9 +239,10 @@ def generate_launch_description():
     # Subscribes: /terramechanic_odom (vx, ω), /imu/data_filtered (yaw)
     # Publishes:  /odometry/filtered, odom→base_footprint TF
     #
-    # STARTUP DELAY — 5 seconds wall-clock time:
-    #   Wait for Madgwick to
-    #   converge the gravity-aligned quaternion before trusting IMU yaw.
+    # STARTUP DELAY — 1 second:
+    #   Factor graph now gates IMU preintegration on first /terramechanic_odom
+    #   and resets to identity on first wheel tick, eliminating the 40 m drift.
+    #   Short delay ensures terramechanic is publishing before we spin.
     fg_node = Node(
         package='custom_ackermann_controller',
         executable='factor_graph_fuser',
@@ -256,7 +255,7 @@ def generate_launch_description():
         output='screen',
     )
     fg_node_delayed = TimerAction(
-        period=5.0,
+        period=1.0,
         actions=[fg_node],
     )
 
@@ -266,11 +265,9 @@ def generate_launch_description():
     # Subscribes: /elevation_map/local_float, /odometry/filtered
     # Publishes:  map→odom TF, /trn/match_quality, /trn/entropy
     #
-    # STARTUP DELAY — 7 seconds:
-    #   Must wait for factor graph (5s) to be publishing stable odom→base_footprint TF
-    #   AND for local_dem_builder (6s) to have built at least one rolling local DEM.
-    #   Without valid TF, TRN's ROI crop pulls NaN position → math.ceil(NaN)
-    #   → ValueError crash.
+    # STARTUP DELAY — 3 seconds:
+    #   Must wait for factor graph + local_dem_builder to be stable.
+    #   TRN now has a DEM-bounds sanity gate on priors to prevent ROI crashes.
     trn_slam_node = Node(
         package='custom_ackermann_controller',
         executable='trn_slam_node',
@@ -286,7 +283,7 @@ def generate_launch_description():
         output='screen',
     )
     trn_slam_node_delayed = TimerAction(
-        period=7.0,
+        period=3.0,
         actions=[trn_slam_node],
     )
 

@@ -42,7 +42,7 @@ import math
 from collections import deque
 
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, String
 from geometry_msgs.msg import Pose, Vector3
 from tf_transformations import euler_from_quaternion
 
@@ -123,11 +123,20 @@ class OdomVisualizerNode(Node):
 
         self.start_time = self.get_clock().now()
 
-        # Publishers
+        # Publishers (visualizer native)
         self.pos_err_pub  = self.create_publisher(Float64, '/odom_viz/position_error', 10)
         self.head_err_pub = self.create_publisher(Float64, '/odom_viz/heading_error',  10)
         self.drift_pub    = self.create_publisher(Float64, '/odom_viz/drift_percent',  10)
         self.ate_pub      = self.create_publisher(Float64, '/odom_viz/ate',            10)
+
+        # Publishers (merged from odom_ground_truth_comparator)
+        self.ekf_pos_err_pub  = self.create_publisher(Float64, '/odom_error/ekf/position_error',  10)
+        self.ekf_head_err_pub = self.create_publisher(Float64, '/odom_error/ekf/heading_error',   10)
+        self.ekf_drift_pub    = self.create_publisher(Float64, '/odom_error/ekf/drift_percent',   10)
+        self.ekf_ate_pub      = self.create_publisher(Float64, '/odom_error/ekf/ate',             10)
+        self.raw_pos_err_pub  = self.create_publisher(Float64, '/odom_error/raw/position_error',  10)
+        self.raw_head_err_pub = self.create_publisher(Float64, '/odom_error/raw/heading_error',   10)
+        self.summary_pub      = self.create_publisher(String,  '/odom_error/summary',             10)
 
         # Subscribers
         self.create_subscription(Odometry, '/odometry/filtered',  self._odom_cb,    10)
@@ -304,9 +313,31 @@ class OdomVisualizerNode(Node):
         self._pub(self.pos_err_pub,  pos_err)
         self._pub(self.head_err_pub, head_err)
         self._pub(self.drift_pub,    drift_pct)
-        if len(self.loc_pos_err) >= 10:
-            self._pub(self.ate_pub,
-                      float(np.mean(list(self.loc_pos_err)[-100:])))
+        ate = float(np.mean(list(self.loc_pos_err)[-100:])) if len(self.loc_pos_err) >= 10 else 0.0
+        self._pub(self.ate_pub, ate)
+
+        # Merged comparator publishers
+        self._pub(self.ekf_pos_err_pub,  pos_err)
+        self._pub(self.ekf_head_err_pub, head_err)
+        self._pub(self.ekf_drift_pub,    drift_pct)
+        self._pub(self.ekf_ate_pub,      ate)
+        if self.raw_pos_err:
+            raw_pe = self.raw_pos_err[-1]
+            self._pub(self.raw_pos_err_pub, raw_pe)
+        if self.raw_x and self.raw_y:
+            raw_yaw_err = math.degrees(_wrap(
+                self.raw_yaw[-1] - gt_yaw)) if self.raw_yaw else 0.0
+            self._pub(self.raw_head_err_pub, abs(raw_yaw_err))
+
+        summary = (
+            f'PosErr={pos_err:.2f}m  HeadErr={head_err:.1f}deg  '
+            f'Drift={drift_pct:.1f}%  ATE={ate:.2f}m  '
+            f'RawPosErr={self.raw_pos_err[-1] if self.raw_pos_err else 0.0:.2f}m  '
+            f'TRN_Q={self.last_trn_q:.2f}'
+        )
+        sum_msg = String()
+        sum_msg.data = summary
+        self.summary_pub.publish(sum_msg)
 
     def _pub(self, pub, value):
         msg = Float64()
