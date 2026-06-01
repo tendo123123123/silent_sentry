@@ -45,7 +45,6 @@ def generate_launch_description():
     )
 
     if use_source_tree:
-        imu_filter_config = os.path.join(source_config_dir, 'imu_filter.yaml')
         terramech_config = os.path.join(source_config_dir, 'terramechanic_odometry.yaml')
         fg_config = os.path.join(source_config_dir, 'factor_graph.yaml')
         trn_config = os.path.join(source_config_dir, 'trn_slam.yaml')
@@ -62,9 +61,6 @@ def generate_launch_description():
         )
     else:
         pkg_share = FindPackageShare('custom_ackermann_controller')
-        imu_filter_config = PathJoinSubstitution([
-            pkg_share, 'config', 'imu_filter.yaml'
-        ])
         terramech_config = PathJoinSubstitution([
             pkg_share, 'config', 'terramechanic_odometry.yaml'
         ])
@@ -130,7 +126,6 @@ def generate_launch_description():
         executable='imu_filter_madgwick_node',
         name='imu_filter_madgwick_node',
         parameters=[
-            imu_filter_config,
             {'use_sim_time': LaunchConfiguration('use_sim_time')},
         ],
         remappings=[
@@ -288,32 +283,6 @@ def generate_launch_description():
     )
 
     # ====================================================================
-    # NODE 6: Odometry Ground Truth Comparator (benchmarking)
-    # ====================================================================
-    # Subscribes: /ground_truth/pose (TFMessage), /odometry/filtered,
-    #             /terramechanic_odom
-    # Publishes:  /odom_error/ekf/*, /odom_error/raw/*, /odom_error/summary
-    # Also logs CSV to /tmp/odom_ground_truth_log.csv for offline evo analysis
-    odom_comparator_node = Node(
-        package='custom_ackermann_controller',
-        executable='odom_ground_truth_comparator',
-        name='odom_ground_truth_comparator',
-        parameters=[{
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'publish_rate': 2.0,
-            'ate_window_size': 100,
-            'csv_log_enabled': True,
-            'csv_log_path': '/tmp/odom_ground_truth_log.csv',
-            'model_name': LaunchConfiguration('model_name'),
-            'ground_truth_topic': '/ground_truth/pose',
-            'ekf_odom_topic': '/odometry/filtered',
-            'raw_odom_topic': '/terramechanic_odom',
-        }],
-        additional_env=custom_pkg_env,
-        output='screen',
-    )
-
-    # ====================================================================
     # NODE 7: Odometry Visualizer (graphical comparison)
     # ====================================================================
     # Real-time matplotlib visualization of odometry vs ground truth
@@ -347,11 +316,10 @@ def generate_launch_description():
 
         # Nodes (order matters for startup, but they're all async)
         imu_filter_node,              # Must start first — downstream nodes need filtered IMU
-        terramech_odom_node_delayed,  # +5s delay: waits for Madgwick convergence
-        fg_node_delayed,              # +5s delay: waits for AHRS convergence + terrain settle
-        local_dem_node_delayed,       # +6s delay: waits for factor graph to publish odom→base_footprint TF
-        trn_slam_node_delayed,        # +7s delay: waits for factor graph + local DEM to be stable
-        odom_comparator_node,  # Benchmarking — needs GT + filtered + raw odom
-        odom_visualizer_node,  # Graphical comparison — needs GT + filtered + raw odom
+        terramech_odom_node_delayed,  # +1s delay: waits for Madgwick convergence
+        fg_node_delayed,              # +1s delay: waits for AHRS convergence + terrain settle
+        local_dem_node_delayed,       # +2s delay: waits for factor graph to publish odom→base_footprint TF
+        trn_slam_node_delayed,        # +3s delay: waits for factor graph + local DEM to be stable
+        odom_visualizer_node,  # Graphical comparison + benchmarking — needs GT + filtered + raw odom
     ])
 
