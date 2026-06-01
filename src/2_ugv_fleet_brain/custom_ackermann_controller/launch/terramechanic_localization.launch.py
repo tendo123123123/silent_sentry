@@ -3,22 +3,21 @@ Terramechanic Localization Launch File
 ======================================
 Launches the complete desert-hardened localization stack:
 
-  1. imu_filter_madgwick     — AHRS fusion for gravity-free orientation
-  2. terramechanic_odometry  — Bekker-Wong wheel odometry
-    3. local_dem_builder       — LiDAR → rolling odom-frame 3D ground submap → local DEM
-  4. factor_graph_fuser      — GTSAM iSAM2, odom→base_footprint (50Hz)
-    5. trn_slam_node           — MCL DEM matching on latest rolling local DEM, map→odom (3Hz)
+  1. imu_filter_madgwick    — AHRS fusion (external imu_tools)
+  2. terramechanic_odometry — Bekker-Wong wheel odometry
+  3. local_dem_builder      — LiDAR rolling DEM
+  4. factor_graph_fuser     — GTSAM iSAM2 dead-reckoning (50 Hz)
+  5. trn_slam_node          — MCL DEM matching (3 Hz)
+  6. odom_visualizer        — Matplotlib viz + benchmarking
 
 TF Tree (REP-105):
     map ──(TRN SLAM)──> odom ──(FactorGraph 50Hz)──> base_footprint
 
-Why the dedicated factor graph backend:
-    The current GTSAM iSAM2 node is a blind dead-reckoning engine for
-    odom→base_footprint. It:
-        1. Preintegrates raw IMU acceleration and angular velocity on SE(3)
-        2. Uses wheel displacement as a soft forward-motion factor
-        3. Stays fully decoupled from TRN to avoid frame-tearing feedback loops
-        4. Leaves all global correction authority to TRN's map→odom TF
+Architecture notes:
+    - factor_graph_fuser is the local dead-reckoning backend (odom→base).
+    - trn_slam_node holds global correction authority (map→odom TF).
+    - TRN match_quality feeds back into factor-graph covariance scaling.
+    - This split prevents frame-tearing while allowing soft correction.
 """
 
 import os
@@ -137,14 +136,6 @@ def generate_launch_description():
     )
 
     # ====================================================================
-    # NODE 1b: IMU Covariance Fixer — REMOVED
-    # ====================================================================
-    # Was needed by robot_localization UKF (required non-zero R matrices).
-    # The factor graph reads /imu/data_filtered directly and only needs
-    # the orientation quaternion and angular velocity — no covariance.
-    # Keeping the file for potential future use but not launching it.
-
-    # ====================================================================
     # NODE 2: Terramechanic Wheel Odometry
     # ====================================================================
     # Subscribes: /joint_states, /imu/data_filtered
@@ -228,8 +219,8 @@ def generate_launch_description():
     #   - wheel forward displacement from terramechanic_odom
     #   - SE(3) IMU preintegration from /imu/data_filtered
     #   - absolute IMU attitude priors from Madgwick
-    # It does not subscribe to TRN corrections; global correction stays in
-    # the separate map→odom TF published by trn_slam_node.
+    # It subscribes to /trn/match_quality for covariance scaling feedback.
+    # Global pose correction stays in the separate map→odom TF.
     #
     # Subscribes: /terramechanic_odom (vx, ω), /imu/data_filtered (yaw)
     # Publishes:  /odometry/filtered, odom→base_footprint TF
@@ -283,7 +274,7 @@ def generate_launch_description():
     )
 
     # ====================================================================
-    # NODE 7: Odometry Visualizer (graphical comparison)
+    # NODE 6: Odometry Visualizer (graphical + benchmarking)
     # ====================================================================
     # Real-time matplotlib visualization of odometry vs ground truth
     # Displays: XY trajectory, position error, heading error, drift %
