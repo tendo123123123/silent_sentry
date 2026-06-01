@@ -187,6 +187,7 @@ class FactorGraphCore:
         self.imu_yaw_rate = 0.0
         self.imu_received = False
         self._have_preintegrated_imu = False
+        self._trn_quality = 0.0
 
         self.anchor_nav_state = NavState(Pose3(), _vec3(0.0, 0.0, 0.0))
         self.live_pose3 = Pose3()
@@ -216,9 +217,58 @@ class FactorGraphCore:
         if self.logger is not None:
             self.logger.warn(message)
 
+    def set_trn_quality(self, quality: float):
+        self._trn_quality = float(quality)
+
     def _reset_preintegration(self):
         self.pim.resetIntegrationAndSetBias(self.imu_bias)
         self._have_preintegrated_imu = False
+
+    def reset_to_identity(self):
+        with self.lock:
+            self.isam = ISAM2(self.isam.params())
+            self.graph_inc.resize(0)
+            self.values_inc.clear()
+            self.node_idx = 0
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+        self.vx = 0.0
+        self.raw_vx = 0.0
+        self.omega = 0.0
+        self.initialized = False
+        self.last_odom_stamp = None
+        self.last_imu_stamp = None
+        self.lkg_x = 0.0
+        self.lkg_y = 0.0
+        self.lkg_theta = 0.0
+        self.imu_roll = 0.0
+        self.imu_yaw = None
+        self.imu_rotation = None
+        self._last_raw_imu_yaw = None
+        self.pitch = 0.0
+        self.true_accel_x = 0.0
+        self._filtered_true_accel_x = None
+        self.imu_yaw_rate = 0.0
+        self.imu_received = False
+        self._have_preintegrated_imu = False
+        self._trn_quality = 0.0
+        self.anchor_nav_state = NavState(Pose3(), _vec3(0.0, 0.0, 0.0))
+        self.live_pose3 = Pose3()
+        self.live_velocity = _vec3(0.0, 0.0, 0.0)
+        self._kf_wheel_ds = 0.0
+        self._kf_noise_scale = 1.0
+        self.pos_cov = 0.01
+        self.dist_traveled = 0.0
+        self.last_twist_cov = [0.0] * 36
+        self.is_slipping = False
+        self.last_wheel_accel = 0.0
+        self._prev_wheel_vx = None
+        self._prev_wheel_stamp = None
+        self._last_noise_scale = 1.0
+        self.tick_count = 0
+        self._reset_preintegration()
+        self._log_info('Factor graph reset to identity')
 
     @staticmethod
     def _wheel_delta_pose(ds: float) -> Pose3:
@@ -289,9 +339,11 @@ class FactorGraphCore:
         ds = abs(vx) * dt
         cov_ds = abs(raw_vx) * dt if self.is_slipping else ds
         cov_gain = self.slip_cov_multiplier if self.is_slipping else 1.0
+        # TRN quality feedback: high quality → tighter covariance
+        trn_scale = max(0.2, 1.0 - self._trn_quality * 0.8)
         self.dist_traveled += ds
         self.pos_cov = min(
-            self.pos_cov + cov_ds * self.pos_noise_pm * cov_gain,
+            self.pos_cov + cov_ds * self.pos_noise_pm * cov_gain * trn_scale,
             500.0,
         )
 
@@ -470,7 +522,14 @@ class FactorGraphCore:
                 self.values_inc.insert(_X(0), pose0)
                 self.values_inc.insert(_V(0), vel0)
                 self.values_inc.insert(self.bias_key, self.imu_bias)
-                self.isam.update(self.graph_inc, self.values_inc)
+                try:
+                    self.isam.update(self.graph_inc, self.values_inc)
+                except Exception as e:
+                    self._log_warn(f'iSAM2 init update failed: {e}, retrying next tick')
+                    self.graph_inc.resize(0)
+                    self.values_inc.clear()
+                    self.initialized = False
+                    return
                 self.graph_inc.resize(0)
                 self.values_inc.clear()
 
@@ -574,14 +633,28 @@ class FactorGraphCore:
             self.values_inc.insert(_X(new_idx), seed_pose)
             self.values_inc.insert(_V(new_idx), seed_vel)
 
-            self.isam.update(self.graph_inc, self.values_inc)
+            try:
+                self.isam.update(self.graph_inc, self.values_inc)
+            except Exception as e:
+                self._log_warn(f'iSAM2 update failed: {e}, resetting preintegration')
+                self.graph_inc.resize(0)
+                self.values_inc.clear()
+                self._reset_preintegration()
+                self._kf_wheel_ds = 0.0
+                return
             self.graph_inc.resize(0)
             self.values_inc.clear()
 
-            result = self.isam.calculateEstimate()
-            opt_pose = result.atPose3(_X(new_idx))
-            opt_vel = _as_vec3(result.atVector(_V(new_idx)))
-            self.imu_bias = result.atConstantBias(self.bias_key)
+            try:
+                result = self.isam.calculateEstimate()
+                opt_pose = result.atPose3(_X(new_idx))
+                opt_vel = _as_vec3(result.atVector(_V(new_idx)))
+                self.imu_bias = result.atConstantBias(self.bias_key)
+            except Exception as e:
+                self._log_warn(f'iSAM2 estimate failed: {e}, falling back to lkg')
+                self._reset_preintegration()
+                self._kf_wheel_ds = 0.0
+                return
 
         self.node_idx = new_idx
         self.anchor_nav_state = NavState(opt_pose, opt_vel)
@@ -596,23 +669,24 @@ class FactorGraphCore:
         self._log_debug(vx)
 
     def build_publish_output(self) -> Optional[FactorGraphPublishOutput]:
-        if not self.initialized:
-            return None
+        with self.lock:
+            if not self.initialized:
+                return None
 
-        x_pos = self.x if math.isfinite(self.x) else self.lkg_x
-        y_pos = self.y if math.isfinite(self.y) else self.lkg_y
-        theta = self.theta if math.isfinite(self.theta) else self.lkg_theta
+            x_pos = self.x if math.isfinite(self.x) else self.lkg_x
+            y_pos = self.y if math.isfinite(self.y) else self.lkg_y
+            theta = self.theta if math.isfinite(self.theta) else self.lkg_theta
 
-        x_pos = x_pos if math.isfinite(x_pos) else 0.0
-        y_pos = y_pos if math.isfinite(y_pos) else 0.0
-        theta = theta if math.isfinite(theta) else 0.0
+            x_pos = x_pos if math.isfinite(x_pos) else 0.0
+            y_pos = y_pos if math.isfinite(y_pos) else 0.0
+            theta = theta if math.isfinite(theta) else 0.0
 
-        return FactorGraphPublishOutput(
-            x=x_pos,
-            y=y_pos,
-            theta=theta,
-            vx=_safe(self.vx),
-            omega=_safe(self.omega),
-            pos_cov=max(self.pos_cov, 1e-4),
-            twist_covariance=list(self.last_twist_cov),
-        )
+            return FactorGraphPublishOutput(
+                x=x_pos,
+                y=y_pos,
+                theta=theta,
+                vx=_safe(self.vx),
+                omega=_safe(self.omega),
+                pos_cov=max(self.pos_cov, 1e-4),
+                twist_covariance=list(self.last_twist_cov),
+            )

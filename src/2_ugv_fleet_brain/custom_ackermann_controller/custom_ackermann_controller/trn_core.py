@@ -142,6 +142,19 @@ class TRNCore:
     def has_local_dem(self) -> bool:
         return self.latest_local_dem is not None
 
+    def prior_within_dem_bounds(self, prior_x: float, prior_y: float) -> bool:
+        if self.global_dem is None:
+            return False
+        dem_h, dem_w = self.global_dem.shape
+        x_min = self.global_dem_origin_x
+        x_max = self.global_dem_origin_x + dem_w * self.global_res
+        y_min = self.global_dem_origin_y
+        y_max = self.global_dem_origin_y + dem_h * self.global_res
+        return (
+            x_min <= prior_x <= x_max
+            and y_min <= prior_y <= y_max
+        )
+
     def _load_global_dem(self):
         loaded = False
         has_real_georef = False
@@ -868,6 +881,13 @@ class TRNCore:
                 composite_height_m=height_m,
                 composite_coverage=coverage,
             )
+
+        if not self.prior_within_dem_bounds(prior_x, prior_y):
+            self._log_warn(
+                f'TRN: prior ({prior_x:.1f},{prior_y:.1f}) outside DEM bounds — '
+                f'skipping match cycle'
+            )
+            return TRNMatchCycleResult(quality=0.0)
 
         search_radius = self._compute_dynamic_radius()
         roi_result = self._extract_dynamic_roi(prior_x, prior_y, search_radius)

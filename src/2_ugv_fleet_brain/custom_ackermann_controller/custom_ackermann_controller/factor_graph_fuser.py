@@ -33,6 +33,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Float64
 
 import tf2_ros
 
@@ -90,8 +91,11 @@ class FactorGraphFuser(Node):
         self.tf_br = tf2_ros.TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, '/odometry/filtered', 10)
 
+        self._wheel_odom_received = False
+
         self.create_subscription(Odometry, '/terramechanic_odom', self._odom_cb, 10)
         self.create_subscription(Imu, '/imu/data_filtered', self._imu_cb, 10)
+        self.create_subscription(Float64, '/trn/match_quality', self._trn_quality_cb, 10)
 
         self.pub_timer = self.create_timer(
             1.0 / self.core_config.publish_rate,
@@ -125,6 +129,8 @@ class FactorGraphFuser(Node):
         return stamp_msg.sec + stamp_msg.nanosec / 1e9
 
     def _imu_cb(self, msg: Imu):
+        if not self._wheel_odom_received:
+            return
         quat = np.array(
             [
                 msg.orientation.x,
@@ -157,7 +163,17 @@ class FactorGraphFuser(Node):
             self._time_from_msg(msg.header.stamp),
         )
 
+    def _trn_quality_cb(self, msg: Float64):
+        self.core.set_trn_quality(msg.data)
+
     def _odom_cb(self, msg: Odometry):
+        if not self._wheel_odom_received:
+            self._wheel_odom_received = True
+            self.core.reset_to_identity()
+            self.get_logger().info(
+                'First wheel odometry received — resetting factor graph to identity '
+                'and enabling IMU preintegration'
+            )
         self.core.process_odom(
             msg.twist.twist.linear.x,
             msg.twist.twist.angular.z,
