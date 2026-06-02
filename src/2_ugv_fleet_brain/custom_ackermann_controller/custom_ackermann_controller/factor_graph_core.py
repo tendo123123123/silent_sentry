@@ -153,7 +153,7 @@ class FactorGraphCore:
                 [
                     self.imu_rp_sig,
                     self.imu_rp_sig,
-                    self.imu_sig,
+                    1e3,
                     1e3,
                     1e3,
                     1e3,
@@ -194,6 +194,7 @@ class FactorGraphCore:
         self.live_velocity = _vec3(0.0, 0.0, 0.0)
 
         self._kf_wheel_ds = 0.0
+        self._kf_wheel_dtheta = 0.0
         self._kf_noise_scale = 1.0
 
         self.pos_cov = 0.01
@@ -238,25 +239,21 @@ class FactorGraphCore:
         self.omega = 0.0
         self.initialized = False
         self.last_odom_stamp = None
-        self.last_imu_stamp = None
+        # IMU state intentionally preserved so graph re-initialises with current
+        # roll/pitch even though planar yaw is now wheel-driven.
         self.lkg_x = 0.0
         self.lkg_y = 0.0
         self.lkg_theta = 0.0
-        self.imu_roll = 0.0
-        self.imu_yaw = None
-        self.imu_rotation = None
-        self._last_raw_imu_yaw = None
-        self.pitch = 0.0
         self.true_accel_x = 0.0
         self._filtered_true_accel_x = None
         self.imu_yaw_rate = 0.0
-        self.imu_received = False
         self._have_preintegrated_imu = False
         self._trn_quality = 0.0
         self.anchor_nav_state = NavState(Pose3(), _vec3(0.0, 0.0, 0.0))
         self.live_pose3 = Pose3()
         self.live_velocity = _vec3(0.0, 0.0, 0.0)
         self._kf_wheel_ds = 0.0
+        self._kf_wheel_dtheta = 0.0
         self._kf_noise_scale = 1.0
         self.pos_cov = 0.01
         self.dist_traveled = 0.0
@@ -271,8 +268,8 @@ class FactorGraphCore:
         self._log_info('Factor graph reset to identity')
 
     @staticmethod
-    def _wheel_delta_pose(ds: float) -> Pose3:
-        return Pose3(Rot3(), _vec3(ds, 0.0, 0.0))
+    def _wheel_delta_pose(ds: float, dtheta: float = 0.0) -> Pose3:
+        return Pose3(Rot3.Yaw(dtheta), _vec3(ds, 0.0, 0.0))
 
     @staticmethod
     def _compose_planar_seed(
@@ -289,6 +286,14 @@ class FactorGraphCore:
         logmap = np.asarray(Rot3.Logmap(delta), dtype=float).reshape(3)
         return float(np.linalg.norm(logmap))
 
+    def _fused_rotation(self, yaw: float) -> Rot3:
+        if not self.imu_received:
+            return Rot3.Yaw(yaw)
+
+        roll = _safe(self.imu_roll)
+        pitch = _safe(self.pitch)
+        return Rot3.RzRyRx(roll, pitch, yaw)
+
     def _update_planar_projection(self, pose: Pose3):
         translation = _as_vec3(pose.translation())
         yaw = _yaw_from_rot3(pose.rotation())
@@ -301,39 +306,34 @@ class FactorGraphCore:
 
     def _live_state_prediction(self, vx: float):
         anchor_pose = self.anchor_nav_state.pose()
-        wheel_delta = self._wheel_delta_pose(self._kf_wheel_ds)
+        wheel_delta = self._wheel_delta_pose(self._kf_wheel_ds, self._kf_wheel_dtheta)
+        planar_seed = anchor_pose.compose(wheel_delta)
+        planar_yaw = _yaw_from_rot3(planar_seed.rotation())
         if self._have_preintegrated_imu and self.pim.deltaTij() > 1e-4:
             predicted_nav = self.pim.predict(self.anchor_nav_state, self.imu_bias)
-            rot = predicted_nav.pose().rotation()
             vel = _as_vec3(predicted_nav.velocity())
         else:
-            rot = self.imu_rotation if self.imu_rotation is not None else anchor_pose.rotation()
+            rot = self._fused_rotation(planar_yaw)
             vel = rot.matrix() @ _vec3(vx, 0.0, 0.0)
 
-        if self.imu_rotation is not None:
-            rot = self.imu_rotation
+        rot = self._fused_rotation(planar_yaw)
 
         pose = self._compose_planar_seed(anchor_pose, wheel_delta, rot)
         return pose, vel
 
-    def _wheel_noise_model(self, ds: float, noise_scale: float):
+    def _wheel_noise_model(self, ds: float, noise_scale: float, yaw_sig: float = 1e3):
         forward_sig = self.odom_sig_xy * noise_scale * max(1.0, abs(ds) / 0.05)
         lateral_sig = max(0.25, 4.0 * forward_sig)
         vertical_sig = max(0.25, 4.0 * forward_sig)
         return noiseModel.Diagonal.Sigmas(
             np.array(
-                [1e3, 1e3, 1e3, forward_sig, lateral_sig, vertical_sig],
+                [1e3, 1e3, yaw_sig, forward_sig, lateral_sig, vertical_sig],
                 dtype=float,
             )
         )
 
-    def _pose3_from_imu(self, translation: np.ndarray) -> Pose3:
-        rot = (
-            self.imu_rotation
-            if self.imu_rotation is not None
-            else self.live_pose3.rotation()
-        )
-        return Pose3(rot, _as_vec3(translation))
+    def _pose3_from_imu(self, translation: np.ndarray, yaw: float) -> Pose3:
+        return Pose3(self._fused_rotation(yaw), _as_vec3(translation))
 
     def _update_covariance(self, vx: float, raw_vx: float, dt: float):
         ds = abs(vx) * dt
@@ -502,7 +502,7 @@ class FactorGraphCore:
             self.last_twist_cov = list(twist_covariance)
 
         if not self.initialized:
-            rot0 = self.imu_rotation if self.imu_rotation is not None else Rot3()
+            rot0 = self._fused_rotation(0.0)
             vel0 = rot0.matrix() @ _vec3(vx, 0.0, 0.0)
             pose0 = Pose3(rot0, _vec3(0.0, 0.0, 0.0))
             with self.lock:
@@ -566,14 +566,26 @@ class FactorGraphCore:
         self._kf_noise_scale = max(self._kf_noise_scale, noise_scale)
 
         self._kf_wheel_ds += vx * dt
+        self._kf_wheel_dtheta += omega * dt
         live_pose, live_vel = self._live_state_prediction(vx)
         self.live_pose3 = live_pose
         self.live_velocity = _as_vec3(live_vel)
         self._update_planar_projection(live_pose)
 
-        anchor_rot = self.anchor_nav_state.pose().rotation()
-        live_rot = live_pose.rotation()
-        acc_rot = self._rotation_delta_norm(anchor_rot, live_rot)
+        acc_rot = abs(self._kf_wheel_dtheta)
+
+        _MAX_PIM_AGE = 2.0
+        if (
+            self._have_preintegrated_imu
+            and self.pim.deltaTij() > _MAX_PIM_AGE
+            and abs(self._kf_wheel_ds) < self.kf_min_dist
+            and acc_rot < self.kf_min_angle
+        ):
+            self._log_warn(
+                f'PIM stale ({self.pim.deltaTij():.1f}s > {_MAX_PIM_AGE}s) — '
+                'resetting preintegration (robot likely idle)'
+            )
+            self._reset_preintegration()
 
         if abs(self._kf_wheel_ds) < self.kf_min_dist and acc_rot < self.kf_min_angle:
             self._update_covariance(vx, raw_vx, dt)
@@ -585,17 +597,28 @@ class FactorGraphCore:
             self._log_debug(vx)
             return
 
+        if self.pim.deltaTij() > _MAX_PIM_AGE:
+            self._log_warn(
+                f'PIM stale ({self.pim.deltaTij():.1f}s > {_MAX_PIM_AGE}s) — '
+                'resetting preintegration (robot likely idle)'
+            )
+            self._reset_preintegration()
+            self._update_covariance(vx, raw_vx, dt)
+            self._log_debug(vx)
+            return
+
         kf_ds = self._kf_wheel_ds
+        kf_dtheta = self._kf_wheel_dtheta
         kf_noise_scale = self._kf_noise_scale
         predicted_nav = self.pim.predict(self.anchor_nav_state, self.imu_bias)
-        seed_rot = (
-            self.imu_rotation
-            if self.imu_rotation is not None
-            else predicted_nav.pose().rotation()
+        seed_planar_pose = self.anchor_nav_state.pose().compose(
+            self._wheel_delta_pose(kf_ds, kf_dtheta)
         )
+        seed_yaw = _yaw_from_rot3(seed_planar_pose.rotation())
+        seed_rot = self._fused_rotation(seed_yaw)
         seed_pose = self._compose_planar_seed(
             self.anchor_nav_state.pose(),
-            self._wheel_delta_pose(kf_ds),
+            self._wheel_delta_pose(kf_ds, kf_dtheta),
             seed_rot,
         )
         seed_vel = _as_vec3(predicted_nav.velocity())
@@ -612,12 +635,14 @@ class FactorGraphCore:
                     self.pim,
                 )
             )
+            # Yaw noise: tight when wheel odometry reports a turn, loose otherwise
+            yaw_sig = 0.03 if abs(kf_dtheta) > 0.01 else 1e3
             self.graph_inc.add(
                 BetweenFactorPose3(
                     _X(self.node_idx),
                     _X(new_idx),
-                    self._wheel_delta_pose(kf_ds),
-                    self._wheel_noise_model(kf_ds, kf_noise_scale),
+                    self._wheel_delta_pose(kf_ds, kf_dtheta),
+                    self._wheel_noise_model(kf_ds, kf_noise_scale, yaw_sig),
                 )
             )
 
@@ -625,7 +650,7 @@ class FactorGraphCore:
                 self.graph_inc.add(
                     PriorFactorPose3(
                         _X(new_idx),
-                        self._pose3_from_imu(seed_pose.translation()),
+                        self._pose3_from_imu(seed_pose.translation(), seed_yaw),
                         self.imu_attitude_noise,
                     )
                 )
@@ -662,6 +687,7 @@ class FactorGraphCore:
         self.live_velocity = opt_vel
         self._update_planar_projection(opt_pose)
         self._kf_wheel_ds = 0.0
+        self._kf_wheel_dtheta = 0.0
         self._kf_noise_scale = 1.0
         self._reset_preintegration()
 

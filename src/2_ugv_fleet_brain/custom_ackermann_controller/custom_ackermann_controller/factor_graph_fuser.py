@@ -91,7 +91,9 @@ class FactorGraphFuser(Node):
         self.tf_br = tf2_ros.TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, '/odometry/filtered', 10)
 
+        self._imu_received = False
         self._wheel_odom_received = False
+        self._wait_logs = set()
 
         self.create_subscription(Odometry, '/terramechanic_odom', self._odom_cb, 10)
         self.create_subscription(Imu, '/imu/data_filtered', self._imu_cb, 10)
@@ -123,12 +125,23 @@ class FactorGraphFuser(Node):
     def _string_param(self, name: str) -> str:
         return self.get_parameter(name).get_parameter_value().string_value
 
+    def _log_wait_once(self, key: str, message: str):
+        if key in self._wait_logs:
+            return
+        self._wait_logs.add(key)
+        self.get_logger().info(message)
+
     def _time_from_msg(self, stamp_msg) -> float:
         if stamp_msg.sec == 0 and stamp_msg.nanosec == 0:
             return self.get_clock().now().nanoseconds / 1e9
         return stamp_msg.sec + stamp_msg.nanosec / 1e9
 
     def _imu_cb(self, msg: Imu):
+        if not self._imu_received:
+            self._imu_received = True
+            self.get_logger().info(
+                'Factor graph ready gate satisfied: first /imu/data_filtered sample received'
+            )
         if not self._wheel_odom_received:
             return
         quat = np.array(
@@ -182,6 +195,19 @@ class FactorGraphFuser(Node):
         )
 
     def _publish(self):
+        if not self._imu_received:
+            self._log_wait_once(
+                'imu',
+                'Factor graph waiting for first /imu/data_filtered sample before publishing odom->base_footprint',
+            )
+            return
+        if not self._wheel_odom_received:
+            self._log_wait_once(
+                'wheel_odom',
+                'Factor graph waiting for first /terramechanic_odom sample before publishing odom->base_footprint',
+            )
+            return
+
         output = self.core.build_publish_output()
         if output is None:
             return

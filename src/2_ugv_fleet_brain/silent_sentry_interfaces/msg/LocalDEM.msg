@@ -1,0 +1,11 @@
+std_msgs/Header header
+builtin_interfaces/Time acquisition_stamp
+uint32 width
+uint32 height
+float32 resolution
+float64 origin_x
+float64 origin_y
+float64 center_x
+float64 center_y
+float32 no_data_value
+float32[] data

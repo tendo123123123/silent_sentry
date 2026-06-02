@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100">
+<defs>
+<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#475569" /></marker>
+</defs>
+<rect x="0" y="0" width="1800" height="1100" fill="#fbfbfd" />
+<text x="40" y="48" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="700" fill="#1f2937">
+<tspan x="40" dy="0">Silent Sentry - Runtime Data Flow</tspan>
+</text>
+<text x="40" y="85" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">Topic-level flow for the active localization pipeline</tspan>
+</text>
+<rect x="70" y="140" rx="16" ry="16" width="230" height="220" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="84" y="172" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="84" dy="0">IMU</tspan>
+</text>
+<text x="84" y="200" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="84" dy="0">/imu from</tspan>
+<tspan x="84" dy="20">ros_gz_bridge</tspan>
+</text>
+<rect x="70" y="400" rx="16" ry="16" width="230" height="220" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="84" y="432" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="84" dy="0">Joint States</tspan>
+</text>
+<text x="84" y="460" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="84" dy="0">/joint_states from</tspan>
+<tspan x="84" dy="20">controller manager</tspan>
+</text>
+<rect x="70" y="660" rx="16" ry="16" width="230" height="220" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="84" y="692" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="84" dy="0">LiDAR</tspan>
+</text>
+<text x="84" y="720" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="84" dy="0">/scan/points</tspan>
+<tspan x="84" dy="20">PointCloud2</tspan>
+</text>
+<rect x="360" y="140" rx="16" ry="16" width="260" height="220" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="374" y="172" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="374" dy="0">Madgwick</tspan>
+</text>
+<text x="374" y="200" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="374" dy="0">gravity-aligned</tspan>
+<tspan x="374" dy="20">attitude -&gt;</tspan>
+<tspan x="374" dy="20">/imu/data_filtered</tspan>
+</text>
+<rect x="360" y="400" rx="16" ry="16" width="260" height="220" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="374" y="432" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="374" dy="0">Terramechanic Odom</tspan>
+</text>
+<text x="374" y="460" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="374" dy="0">Bekker-Wong + gyro KF</tspan>
+<tspan x="374" dy="20">-&gt; /terramechanic_odom</tspan>
+</text>
+<rect x="360" y="660" rx="16" ry="16" width="260" height="220" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="374" y="692" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="374" dy="0">Local DEM Builder</tspan>
+</text>
+<text x="374" y="720" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="374" dy="0">deskew + self-hit</tspan>
+<tspan x="374" dy="20">filtering + RANSAC -&gt;</tspan>
+<tspan x="374" dy="20">/elevation_map/local_float</tspan>
+</text>
+<rect x="700" y="220" rx="16" ry="16" width="300" height="260" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="714" y="252" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="714" dy="0">Factor Graph Fuser</tspan>
+</text>
+<text x="714" y="280" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="714" dy="0">ImuFactor + wheel factors</tspan>
+<tspan x="714" dy="20">-&gt; /odometry/filtered +</tspan>
+<tspan x="714" dy="20">odom-&gt;base_footprint</tspan>
+</text>
+<rect x="700" y="580" rx="16" ry="16" width="300" height="220" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="714" y="612" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="714" dy="0">TRN MCL</tspan>
+</text>
+<text x="714" y="640" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="714" dy="0">DEM matching -&gt; map-&gt;odom +</tspan>
+<tspan x="714" dy="20">/trn/* diagnostics</tspan>
+</text>
+<rect x="1080" y="220" rx="16" ry="16" width="300" height="220" fill="#eef2ff" stroke="#334155" stroke-width="3" />
+<text x="1094" y="252" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1094" dy="0">Composed Pose</tspan>
+</text>
+<text x="1094" y="280" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1094" dy="0">map-&gt;odom composed with</tspan>
+<tspan x="1094" dy="20">odom-&gt;base_footprint</tspan>
+</text>
+<rect x="1080" y="540" rx="16" ry="16" width="300" height="220" fill="#ffe9e2" stroke="#334155" stroke-width="3" />
+<text x="1094" y="572" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1094" dy="0">Visualizer / Comparator</tspan>
+</text>
+<text x="1094" y="600" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1094" dy="0">GT vs localized vs raw odom</tspan>
+</text>
+<rect x="1460" y="220" rx="16" ry="16" width="260" height="220" fill="#fef3c7" stroke="#334155" stroke-width="3" />
+<text x="1474" y="252" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1474" dy="0">Navigation Consumers</tspan>
+</text>
+<text x="1474" y="280" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1474" dy="0">RViz, benchmark tools,</tspan>
+<tspan x="1474" dy="20">downstream nav users</tspan>
+</text>
+<line x1="300" y1="250" x2="360" y2="250" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="280" y="236" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="290" y="255" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="290" dy="0">/imu</tspan>
+</text>
+<line x1="300" y1="510" x2="360" y2="510" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="272" y="496" width="117" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="282" y="515" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="282" dy="0">/joint_states</tspan>
+</text>
+<line x1="300" y1="770" x2="360" y2="770" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="276" y="756" width="108" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="286" y="775" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="286" dy="0">/scan/points</tspan>
+</text>
+<line x1="620" y1="250" x2="700" y2="300" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="579" y="261" width="162" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="589" y="280" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="589" dy="0">/imu/data_filtered</tspan>
+</text>
+<line x1="620" y1="510" x2="700" y2="360" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="575" y="421" width="171" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="585" y="440" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="585" dy="0">/terramechanic_odom</tspan>
+</text>
+<line x1="620" y1="770" x2="700" y2="690" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="543" y="716" width="234" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="553" y="735" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="553" dy="0">/elevation_map/local_float</tspan>
+</text>
+<line x1="1000" y1="350" x2="1080" y2="330" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="990" y="326" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1000" y="345" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1000" dy="0">odom-&gt;base</tspan>
+</text>
+<line x1="1000" y1="690" x2="1080" y2="330" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="990" y="496" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1000" y="515" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1000" dy="0">map-&gt;odom</tspan>
+</text>
+<line x1="1380" y1="330" x2="1460" y2="330" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="1370" y="316" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1380" y="335" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1380" dy="0">map-&gt;base</tspan>
+</text>
+<line x1="1000" y1="690" x2="1080" y2="650" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="990" y="656" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1000" y="675" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1000" dy="0">/trn/*</tspan>
+</text>
+<line x1="1380" y1="650" x2="1460" y2="440" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="1370" y="531" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1380" y="550" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1380" dy="0">metrics</tspan>
+</text>
+<line x1="620" y1="510" x2="1080" y2="650" stroke="#475569" stroke-width="3" stroke-dasharray="10,8" marker-end="url(#arrowhead)" />
+<rect x="800" y="566" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="810" y="585" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="810" dy="0">raw odom</tspan>
+</text>
+<text x="40" y="1088" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">Generated from current repo structure and active launch paths</tspan>
+</text>
+</svg>

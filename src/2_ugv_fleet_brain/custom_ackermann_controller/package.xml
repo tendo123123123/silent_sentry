@@ -17,6 +17,7 @@
   <depend>tf2_msgs</depend>
   <depend>tf_transformations</depend>
   <depend>robot_localization</depend>
+  <depend>silent_sentry_interfaces</depend>
 
   <!-- Terramechanic localization stack -->
   <depend>imu_tools</depend>

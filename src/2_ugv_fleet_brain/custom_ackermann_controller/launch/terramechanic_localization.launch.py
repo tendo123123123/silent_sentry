@@ -24,7 +24,7 @@ import os
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, LogInfo, TimerAction
+from launch.actions import DeclareLaunchArgument, LogInfo
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
@@ -126,6 +126,7 @@ def generate_launch_description():
         name='imu_filter_madgwick_node',
         parameters=[
             {'use_sim_time': LaunchConfiguration('use_sim_time')},
+            {'use_mag': False},
         ],
         remappings=[
             ('imu/data_raw', LaunchConfiguration('imu_raw_topic')),
@@ -141,9 +142,6 @@ def generate_launch_description():
     # Subscribes: /joint_states, /imu/data_filtered
     # Publishes:  /terramechanic_odom (Odometry with slip-scaled covariance)
     #
-    # STARTUP DELAY — 1 second:
-    #   Terramechanic node now gates internally on /imu/data_filtered.
-    #   Short delay ensures Madgwick has started before terramechanic spins.
     terramech_odom_node = Node(
         package='custom_ackermann_controller',
         executable='terramechanic_odometry',
@@ -155,22 +153,17 @@ def generate_launch_description():
         additional_env=custom_pkg_env,
         output='screen',
     )
-    terramech_odom_node_delayed = TimerAction(
-        period=1.0,
-        actions=[terramech_odom_node],
-    )
 
     # ====================================================================
     # NODE 3: Local DEM Builder
     # ====================================================================
     # Subscribes: /scan/points (PointCloud2)
     # Publishes:  /elevation_map/local (OccupancyGrid)
-    #             /elevation_map/local_float (Float32MultiArray)
+    #             /elevation_map/local_dem (typed LocalDEM)
+    #             /elevation_map/local_float (legacy Float32MultiArray)
     #
-    # STARTUP DELAY — 2 seconds:
-    #   Wait for factor graph to initialize and publish odom→base_footprint TF.
-    #   local_dem_builder deskews each sweep, filters self-hits, and accumulates
-    #   a rolling odom-frame ground submap before rasterizing the latest DEM.
+    # Node-side readiness gating waits for first filtered IMU, terramechanic
+    # odom, LiDAR, and odom→base_footprint TF availability.
     local_dem_node = Node(
         package='custom_ackermann_controller',
         executable='local_dem_builder',
@@ -207,10 +200,6 @@ def generate_launch_description():
         additional_env=custom_pkg_env,
         output='screen',
     )
-    local_dem_node_delayed = TimerAction(
-        period=2.0,
-        actions=[local_dem_node],
-    )
 
     # ====================================================================
     # NODE 4: Factor Graph Fuser (odom → base_footprint)
@@ -225,10 +214,8 @@ def generate_launch_description():
     # Subscribes: /terramechanic_odom (vx, ω), /imu/data_filtered (yaw)
     # Publishes:  /odometry/filtered, odom→base_footprint TF
     #
-    # STARTUP DELAY — 1 second:
-    #   Factor graph now gates IMU preintegration on first /terramechanic_odom
-    #   and resets to identity on first wheel tick, eliminating the 40 m drift.
-    #   Short delay ensures terramechanic is publishing before we spin.
+    # Node-side readiness gating waits for first filtered IMU and first
+    # terramechanic odom sample before publishing odom→base_footprint.
     fg_node = Node(
         package='custom_ackermann_controller',
         executable='factor_graph_fuser',
@@ -240,20 +227,15 @@ def generate_launch_description():
         additional_env=custom_pkg_env,
         output='screen',
     )
-    fg_node_delayed = TimerAction(
-        period=1.0,
-        actions=[fg_node],
-    )
 
     # ====================================================================
     # NODE 5: TRN SLAM (map → odom)
     # ====================================================================
-    # Subscribes: /elevation_map/local_float, /odometry/filtered
+    # Subscribes: /elevation_map/local_dem, /odometry/filtered
     # Publishes:  map→odom TF, /trn/match_quality, /trn/entropy
     #
-    # STARTUP DELAY — 3 seconds:
-    #   Must wait for factor graph + local_dem_builder to be stable.
-    #   TRN now has a DEM-bounds sanity gate on priors to prevent ROI crashes.
+    # Node-side readiness gating waits for first typed local DEM, first
+    # filtered odom sample, and first odom→base_footprint TF.
     trn_slam_node = Node(
         package='custom_ackermann_controller',
         executable='trn_slam_node',
@@ -267,10 +249,6 @@ def generate_launch_description():
         ],
         additional_env=custom_pkg_env,
         output='screen',
-    )
-    trn_slam_node_delayed = TimerAction(
-        period=3.0,
-        actions=[trn_slam_node],
     )
 
     # ====================================================================
@@ -305,12 +283,12 @@ def generate_launch_description():
         global_dem_path_arg,
         model_name_arg,
 
-        # Nodes (order matters for startup, but they're all async)
-        imu_filter_node,              # Must start first — downstream nodes need filtered IMU
-        terramech_odom_node_delayed,  # +1s delay: waits for Madgwick convergence
-        fg_node_delayed,              # +1s delay: waits for AHRS convergence + terrain settle
-        local_dem_node_delayed,       # +2s delay: waits for factor graph to publish odom→base_footprint TF
-        trn_slam_node_delayed,        # +3s delay: waits for factor graph + local DEM to be stable
-        odom_visualizer_node,  # Graphical comparison + benchmarking — needs GT + filtered + raw odom
+        # Nodes start immediately; each node blocks on its own runtime prerequisites.
+        imu_filter_node,
+        terramech_odom_node,
+        fg_node,
+        local_dem_node,
+        trn_slam_node,
+        odom_visualizer_node,
     ])
 
