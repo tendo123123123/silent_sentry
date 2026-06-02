@@ -169,6 +169,10 @@ class TerramechanicOdometryNode(Node):
         self.create_subscription(JointState, '/joint_states', self.joint_state_callback, 10)
         self.create_subscription(Imu, '/imu/data_filtered', self.imu_callback, 10)
 
+        self._imu_received = False
+        self._joint_state_ready = False
+        self._wait_logs = set()
+
         self.timer = self.create_timer(
             1.0 / self.core_config.publish_rate,
             self.publish_odometry,
@@ -199,7 +203,18 @@ class TerramechanicOdometryNode(Node):
     def _now_seconds(self) -> float:
         return self.get_clock().now().nanoseconds / 1e9
 
+    def _log_wait_once(self, key: str, message: str):
+        if key in self._wait_logs:
+            return
+        self._wait_logs.add(key)
+        self.get_logger().info(message)
+
     def imu_callback(self, msg: Imu):
+        if not self._imu_received:
+            self._imu_received = True
+            self.get_logger().info(
+                'Terramechanic odometry ready gate satisfied: first /imu/data_filtered sample received'
+            )
         orientation = np.array(
             [
                 msg.orientation.x,
@@ -239,9 +254,27 @@ class TerramechanicOdometryNode(Node):
             self._now_seconds(),
         )
         if updated:
+            if not self._joint_state_ready:
+                self._joint_state_ready = True
+                self.get_logger().info(
+                    'Terramechanic odometry ready gate satisfied: valid /joint_states received'
+                )
             self._publish_diagnostics()
 
     def publish_odometry(self):
+        if not self._imu_received:
+            self._log_wait_once(
+                'imu',
+                'Terramechanic odometry waiting for first /imu/data_filtered sample before publishing',
+            )
+            return
+        if not self._joint_state_ready:
+            self._log_wait_once(
+                'joint_states',
+                'Terramechanic odometry waiting for valid /joint_states before publishing',
+            )
+            return
+
         output = self.core.build_odometry_output(self._now_seconds())
         if output is None:
             return

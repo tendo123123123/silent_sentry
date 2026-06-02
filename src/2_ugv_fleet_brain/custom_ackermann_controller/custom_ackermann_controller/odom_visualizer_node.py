@@ -13,8 +13,8 @@ even when TRN was working correctly.
 This version computes:
   - Localized pose = map → base_footprint  (TRN + dead-reckoning combined)
   - Raw odom pose  = /terramechanic_odom    (wheel odom only)
-  - Ground truth   = Gazebo model pose
-  All tracks aligned to start at (0,0) relative to their initial pose.
+    - Ground truth   = Gazebo model pose
+    All tracks aligned to start at (0,0) in the same GT-initial frame.
 
 Layout (2×2):
   [0,0]  XY Trajectory  — GT (green), Localized (blue), Raw Odom (red dashed)
@@ -44,18 +44,19 @@ from collections import deque
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float64, String
 from geometry_msgs.msg import Pose, Vector3
-from tf_transformations import euler_from_quaternion
 
 import tf2_ros
+
+from .benchmark_pose_utils import (
+    align_pose_to_reference,
+    lookup_localized_pose,
+    quaternion_to_yaw,
+    wrap_angle,
+)
 
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-
-
-def _wrap(a):
-    return math.atan2(math.sin(a), math.cos(a))
-
 
 class OdomVisualizerNode(Node):
     def __init__(self):
@@ -110,8 +111,9 @@ class OdomVisualizerNode(Node):
         # Cached odom-frame pose (used when map→base_footprint TF not yet available)
         self.odom_x = 0.0;  self.odom_y = 0.0;  self.odom_yaw = 0.0
 
-        # GT alignment state
+        # GT alignment state (defines the common comparison frame)
         self.gt_initial_x = self.gt_initial_y = self.gt_initial_yaw = None
+        self.reference_yaw = None
         self.total_dist_gt = 0.0
         self.gt_received   = False
 
@@ -121,7 +123,7 @@ class OdomVisualizerNode(Node):
         # Raw odom alignment
         self.raw_initial_x = self.raw_initial_y = self.raw_initial_yaw = None
 
-        self.start_time = self.get_clock().now()
+        self.start_time = None
 
         # Publishers (visualizer native)
         self.pos_err_pub  = self.create_publisher(Float64, '/odom_viz/position_error', 10)
@@ -155,7 +157,13 @@ class OdomVisualizerNode(Node):
             f'GT: {self.gt_topic} | refresh={self.update_rate}Hz')
 
     def _t(self):
-        return (self.get_clock().now() - self.start_time).nanoseconds / 1e9
+        now = self.get_clock().now()
+        if now.nanoseconds <= 0:
+            return 0.0
+        if self.start_time is None:
+            self.start_time = now
+            return 0.0
+        return (now - self.start_time).nanoseconds / 1e9
 
     # =========================================================================
     # Callbacks
@@ -164,15 +172,12 @@ class OdomVisualizerNode(Node):
         """Cache odom-frame pose for TF fallback composition."""
         self.odom_x  = msg.pose.pose.position.x
         self.odom_y  = msg.pose.pose.position.y
-        q = msg.pose.pose.orientation
-        _, _, yaw    = euler_from_quaternion([q.x, q.y, q.z, q.w])
-        self.odom_yaw = yaw
+        self.odom_yaw = quaternion_to_yaw(msg.pose.pose.orientation)
 
     def _raw_cb(self, msg: Odometry):
         """Raw terramechanic wheel odometry — aligned to start at (0,0)."""
         t  = self._t()
-        q  = msg.pose.pose.orientation
-        _, _, yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])
+        yaw = quaternion_to_yaw(msg.pose.pose.orientation)
         rx = msg.pose.pose.position.x
         ry = msg.pose.pose.position.y
 
@@ -181,36 +186,44 @@ class OdomVisualizerNode(Node):
             self.raw_initial_y   = ry
             self.raw_initial_yaw = yaw
 
-        dx   = rx - self.raw_initial_x
-        dy   = ry - self.raw_initial_y
-        ci   = math.cos(-self.raw_initial_yaw)
-        si   = math.sin(-self.raw_initial_yaw)
-        self.raw_x.append(dx * ci - dy * si)
-        self.raw_y.append(dx * si + dy * ci)
-        self.raw_yaw.append(_wrap(yaw - self.raw_initial_yaw))
+        if self.reference_yaw is None:
+            return
+
+        ax, ay, aligned_yaw = align_pose_to_reference(
+            rx,
+            ry,
+            yaw,
+            self.raw_initial_x,
+            self.raw_initial_y,
+            self.reference_yaw,
+        )
+        self.raw_x.append(ax)
+        self.raw_y.append(ay)
+        self.raw_yaw.append(aligned_yaw)
         self.raw_time.append(t)
 
     def _gt_cb(self, msg: Pose):
         raw_x   = msg.position.x
         raw_y   = msg.position.y
-        q       = msg.orientation
-        _, _, raw_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])
+        raw_yaw = quaternion_to_yaw(msg.orientation)
 
         if self.gt_initial_x is None:
             self.gt_initial_x   = raw_x
             self.gt_initial_y   = raw_y
             self.gt_initial_yaw = raw_yaw
+            self.reference_yaw  = raw_yaw
             self.get_logger().info(
                 f'GT initial pose captured: ({raw_x:.2f}, {raw_y:.2f}, '
                 f'yaw={math.degrees(raw_yaw):.1f}°)')
 
-        dx   = raw_x - self.gt_initial_x
-        dy   = raw_y - self.gt_initial_y
-        ci   = math.cos(-self.gt_initial_yaw)
-        si   = math.sin(-self.gt_initial_yaw)
-        ax   = dx * ci - dy * si
-        ay   = dx * si + dy * ci
-        ayaw = _wrap(raw_yaw - self.gt_initial_yaw)
+        ax, ay, ayaw = align_pose_to_reference(
+            raw_x,
+            raw_y,
+            raw_yaw,
+            self.gt_initial_x,
+            self.gt_initial_y,
+            self.reference_yaw,
+        )
 
         step = math.hypot(ax - (self.gt_x[-1] if self.gt_x else 0.0),
                           ay - (self.gt_y[-1] if self.gt_y else 0.0))
@@ -242,37 +255,17 @@ class OdomVisualizerNode(Node):
 
         t = self._t()
 
-        # --- Look up full localized pose via TF ---
-        loc_x = loc_y = loc_yaw = None
-        try:
-            tf = self.tf_buffer.lookup_transform(
-                'map', 'base_footprint',
-                rclpy.time.Time(),
-                timeout=rclpy.duration.Duration(seconds=0.02))
-            loc_x   = tf.transform.translation.x
-            loc_y   = tf.transform.translation.y
-            q       = tf.transform.rotation
-            _, _, loc_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])
-        except Exception:
-            try:
-                tf_mo = self.tf_buffer.lookup_transform(
-                    'map', 'odom',
-                    rclpy.time.Time(),
-                    timeout=rclpy.duration.Duration(seconds=0.02))
-                mo_x   = tf_mo.transform.translation.x
-                mo_y   = tf_mo.transform.translation.y
-                q_mo   = tf_mo.transform.rotation
-                _, _, mo_yaw = euler_from_quaternion(
-                    [q_mo.x, q_mo.y, q_mo.z, q_mo.w])
-                c, s   = math.cos(mo_yaw), math.sin(mo_yaw)
-                loc_x  = mo_x + c * self.odom_x - s * self.odom_y
-                loc_y  = mo_y + s * self.odom_x + c * self.odom_y
-                loc_yaw = _wrap(mo_yaw + self.odom_yaw)
-            except Exception:
-                return
-
-        if loc_x is None:
+        localized_pose = lookup_localized_pose(
+            self.tf_buffer,
+            self.odom_x,
+            self.odom_y,
+            self.odom_yaw,
+        )
+        if localized_pose is None:
             return
+        loc_x = localized_pose.x
+        loc_y = localized_pose.y
+        loc_yaw = localized_pose.yaw
 
         # Align localized to start at (0,0)
         if self.loc_initial_x is None:
@@ -280,13 +273,14 @@ class OdomVisualizerNode(Node):
             self.loc_initial_y   = loc_y
             self.loc_initial_yaw = loc_yaw
 
-        dx   = loc_x - self.loc_initial_x
-        dy   = loc_y - self.loc_initial_y
-        ci   = math.cos(-self.loc_initial_yaw)
-        si   = math.sin(-self.loc_initial_yaw)
-        alx  = dx * ci - dy * si
-        aly  = dx * si + dy * ci
-        alyaw = _wrap(loc_yaw - self.loc_initial_yaw)
+        alx, aly, alyaw = align_pose_to_reference(
+            loc_x,
+            loc_y,
+            loc_yaw,
+            self.loc_initial_x,
+            self.loc_initial_y,
+            self.reference_yaw,
+        )
 
         self.loc_x.append(alx);  self.loc_y.append(aly)
         self.loc_yaw.append(alyaw);  self.loc_time.append(t)
@@ -297,7 +291,7 @@ class OdomVisualizerNode(Node):
         gt_yaw = self.gt_yaw[-1]
 
         pos_err   = math.hypot(alx - gt_x, aly - gt_y)
-        head_err  = math.degrees(_wrap(alyaw - gt_yaw))
+        head_err  = math.degrees(wrap_angle(alyaw - gt_yaw))
         drift_pct = (pos_err / self.total_dist_gt * 100.0
                      if self.total_dist_gt > 0.5 else 0.0)
 
@@ -325,7 +319,7 @@ class OdomVisualizerNode(Node):
             raw_pe = self.raw_pos_err[-1]
             self._pub(self.raw_pos_err_pub, raw_pe)
         if self.raw_x and self.raw_y:
-            raw_yaw_err = math.degrees(_wrap(
+            raw_yaw_err = math.degrees(wrap_angle(
                 self.raw_yaw[-1] - gt_yaw)) if self.raw_yaw else 0.0
             self._pub(self.raw_head_err_pub, abs(raw_yaw_err))
 
@@ -363,6 +357,9 @@ class OdomVisualizerNode(Node):
         self.line_loc, = ax.plot([], [], 'b-',  lw=1.5, label='Localized (map→base)')
         self.line_raw, = ax.plot([], [], 'r--', lw=0.8, alpha=0.5,
                                  label='Raw Odom')
+        self.pt_gt,  = ax.plot([], [], 'go', ms=5, label='_nolegend_')
+        self.pt_loc, = ax.plot([], [], 'bo', ms=4, label='_nolegend_')
+        self.pt_raw, = ax.plot([], [], 'ro', ms=3, alpha=0.5, label='_nolegend_')
         self.qv_gt  = ax.quiver([], [], [], [], color='darkgreen',
                                 scale=25, width=0.006, headwidth=4)
         self.qv_loc = ax.quiver([], [], [], [], color='royalblue',
@@ -417,12 +414,29 @@ class OdomVisualizerNode(Node):
     # =========================================================================
     def update_plot(self):
         # -- Trajectory --
-        if len(self.gt_x) > 1:
-            self.line_gt.set_data(list(self.gt_x),  list(self.gt_y))
-        if len(self.loc_x) > 1:
-            self.line_loc.set_data(list(self.loc_x), list(self.loc_y))
-        if len(self.raw_x) > 1:
-            self.line_raw.set_data(list(self.raw_x), list(self.raw_y))
+        if self.gt_x:
+            gt_x = list(self.gt_x)
+            gt_y = list(self.gt_y)
+            self.line_gt.set_data(gt_x, gt_y)
+            self.pt_gt.set_data([gt_x[-1]], [gt_y[-1]])
+        else:
+            self.pt_gt.set_data([], [])
+
+        if self.loc_x:
+            loc_x = list(self.loc_x)
+            loc_y = list(self.loc_y)
+            self.line_loc.set_data(loc_x, loc_y)
+            self.pt_loc.set_data([loc_x[-1]], [loc_y[-1]])
+        else:
+            self.pt_loc.set_data([], [])
+
+        if self.raw_x:
+            raw_x = list(self.raw_x)
+            raw_y = list(self.raw_y)
+            self.line_raw.set_data(raw_x, raw_y)
+            self.pt_raw.set_data([raw_x[-1]], [raw_y[-1]])
+        else:
+            self.pt_raw.set_data([], [])
 
         # Heading arrows at current positions
         if self.gt_x and self.gt_yaw:

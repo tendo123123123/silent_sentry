@@ -10,7 +10,8 @@ from rclpy.time import Time
 
 from geometry_msgs.msg import TransformStamped, Vector3
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray, Float64
+from silent_sentry_interfaces.msg import LocalDEM
+from std_msgs.msg import Float64
 
 import tf2_ros
 
@@ -135,12 +136,18 @@ class TRNSlamNode(Node):
         self.composite_size_pub = self.create_publisher(Vector3, '/trn/composite_size', 10)
 
         self.create_subscription(
-            Float32MultiArray,
-            '/elevation_map/local_float',
+            LocalDEM,
+            '/elevation_map/local_dem',
             self.local_dem_callback,
             5,
         )
         self.create_subscription(Odometry, '/odometry/filtered', self.ekf_odom_callback, 10)
+
+        self._local_dem_received = False
+        self._odom_received = False
+        self._localization_tf_ready = False
+        self._wait_logs = set()
+        self._ready_logs = set()
 
         self.match_timer = self.create_timer(
             1.0 / self.core_config.match_rate,
@@ -174,44 +181,64 @@ class TRNSlamNode(Node):
     def _string_param(self, name: str) -> str:
         return self.get_parameter(name).get_parameter_value().string_value
 
-    @staticmethod
-    def _parse_local_dem_metadata(label: str) -> dict[str, float | int]:
-        metadata = {}
-        if not label or ';' not in label:
-            return metadata
+    def _log_wait_once(self, key: str, message: str):
+        if key in self._wait_logs:
+            return
+        self._wait_logs.add(key)
+        self.get_logger().info(message)
 
-        for part in label.split(';')[1:]:
-            if '=' not in part:
-                continue
-            key, value = part.split('=', 1)
-            try:
-                if key == 'stamp_ns':
-                    metadata[key] = int(value)
-                else:
-                    metadata[key] = float(value)
-            except ValueError:
-                continue
-        return metadata
+    def _log_ready_once(self, key: str, message: str):
+        if key in self._ready_logs:
+            return
+        self._ready_logs.add(key)
+        self.get_logger().info(message)
 
-    def local_dem_callback(self, msg: Float32MultiArray):
-        ny = msg.layout.dim[0].size if len(msg.layout.dim) >= 2 else self.core_config.local_ny
-        nx = msg.layout.dim[1].size if len(msg.layout.dim) >= 2 else self.core_config.local_nx
-        metadata_label = msg.layout.dim[0].label if len(msg.layout.dim) >= 1 else ''
-        metadata = self._parse_local_dem_metadata(metadata_label)
-        stamp_ns = int(metadata.get('stamp_ns', self.get_clock().now().nanoseconds))
+    def _localization_tf_available(self) -> bool:
+        try:
+            self.tf_buffer.lookup_transform(
+                self.core_config.odom_frame,
+                self.core_config.base_link_frame,
+                Time(),
+                timeout=Duration(seconds=0.05),
+            )
+            return True
+        except (
+            tf2_ros.LookupException,
+            tf2_ros.ConnectivityException,
+            tf2_ros.ExtrapolationException,
+        ):
+            return False
+
+    def local_dem_callback(self, msg: LocalDEM):
+        if not self._local_dem_received:
+            self._local_dem_received = True
+            self._log_ready_once(
+                'local_dem',
+                'TRN ready gate satisfied: first typed /elevation_map/local_dem received',
+            )
+        stamp_ns = (
+            msg.acquisition_stamp.sec * 1_000_000_000
+            + msg.acquisition_stamp.nanosec
+        )
         self.core.update_local_dem(
             msg.data,
-            ny,
-            nx,
+            int(msg.height),
+            int(msg.width),
             stamp_ns,
-            origin_x=metadata.get('origin_x'),
-            origin_y=metadata.get('origin_y'),
-            center_x=metadata.get('center_x'),
-            center_y=metadata.get('center_y'),
-            resolution=metadata.get('resolution'),
+            origin_x=msg.origin_x,
+            origin_y=msg.origin_y,
+            center_x=msg.center_x,
+            center_y=msg.center_y,
+            resolution=msg.resolution,
         )
 
     def ekf_odom_callback(self, msg: Odometry):
+        if not self._odom_received:
+            self._odom_received = True
+            self._log_ready_once(
+                'odom',
+                'TRN ready gate satisfied: first /odometry/filtered sample received',
+            )
         quat = msg.pose.pose.orientation
         _, _, yaw = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         cov = msg.pose.covariance
@@ -245,8 +272,32 @@ class TRNSlamNode(Node):
             return prior_x, prior_y, False
 
     def run_trn_match(self):
-        if not self.core.has_global_dem() or not self.core.has_local_dem():
+        if not self.core.has_global_dem():
             return
+        if not self._local_dem_received or not self.core.has_local_dem():
+            self._log_wait_once(
+                'wait_local_dem',
+                'TRN waiting for first typed local DEM before matching',
+            )
+            return
+        if not self._odom_received:
+            self._log_wait_once(
+                'wait_odom',
+                'TRN waiting for first /odometry/filtered sample before matching',
+            )
+            return
+        if not self._localization_tf_ready:
+            if not self._localization_tf_available():
+                self._log_wait_once(
+                    'wait_tf',
+                    f'TRN waiting for TF {self.core_config.odom_frame}->{self.core_config.base_link_frame} before matching',
+                )
+                return
+            self._localization_tf_ready = True
+            self._log_ready_once(
+                'tf',
+                f'TRN ready gate satisfied: TF {self.core_config.odom_frame}->{self.core_config.base_link_frame} available',
+            )
 
         prior_x, prior_y, tf_success = self._get_map_frame_prior()
         result = self.core.run_match_cycle(

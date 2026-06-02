@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100">
+<defs>
+<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#475569" /></marker>
+</defs>
+<rect x="0" y="0" width="1800" height="1100" fill="#fbfbfd" />
+<text x="40" y="48" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="700" fill="#1f2937">
+<tspan x="40" dy="0">Silent Sentry - Sensor Processing and Use</tspan>
+</text>
+<text x="40" y="85" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">How each sensor is transformed before it affects estimation or planning</tspan>
+</text>
+<rect x="60" y="120" rx="16" ry="16" width="380" height="360" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="74" y="152" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="74" dy="0">IMU Processing</tspan>
+</text>
+<text x="74" y="180" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="74" dy="0">raw /imu -&gt; Madgwick orientation</tspan>
+<tspan x="74" dy="20">used by terramechanics for gravity</tspan>
+<tspan x="74" dy="20">compensation, stall logic, gyro</tspan>
+<tspan x="74" dy="20">fusion</tspan>
+<tspan x="74" dy="20">used by factor graph for</tspan>
+<tspan x="74" dy="20">roll/pitch priors and IMU</tspan>
+<tspan x="74" dy="20">preintegration</tspan>
+</text>
+<rect x="500" y="120" rx="16" ry="16" width="380" height="360" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="514" y="152" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="514" dy="0">Wheel / Joint Processing</tspan>
+</text>
+<text x="514" y="180" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="514" dy="0">/joint_states -&gt; steering angle,</tspan>
+<tspan x="514" dy="20">wheel velocities, Bekker sinkage,</tspan>
+<tspan x="514" dy="20">slip ratio, yaw-rate fusion</tspan>
+<tspan x="514" dy="20">produces /terramechanic_odom and</tspan>
+<tspan x="514" dy="20">adaptive covariance</tspan>
+</text>
+<rect x="940" y="120" rx="16" ry="16" width="380" height="360" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="954" y="152" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="954" dy="0">LiDAR Processing</tspan>
+</text>
+<text x="954" y="180" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="954" dy="0">/scan/points -&gt; azimuth timing -&gt;</tspan>
+<tspan x="954" dy="20">deskew -&gt; self-hit filtering -&gt;</tspan>
+<tspan x="954" dy="20">gravity alignment -&gt; RANSAC ground</tspan>
+<tspan x="954" dy="20">-&gt; rolling DEM</tspan>
+</text>
+<rect x="1380" y="120" rx="16" ry="16" width="360" height="360" fill="#e0f2fe" stroke="#334155" stroke-width="3" />
+<text x="1394" y="152" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1394" dy="0">Camera Processing</tspan>
+</text>
+<text x="1394" y="180" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1394" dy="0">/camera/image_raw -&gt; CLIP zero-</tspan>
+<tspan x="1394" dy="20">shot prompts -&gt; terrain class</tspan>
+<tspan x="1394" dy="20">and traversability score</tspan>
+</text>
+<rect x="260" y="600" rx="16" ry="16" width="430" height="260" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="274" y="632" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="274" dy="0">Estimator Use</tspan>
+</text>
+<text x="274" y="660" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="274" dy="0">Terramechanics drives local motion;</tspan>
+<tspan x="274" dy="20">factor graph refines local pose with</tspan>
+<tspan x="274" dy="20">IMU; TRN uses DEM + odom prior for</tspan>
+<tspan x="274" dy="20">global correction</tspan>
+</text>
+<rect x="920" y="600" rx="16" ry="16" width="520" height="260" fill="#fde7f3" stroke="#334155" stroke-width="3" />
+<text x="934" y="632" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="934" dy="0">Planning Use</tspan>
+</text>
+<text x="934" y="660" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="934" dy="0">Camera-derived terrain class changes SBLP</tspan>
+<tspan x="934" dy="20">scenario; localization outputs support</tspan>
+<tspan x="934" dy="20">monitoring and future navigation consumers</tspan>
+</text>
+<line x1="250" y1="480" x2="430" y2="600" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="273" y="526" width="135" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="283" y="545" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="283" dy="0">inertial priors</tspan>
+</text>
+<line x1="690" y1="480" x2="520" y2="600" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="551" y="526" width="108" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="561" y="545" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="561" dy="0">wheel motion</tspan>
+</text>
+<line x1="1130" y1="480" x2="530" y2="600" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="763" y="526" width="135" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="773" y="545" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="773" dy="0">local DEM / TRN</tspan>
+</text>
+<line x1="1560" y1="480" x2="1180" y2="600" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="1312" y="526" width="117" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1322" y="545" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1322" dy="0">terrain class</tspan>
+</text>
+<line x1="690" y1="730" x2="920" y2="730" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="742" y="716" width="126" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="752" y="735" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="752" dy="0">pose / context</tspan>
+</text>
+<text x="40" y="1088" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">Generated from current repo structure and active launch paths</tspan>
+</text>
+</svg>

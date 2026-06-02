@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100">
+<defs>
+<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#475569" /></marker>
+</defs>
+<rect x="0" y="0" width="1800" height="1100" fill="#fbfbfd" />
+<text x="40" y="48" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="700" fill="#1f2937">
+<tspan x="40" dy="0">Silent Sentry - System Architecture</tspan>
+</text>
+<text x="40" y="85" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">Current active stack in the repo: Gazebo + native ros2_control + custom terramechanic/TRN localization + VLM/SBLP command path</tspan>
+</text>
+<rect x="70" y="150" rx="16" ry="16" width="300" height="220" fill="#e8f3ff" stroke="#334155" stroke-width="3" />
+<text x="84" y="182" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="84" dy="0">Gazebo + Robot Model</tspan>
+</text>
+<text x="84" y="210" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="84" dy="0">World, physics, sensors,</tspan>
+<tspan x="84" dy="20">model pose, joint states,</tspan>
+<tspan x="84" dy="20">gz topics</tspan>
+</text>
+<rect x="430" y="150" rx="16" ry="16" width="300" height="220" fill="#fef3c7" stroke="#334155" stroke-width="3" />
+<text x="444" y="182" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="444" dy="0">Robot Interface</tspan>
+</text>
+<text x="444" y="210" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="444" dy="0">ros_gz_bridge,</tspan>
+<tspan x="444" dy="20">robot_state_publisher,</tspan>
+<tspan x="444" dy="20">ros2_control,</tspan>
+<tspan x="444" dy="20">EmconSystemInterface</tspan>
+</text>
+<rect x="790" y="90" rx="16" ry="16" width="360" height="300" fill="#e9fbe7" stroke="#334155" stroke-width="3" />
+<text x="804" y="122" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="804" dy="0">Localization Stack</tspan>
+</text>
+<text x="804" y="150" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="804" dy="0">Madgwick -&gt; Terramechanic Odom</tspan>
+<tspan x="804" dy="20">-&gt; Factor Graph -&gt; Local DEM -&gt;</tspan>
+<tspan x="804" dy="20">TRN</tspan>
+</text>
+<rect x="1210" y="110" rx="16" ry="16" width="500" height="260" fill="#fde7f3" stroke="#334155" stroke-width="3" />
+<text x="1224" y="142" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1224" dy="0">Planning + EMCON</tspan>
+</text>
+<text x="1224" y="170" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1224" dy="0">Camera -&gt; VLM terrain class -&gt; SBLP primitive</tspan>
+<tspan x="1224" dy="20">planner -&gt; EMCON arbitration -&gt; /cmd_vel</tspan>
+</text>
+<rect x="300" y="500" rx="16" ry="16" width="450" height="260" fill="#fef3c7" stroke="#334155" stroke-width="3" />
+<text x="314" y="532" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="314" dy="0">Control Conversion</tspan>
+</text>
+<text x="314" y="560" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="314" dy="0">ackermann_twist_controller -&gt; steering</tspan>
+<tspan x="314" dy="20">and rear wheel commands -&gt; forward</tspan>
+<tspan x="314" dy="20">controllers</tspan>
+</text>
+<rect x="860" y="500" rx="16" ry="16" width="360" height="260" fill="#eef2ff" stroke="#334155" stroke-width="3" />
+<text x="874" y="532" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="874" dy="0">TF + Outputs</tspan>
+</text>
+<text x="874" y="560" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="874" dy="0">TRN publishes map-&gt;odom; factor</tspan>
+<tspan x="874" dy="20">graph publishes</tspan>
+<tspan x="874" dy="20">odom-&gt;base_footprint; RSP</tspan>
+<tspan x="874" dy="20">publishes body/sensor tree</tspan>
+</text>
+<rect x="1290" y="500" rx="16" ry="16" width="360" height="260" fill="#ffe9e2" stroke="#334155" stroke-width="3" />
+<text x="1304" y="532" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2937">
+<tspan x="1304" dy="0">Diagnostics</tspan>
+</text>
+<text x="1304" y="560" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="normal" fill="#243042">
+<tspan x="1304" dy="0">odom_visualizer,</tspan>
+<tspan x="1304" dy="20">odom_ground_truth_comparator, GT</tspan>
+<tspan x="1304" dy="20">benchmarking, TRN diagnostics</tspan>
+</text>
+<line x1="370" y1="260" x2="430" y2="260" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="324" y="246" width="153" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="334" y="265" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="334" dy="0">gz topics + model</tspan>
+</text>
+<line x1="730" y1="260" x2="790" y2="260" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="693" y="246" width="135" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="703" y="265" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="703" dy="0">ROS topics / TF</tspan>
+</text>
+<line x1="580" y1="370" x2="580" y2="500" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="477" y="421" width="207" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="487" y="440" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="487" dy="0">joint states + /cmd_vel</tspan>
+</text>
+<line x1="1150" y1="240" x2="1210" y2="240" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="1090" y="226" width="180" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1100" y="245" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1100" dy="0">terrain class / goal</tspan>
+</text>
+<line x1="750" y1="630" x2="860" y2="630" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="755" y="616" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="765" y="635" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="765" dy="0">odom + TF</tspan>
+</text>
+<line x1="1220" y1="630" x2="1290" y2="630" stroke="#475569" stroke-width="3" marker-end="url(#arrowhead)" />
+<rect x="1188" y="616" width="135" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1198" y="635" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1198" dy="0">metrics + plots</tspan>
+</text>
+<line x1="1450" y1="370" x2="640" y2="500" stroke="#475569" stroke-width="3" stroke-dasharray="10,8" marker-end="url(#arrowhead)" />
+<rect x="995" y="421" width="100" height="28" rx="8" ry="8" fill="#ffffff" stroke="#e6e8ee" />
+<text x="1005" y="440" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f766e">
+<tspan x="1005" dy="0">/cmd_vel</tspan>
+</text>
+<text x="40" y="1088" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="normal" fill="#4b5563">
+<tspan x="40" dy="0">Generated from current repo structure and active launch paths</tspan>
+</text>
+</svg>

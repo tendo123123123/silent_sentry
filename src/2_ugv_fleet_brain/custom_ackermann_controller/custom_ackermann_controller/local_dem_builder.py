@@ -14,6 +14,8 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import Imu, PointCloud2
 
+from silent_sentry_interfaces.msg import LocalDEM
+
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, String
 
 import tf2_ros
@@ -128,6 +130,11 @@ class LocalDEMBuilderNode(Node):
             '/elevation_map/local',
             5,
         )
+        self.dem_pub = self.create_publisher(
+            LocalDEM,
+            '/elevation_map/local_dem',
+            5,
+        )
         self.float_pub = self.create_publisher(
             Float32MultiArray,
             '/elevation_map/local_float',
@@ -154,6 +161,13 @@ class LocalDEMBuilderNode(Node):
             10,
         )
 
+        self._cloud_received = False
+        self._imu_received = False
+        self._odom_received = False
+        self._base_tf_ready = False
+        self._wait_logs = set()
+        self._ready_logs = set()
+
         self.timer = self.create_timer(
             1.0 / self.publish_rate,
             self.build_and_publish_dem,
@@ -177,6 +191,18 @@ class LocalDEMBuilderNode(Node):
 
     def _b(self, name: str) -> bool:
         return self.get_parameter(name).get_parameter_value().bool_value
+
+    def _log_wait_once(self, key: str, message: str):
+        if key in self._wait_logs:
+            return
+        self._wait_logs.add(key)
+        self.get_logger().info(message)
+
+    def _log_ready_once(self, key: str, message: str):
+        if key in self._ready_logs:
+            return
+        self._ready_logs.add(key)
+        self.get_logger().info(message)
 
     def _lookup_transform(
         self,
@@ -306,6 +332,12 @@ class LocalDEMBuilderNode(Node):
         return transformed
 
     def _imu_callback(self, msg: Imu):
+        if not self._imu_received:
+            self._imu_received = True
+            self._log_ready_once(
+                'imu',
+                'Local DEM ready gate satisfied: first /imu/data_filtered sample received',
+            )
         q = msg.orientation
         try:
             roll, pitch, _ = euler_from_quaternion([q.x, q.y, q.z, q.w])
@@ -324,6 +356,12 @@ class LocalDEMBuilderNode(Node):
         self.core.update_body_angular_velocity(ang_vel)
 
     def _odom_callback(self, msg: Odometry):
+        if not self._odom_received:
+            self._odom_received = True
+            self._log_ready_once(
+                'odom',
+                'Local DEM ready gate satisfied: first /terramechanic_odom sample received',
+            )
         linear_vel = np.array(
             [
                 msg.twist.twist.linear.x,
@@ -339,6 +377,13 @@ class LocalDEMBuilderNode(Node):
         points = self._parse_pointcloud2(msg)
         if points is None or len(points) == 0:
             return
+
+        if not self._cloud_received:
+            self._cloud_received = True
+            self._log_ready_once(
+                'cloud',
+                f'Local DEM ready gate satisfied: first cloud received on {self.lidar_topic}',
+            )
 
         self.core.enqueue_cloud(points, msg.header.stamp, msg.header.frame_id)
 
@@ -402,9 +447,38 @@ class LocalDEMBuilderNode(Node):
 
     def build_and_publish_dem(self):
         """Build the latest local DEM window and publish ROS messages."""
+        if not self._imu_received:
+            self._log_wait_once(
+                'wait_imu',
+                'Local DEM waiting for first /imu/data_filtered sample',
+            )
+            return
+        if not self._odom_received:
+            self._log_wait_once(
+                'wait_odom',
+                'Local DEM waiting for first /terramechanic_odom sample',
+            )
+            return
+        if not self._cloud_received:
+            self._log_wait_once(
+                'wait_cloud',
+                f'Local DEM waiting for first LiDAR cloud on {self.lidar_topic}',
+            )
+            return
+
         robot_pose = self._lookup_robot_pose_in_odom()
         if robot_pose is None:
+            self._log_wait_once(
+                'wait_tf',
+                f'Local DEM waiting for first TF {self.odom_frame}->{self.base_frame}',
+            )
             return
+        if not self._base_tf_ready:
+            self._base_tf_ready = True
+            self._log_ready_once(
+                'tf',
+                f'Local DEM ready gate satisfied: TF {self.odom_frame}->{self.base_frame} available',
+            )
 
         build_output = self.core.build_dem(
             robot_pose,
@@ -433,6 +507,31 @@ class LocalDEMBuilderNode(Node):
             f'stamp_ns={stamp_ns}'
         )
 
+        publish_grid = np.where(
+            np.isnan(elevation_grid),
+            -9999.0,
+            elevation_grid,
+        )
+
+        typed_msg = LocalDEM()
+        typed_msg.header.stamp = (
+            stamp_msg
+            if stamp_msg
+            else self.get_clock().now().to_msg()
+        )
+        typed_msg.header.frame_id = self.odom_frame
+        typed_msg.acquisition_stamp = typed_msg.header.stamp
+        typed_msg.width = self.nx
+        typed_msg.height = self.ny
+        typed_msg.resolution = float(self.resolution)
+        typed_msg.origin_x = float(build_output.origin_x)
+        typed_msg.origin_y = float(build_output.origin_y)
+        typed_msg.center_x = float(center_x)
+        typed_msg.center_y = float(center_y)
+        typed_msg.no_data_value = -9999.0
+        typed_msg.data = publish_grid.astype(np.float32, copy=False).ravel().tolist()
+        self.dem_pub.publish(typed_msg)
+
         float_msg = Float32MultiArray()
         float_msg.layout.dim = [
             MultiArrayDimension(
@@ -446,11 +545,6 @@ class LocalDEMBuilderNode(Node):
                 stride=self.nx,
             ),
         ]
-        publish_grid = np.where(
-            np.isnan(elevation_grid),
-            -9999.0,
-            elevation_grid,
-        )
         float_msg.data = publish_grid.ravel().tolist()
         self.float_pub.publish(float_msg)
 
