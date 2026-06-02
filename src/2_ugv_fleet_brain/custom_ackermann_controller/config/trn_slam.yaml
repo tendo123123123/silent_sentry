@@ -27,10 +27,10 @@ trn_slam_node:
     bilateral_sigma_space: 75.0          # filter sigma in spatial domain (px)
 
     # --- Dynamic ROI Cropping ---
-    base_search_radius: 50.0
-    max_search_radius: 150.0
+    base_search_radius: 15.0
+    max_search_radius: 30.0
     covariance_scale: 2.0
-    initial_search_radius: 150.0
+    initial_search_radius: 15.0
     initial_match_count: 5
 
     # --- MCL Particle Filter ---
