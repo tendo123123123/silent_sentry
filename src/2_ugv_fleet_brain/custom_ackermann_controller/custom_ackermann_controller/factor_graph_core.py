@@ -221,6 +221,60 @@ class FactorGraphCore:
     def set_trn_quality(self, quality: float):
         self._trn_quality = float(quality)
 
+    def add_trn_correction_factor(self, dx: float, dy: float):
+        if abs(dx) < 1e-4 and abs(dy) < 1e-4:
+            return
+
+        with self.lock:
+            if not self.initialized or self.node_idx == 0:
+                return
+
+            t = _as_vec3(self.live_pose3.translation())
+            t[0] += dx
+            t[1] += dy
+            target_pose = Pose3(self.live_pose3.rotation(), t)
+
+            var = max(0.04, 4.0 * (1.0 - self._trn_quality) ** 2)
+            sig_xy = math.sqrt(var)
+
+            sigmas = np.array([1e3, 1e3, 1e3, sig_xy, sig_xy, 1e3], dtype=float)
+            prior_noise = noiseModel.Diagonal.Sigmas(sigmas)
+
+            self.graph_inc.add(
+                PriorFactorPose3(_X(self.node_idx), target_pose, prior_noise)
+            )
+
+            try:
+                self.isam.update(self.graph_inc, self.values_inc)
+            except Exception as e:
+                self._log_warn(f'iSAM2 loop closure update failed: {e}')
+                self.graph_inc.resize(0)
+                self.values_inc.clear()
+                return
+
+            self.graph_inc.resize(0)
+            self.values_inc.clear()
+
+            try:
+                result = self.isam.calculateEstimate()
+                opt_pose = result.atPose3(_X(self.node_idx))
+                opt_vel = _as_vec3(result.atVector(_V(self.node_idx)))
+                self.imu_bias = result.atConstantBias(self.bias_key)
+
+                self.anchor_nav_state = NavState(opt_pose, opt_vel)
+                self.live_pose3 = opt_pose
+                self.live_velocity = opt_vel
+                self._update_planar_projection(opt_pose)
+
+                self.pos_cov = var
+
+                self._log_info(
+                    f'FG loop closure: Applied TRN correction of ({dx:.3f}, {dy:.3f})m '
+                    f'with quality {self._trn_quality:.2f} (sig={sig_xy:.2f}m)'
+                )
+            except Exception as e:
+                self._log_warn(f'iSAM2 loop closure estimate failed: {e}')
+
     def _reset_preintegration(self):
         self.pim.resetIntegrationAndSetBias(self.imu_bias)
         self._have_preintegrated_imu = False

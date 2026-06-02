@@ -30,7 +30,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Vector3
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64
@@ -98,6 +98,7 @@ class FactorGraphFuser(Node):
         self.create_subscription(Odometry, '/terramechanic_odom', self._odom_cb, 10)
         self.create_subscription(Imu, '/imu/data_filtered', self._imu_cb, 10)
         self.create_subscription(Float64, '/trn/match_quality', self._trn_quality_cb, 10)
+        self.create_subscription(Vector3, '/trn/correction', self._trn_correction_cb, 10)
 
         self.pub_timer = self.create_timer(
             1.0 / self.core_config.publish_rate,
@@ -178,6 +179,9 @@ class FactorGraphFuser(Node):
 
     def _trn_quality_cb(self, msg: Float64):
         self.core.set_trn_quality(msg.data)
+
+    def _trn_correction_cb(self, msg: Vector3):
+        self.core.add_trn_correction_factor(msg.x, msg.y)
 
     def _odom_cb(self, msg: Odometry):
         if not self._wheel_odom_received:
