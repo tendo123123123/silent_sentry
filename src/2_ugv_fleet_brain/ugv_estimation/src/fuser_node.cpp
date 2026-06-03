@@ -252,13 +252,17 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     gtsam::Point3 trn_pos(pos.x, pos.y, pos.z);
     gtsam::Pose3 trn_pose(trn_rot, trn_pos);
 
-    // Convert 6x6 Row-major covariance matrix to Eigen::Matrix
-    Eigen::Matrix<double, 6, 6> trn_covariance = Eigen::Matrix<double, 6, 6>::Zero();
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 6; ++j) {
-            trn_covariance(i, j) = msg->pose.covariance[i * 6 + j];
-        }
-    }
+    // Convert 6x6 Row-major covariance matrix to Eigen::Matrix (ROS order: [Trans, Rot])
+    Eigen::Matrix<double, 6, 6> ros_cov = Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(msg->pose.covariance.data());
+
+    // Swap 3x3 blocks to map ROS [Trans, Rot] to GTSAM [Rot, Trans]
+    // GTSAM tangent space ordering: [Rotation, Translation]
+    // ROS 2 PoseWithCovariance tangent space ordering: [Translation, Rotation]
+    Eigen::Matrix<double, 6, 6> trn_covariance;
+    trn_covariance.block<3,3>(0,0).noalias() = ros_cov.block<3,3>(3,3); // ROS Rot->Rot to GTSAM Rot->Rot
+    trn_covariance.block<3,3>(3,3).noalias() = ros_cov.block<3,3>(0,0); // ROS Trans->Trans to GTSAM Trans->Trans
+    trn_covariance.block<3,3>(0,3).noalias() = ros_cov.block<3,3>(3,0); // ROS Rot->Trans to GTSAM Rot->Trans
+    trn_covariance.block<3,3>(3,0).noalias() = ros_cov.block<3,3>(0,3); // ROS Trans->Rot to GTSAM Trans->Rot
 
     // Extract statistics and average them over the epoch interval
     double mean_wheel_accel = 0.0;

@@ -327,12 +327,17 @@ void TRNNode::match_timer_callback()
         corr_msg.pose.pose.orientation.z = q.z();
         corr_msg.pose.pose.orientation.w = q.w();
 
-        // Convert 6x6 Eigen Covariance matrix to flat msg array
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j < 6; ++j) {
-                corr_msg.pose.covariance[i * 6 + j] = global_match_cov(i, j);
-            }
-        }
+        // Swap 3x3 blocks to map GTSAM [Rot, Trans] order to ROS 2 [Trans, Rot] order
+        // GTSAM tangent space ordering: [Rotation, Translation]
+        // ROS 2 PoseWithCovariance tangent space ordering: [Translation, Rotation]
+        Eigen::Matrix<double, 6, 6> ros_cov;
+        ros_cov.block<3,3>(0,0).noalias() = global_match_cov.block<3,3>(3,3); // GTSAM Trans->Trans to ROS Trans->Trans
+        ros_cov.block<3,3>(3,3).noalias() = global_match_cov.block<3,3>(0,0); // GTSAM Rot->Rot to ROS Rot->Rot
+        ros_cov.block<3,3>(0,3).noalias() = global_match_cov.block<3,3>(3,0); // GTSAM Trans->Rot to ROS Trans->Rot
+        ros_cov.block<3,3>(3,0).noalias() = global_match_cov.block<3,3>(0,3); // GTSAM Rot->Trans to ROS Rot->Trans
+
+        // Flatten the ROS-ordered matrix into corr_msg.pose.covariance
+        Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(corr_msg.pose.covariance.data()).noalias() = ros_cov;
 
         correction_pub_->publish(corr_msg);
     } else {
