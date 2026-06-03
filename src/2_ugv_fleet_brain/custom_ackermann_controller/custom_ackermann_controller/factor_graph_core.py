@@ -144,9 +144,9 @@ class FactorGraphCore:
         )
 
         self.initial_pose_noise = noiseModel.Diagonal.Sigmas(
-            np.array([0.02, 0.02, 0.05, 0.01, 0.01, 0.01], dtype=float)
+            np.array([1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4], dtype=float)
         )
-        self.initial_vel_noise = noiseModel.Isotropic.Sigma(3, 0.10)
+        self.initial_vel_noise = noiseModel.Isotropic.Sigma(3, 1e-4)
         self.bias_prior_noise = noiseModel.Isotropic.Sigma(6, 0.10)
         self.imu_attitude_noise = noiseModel.Diagonal.Sigmas(
             np.array(
@@ -227,6 +227,25 @@ class FactorGraphCore:
 
         with self.lock:
             if not self.initialized or self.node_idx == 0:
+                return
+
+            # Quality Check: Reject corrections with weak matching confidence
+            MIN_TRN_QUALITY = 0.40
+            if self._trn_quality < MIN_TRN_QUALITY:
+                self._log_info(
+                    f'FG Loop Closure Rejected: Match quality {self._trn_quality:.2f} '
+                    f'below threshold {MIN_TRN_QUALITY:.2f}'
+                )
+                return
+
+            # Displacement Check: Reject sudden, large jumps (teleportation risk)
+            disp = math.hypot(dx, dy)
+            MAX_TRN_DISPLACEMENT = 2.0
+            if disp > MAX_TRN_DISPLACEMENT:
+                self._log_warn(
+                    f'FG Loop Closure Rejected: Large displacement {disp:.3f}m '
+                    f'exceeds maximum allowed {MAX_TRN_DISPLACEMENT:.1f}m'
+                )
                 return
 
             t = _as_vec3(self.live_pose3.translation())
@@ -556,8 +575,8 @@ class FactorGraphCore:
             self.last_twist_cov = list(twist_covariance)
 
         if not self.initialized:
-            rot0 = self._fused_rotation(0.0)
-            vel0 = rot0.matrix() @ _vec3(vx, 0.0, 0.0)
+            rot0 = Rot3.Identity()
+            vel0 = _vec3(0.0, 0.0, 0.0)
             pose0 = Pose3(rot0, _vec3(0.0, 0.0, 0.0))
             with self.lock:
                 self.graph_inc.add(
@@ -689,8 +708,8 @@ class FactorGraphCore:
                     self.pim,
                 )
             )
-            # Yaw noise: tight when wheel odometry reports a turn, loose otherwise
-            yaw_sig = 0.03 if abs(kf_dtheta) > 0.01 else 1e3
+            # Yaw noise: tight when wheel odometry reports driving straight, looser on turns to allow gyro tracking
+            yaw_sig = 0.05 if abs(kf_dtheta) > 0.01 else 0.01
             self.graph_inc.add(
                 BetweenFactorPose3(
                     _X(self.node_idx),
