@@ -708,8 +708,20 @@ class FactorGraphCore:
                     self.pim,
                 )
             )
-            # Yaw noise: tight when wheel odometry reports driving straight, looser on turns to allow gyro tracking
-            yaw_sig = 0.05 if abs(kf_dtheta) > 0.01 else 0.01
+            # Yaw noise constraint:
+            # - If wheel odometry reports turning, we relax the constraint (yaw_sig = 0.05).
+            # - If the IMU gyro reports real rotational motion (e.g. falling off a cliff, sliding, or hitting an obstacle),
+            #   we also relax the constraint (yaw_sig = 0.50) to let gyro preintegration handle the yaw perfectly.
+            # - We only lock the heading tightly (yaw_sig = 0.01) when BOTH agree the robot is going straight.
+            is_turning_wheel = abs(kf_dtheta) > 0.01
+            is_turning_gyro = abs(self.imu_yaw_rate) > 0.05  # ~2.8 deg/s
+            
+            if is_turning_wheel:
+                yaw_sig = 0.05
+            elif is_turning_gyro:
+                yaw_sig = 0.50  # Trust gyro preintegration during unexpected slip/terrain events
+            else:
+                yaw_sig = 0.01  # Lock straight-line heading to kill gyro bias drift
             self.graph_inc.add(
                 BetweenFactorPose3(
                     _X(self.node_idx),
