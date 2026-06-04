@@ -120,11 +120,11 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
 
     // Setup Topic Subscriptions
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-        "/imu", 10, std::bind(&FuserNode::imu_callback, this, std::placeholders::_1)
+        "/imu/data_filtered", 10, std::bind(&FuserNode::imu_callback, this, std::placeholders::_1)
     );
 
     wheel_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/wheel_odom", 10, std::bind(&FuserNode::wheel_callback, this, std::placeholders::_1)
+        "/terramechanic_odom", 10, std::bind(&FuserNode::wheel_callback, this, std::placeholders::_1)
     );
 
     trn_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
