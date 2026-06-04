@@ -23,6 +23,7 @@ Architecture notes:
 import os
 
 from launch import LaunchDescription
+from launch.events import matches_action
 from launch_ros.actions import Node, LifecycleNode
 from launch.actions import DeclareLaunchArgument, LogInfo, RegisterEventHandler, EmitEvent
 from launch_ros.event_handlers import OnStateTransition
@@ -203,10 +204,10 @@ def generate_launch_description():
             target_lifecycle_node=local_dem_node,
             start_state='unconfigured',
             goal_state='inactive',
-            actions=[
+            entities=[
                 LogInfo(msg="local_dem_builder configured to inactive. Activating..."),
                 EmitEvent(event=ChangeState(
-                    lifecycle_node_matcher=local_dem_node,
+                    lifecycle_node_matcher=matches_action(local_dem_node),
                     transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
                 )),
             ],
@@ -216,7 +217,7 @@ def generate_launch_description():
     # Configure local_dem_builder automatically on startup
     dem_configure_trigger = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher=local_dem_node,
+            lifecycle_node_matcher=matches_action(local_dem_node),
             transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
         )
     )
@@ -267,10 +268,10 @@ def generate_launch_description():
             target_lifecycle_node=fg_node,
             start_state='unconfigured',
             goal_state='inactive',
-            actions=[
+            entities=[
                 LogInfo(msg="factor_graph_fuser configured to inactive. Activating..."),
                 EmitEvent(event=ChangeState(
-                    lifecycle_node_matcher=fg_node,
+                    lifecycle_node_matcher=matches_action(fg_node),
                     transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
                 )),
             ],
@@ -280,7 +281,7 @@ def generate_launch_description():
     # Configure factor_graph_fuser automatically on startup
     fg_configure_trigger = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher=fg_node,
+            lifecycle_node_matcher=matches_action(fg_node),
             transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
         )
     )
@@ -312,10 +313,10 @@ def generate_launch_description():
             target_lifecycle_node=trn_slam_node,
             start_state='unconfigured',
             goal_state='inactive',
-            actions=[
+            entities=[
                 LogInfo(msg="trn_slam_node configured to inactive. Activating..."),
                 EmitEvent(event=ChangeState(
-                    lifecycle_node_matcher=trn_slam_node,
+                    lifecycle_node_matcher=matches_action(trn_slam_node),
                     transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
                 )),
             ],
@@ -325,7 +326,7 @@ def generate_launch_description():
     # Configure trn_slam_node automatically on startup
     trn_configure_trigger = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher=trn_slam_node,
+            lifecycle_node_matcher=matches_action(trn_slam_node),
             transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
         )
     )
