@@ -158,6 +158,9 @@ private:
     std::string map_frame_;                   ///< Global map frame ("map")
     std::string odom_frame_;                  ///< Drifting dead-reckoned frame ("odom")
     std::string base_frame_;                  ///< Vehicle body footprint frame ("base_footprint")
+
+    // State Tracking
+    gtsam::Pose3 latest_map_to_odom_;         ///< Cached authoritative map->odom transform
 };
 
 } // namespace ugv_estimation

@@ -105,6 +105,9 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
     // Warm-start core solver
     fuser_->initialize_graph();
 
+    // Initialize map->odom transform to identity
+    latest_map_to_odom_ = gtsam::Pose3();
+
     // Reset accumulators
     accum_wheel_ds_ = 0.0;
     accum_wheel_dtheta_ = 0.0;
@@ -297,7 +300,10 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         mean_imu_accel
     );
 
-    // Broadcast the single authoritative map -> odom TF
+    // Cache latest map->odom transform
+    latest_map_to_odom_ = map_to_odom;
+
+    // Broadcast the single authoritative map -> odom TF immediately as well
     geometry_msgs::msg::TransformStamped tf_msg;
     tf_msg.header.stamp = msg->header.stamp;
     tf_msg.header.frame_id = map_frame_;
@@ -375,6 +381,25 @@ void FuserNode::publish_odometry()
     tf_msg.transform.rotation.w = q.w();
 
     tf_broadcaster_->sendTransform(tf_msg);
+
+    // Broadcast authoritative map -> odom TF continuously at 50Hz to keep TF tree alive and in sync
+    geometry_msgs::msg::TransformStamped map_tf;
+    map_tf.header.stamp = now;
+    map_tf.header.frame_id = map_frame_;
+    map_tf.child_frame_id = odom_frame_;
+
+    const auto& mt = latest_map_to_odom_.translation();
+    const auto& mq = latest_map_to_odom_.rotation().toQuaternion();
+
+    map_tf.transform.translation.x = mt.x();
+    map_tf.transform.translation.y = mt.y();
+    map_tf.transform.translation.z = mt.z();
+    map_tf.transform.rotation.x = mq.x();
+    map_tf.transform.rotation.y = mq.y();
+    map_tf.transform.rotation.z = mq.z();
+    map_tf.transform.rotation.w = mq.w();
+
+    tf_broadcaster_->sendTransform(map_tf);
 }
 
 } // namespace ugv_estimation
