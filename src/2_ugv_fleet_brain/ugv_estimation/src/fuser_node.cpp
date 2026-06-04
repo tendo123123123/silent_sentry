@@ -197,11 +197,15 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
         last_imu_time_ = timestamp;
         imu_initialized_ = true;
 
-        // Warm-start core solver with the true orientation of the IMU (pitch & roll on tilted terrain)
+        // Warm-start core solver with the true orientation of the IMU (pitch & roll on tilted terrain) but 0.0 yaw to match starting map/ground truth yaw
         const auto& q = msg->orientation;
-        gtsam::Rot3 initial_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        double roll = std::atan2(2.0 * (q.w * q.x + q.y * q.z), 1.0 - 2.0 * (q.x * q.x + q.y * q.y));
+        double sinp = 2.0 * (q.w * q.y - q.z * q.x);
+        double pitch = (std::abs(sinp) >= 1.0) ? std::copysign(3.14159265358979323846 / 2.0, sinp) : std::asin(sinp);
+
+        gtsam::Rot3 initial_rot = gtsam::Rot3::RzRyRx(roll, pitch, 0.0);
         fuser_->initialize_graph(initial_rot);
-        RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (w=%f, x=%f, y=%f, z=%f)", q.w, q.x, q.y, q.z);
+        RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (roll=%f, pitch=%f, yaw=0.0)", roll, pitch);
         return;
     }
 

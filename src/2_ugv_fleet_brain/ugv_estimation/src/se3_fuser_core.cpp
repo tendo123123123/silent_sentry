@@ -225,6 +225,11 @@ void SE3FuserCore::reset_preintegration()
     if (!is_initialized_) {
         return;
     }
+    // Lock the last predicted pose to prevent snapping back to the origin
+    gtsam::NavState anchor_state(current_pose_, current_velocity_);
+    gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
+    current_pose_ = predicted_state.pose();
+
     pim_->resetIntegrationAndSetBias(current_bias_);
     current_velocity_ = gtsam::Vector3::Zero();
 }
