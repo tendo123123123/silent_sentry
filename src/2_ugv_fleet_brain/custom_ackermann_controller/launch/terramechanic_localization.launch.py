@@ -103,9 +103,9 @@ def generate_launch_description():
         default_value=PathJoinSubstitution([
             FindPackageShare('bot_navigation'),
             'maps',
-            'synthetic_dem.tif',
+            'synthetic_dem.bin',
         ]),
-        description='Path to global DEM GeoTIFF file'
+        description='Path to global DEM binary file'
     )
 
     model_name_arg = DeclareLaunchArgument(
