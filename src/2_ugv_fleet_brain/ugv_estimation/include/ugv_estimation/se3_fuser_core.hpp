@@ -68,13 +68,14 @@ public:
 
     /**
      * @brief Initialize the factor graph with zero-state priors at keyframe 0.
+     * @param initial_rotation Optional initial orientation of the vehicle (defaults to Identity).
      * 
      * Mathematically anchors the start state on the manifold to avoid global gage ambiguity:
      * \f[
      *   \mathbf{x}_0 \sim \mathcal{N}(\mathbf{0}, \Sigma_0)
      * \f]
      */
-    void initialize_graph();
+    void initialize_graph(const gtsam::Rot3& initial_rotation = gtsam::Rot3());
 
     /**
      * @brief Integrate a high-frequency IMU sample into the preintegration buffer.

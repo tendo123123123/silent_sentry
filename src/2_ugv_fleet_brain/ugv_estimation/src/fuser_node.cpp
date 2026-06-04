@@ -102,9 +102,6 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
 {
     RCLCPP_INFO(get_logger(), "FuserNode [on_activate]: Transitioning to active state.");
 
-    // Warm-start core solver
-    fuser_->initialize_graph();
-
     // Initialize map->odom transform to identity
     latest_map_to_odom_ = gtsam::Pose3();
 
@@ -199,6 +196,12 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
     if (!imu_initialized_) {
         last_imu_time_ = timestamp;
         imu_initialized_ = true;
+
+        // Warm-start core solver with the true orientation of the IMU (pitch & roll on tilted terrain)
+        const auto& q = msg->orientation;
+        gtsam::Rot3 initial_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        fuser_->initialize_graph(initial_rot);
+        RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (w=%f, x=%f, y=%f, z=%f)", q.w, q.x, q.y, q.z);
         return;
     }
 

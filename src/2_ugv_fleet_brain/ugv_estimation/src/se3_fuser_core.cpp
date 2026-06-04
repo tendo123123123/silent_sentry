@@ -51,15 +51,15 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
     pim_ = std::make_unique<gtsam::PreintegratedImuMeasurements>(imu_params_, current_bias_);
 }
 
-void SE3FuserCore::initialize_graph()
+void SE3FuserCore::initialize_graph(const gtsam::Rot3& initial_rotation)
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (is_initialized_) {
         return;
     }
 
-    // Set starting states to identity/zero
-    current_pose_ = gtsam::Pose3();
+    // Set starting states with initial orientation to compensate gravity correctly
+    current_pose_ = gtsam::Pose3(initial_rotation, gtsam::Point3(0.0, 0.0, 0.0));
     current_velocity_ = gtsam::Vector3::Zero();
     current_bias_ = gtsam::imuBias::ConstantBias();
 
