@@ -118,20 +118,6 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
     // Active lifecycle publishers
     odom_pub_->on_activate();
 
-    // Broadcast initial map -> odom TF of identity to connect TF tree on startup
-    geometry_msgs::msg::TransformStamped initial_tf;
-    initial_tf.header.stamp = this->get_clock()->now();
-    initial_tf.header.frame_id = map_frame_;
-    initial_tf.child_frame_id = odom_frame_;
-    initial_tf.transform.translation.x = 0.0;
-    initial_tf.transform.translation.y = 0.0;
-    initial_tf.transform.translation.z = 0.0;
-    initial_tf.transform.rotation.x = 0.0;
-    initial_tf.transform.rotation.y = 0.0;
-    initial_tf.transform.rotation.z = 0.0;
-    initial_tf.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(initial_tf);
-
     // Setup Topic Subscriptions
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
         "/imu/data_filtered", 10, std::bind(&FuserNode::imu_callback, this, std::placeholders::_1)
@@ -197,15 +183,11 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
         last_imu_time_ = timestamp;
         imu_initialized_ = true;
 
-        // Warm-start core solver with the true orientation of the IMU (pitch & roll on tilted terrain) but 0.0 yaw to match starting map/ground truth yaw
+        // Warm-start core solver with the true orientation of the IMU (which contains the true starting yaw, pitch, and roll in the simulation world)
         const auto& q = msg->orientation;
-        double roll = std::atan2(2.0 * (q.w * q.x + q.y * q.z), 1.0 - 2.0 * (q.x * q.x + q.y * q.y));
-        double sinp = 2.0 * (q.w * q.y - q.z * q.x);
-        double pitch = (std::abs(sinp) >= 1.0) ? std::copysign(3.14159265358979323846 / 2.0, sinp) : std::asin(sinp);
-
-        gtsam::Rot3 initial_rot = gtsam::Rot3::RzRyRx(roll, pitch, 0.0);
+        gtsam::Rot3 initial_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
         fuser_->initialize_graph(initial_rot);
-        RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (roll=%f, pitch=%f, yaw=0.0)", roll, pitch);
+        RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (w=%f, x=%f, y=%f, z=%f)", q.w, q.x, q.y, q.z);
         return;
     }
 
@@ -345,7 +327,7 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
 
 void FuserNode::publish_odometry()
 {
-    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE || !imu_initialized_) {
         return;
     }
 
