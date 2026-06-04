@@ -23,7 +23,7 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
     : config_(config),
       keyframe_index_(0),
       is_initialized_(false),
-      current_pose_(gtsam::Pose3::Identity()),
+      current_pose_(gtsam::Pose3()),
       current_velocity_(gtsam::Vector3::Zero()),
       current_bias_(gtsam::imuBias::ConstantBias())
 {
@@ -59,7 +59,7 @@ void SE3FuserCore::initialize_graph()
     }
 
     // Set starting states to identity/zero
-    current_pose_ = gtsam::Pose3::Identity();
+    current_pose_ = gtsam::Pose3();
     current_velocity_ = gtsam::Vector3::Zero();
     current_bias_ = gtsam::imuBias::ConstantBias();
 
@@ -131,7 +131,7 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
-        return gtsam::Pose3::Identity();
+        return gtsam::Pose3();
     }
 
     const uint64_t prev_idx = keyframe_index_;
@@ -194,7 +194,7 @@ gtsam::Pose3 SE3FuserCore::get_current_pose() const
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
-        return gtsam::Pose3::Identity();
+        return gtsam::Pose3();
     }
     // High-frequency propagation: predict from last keyframe using active IMU buffer
     gtsam::NavState anchor_state(current_pose_, current_velocity_);

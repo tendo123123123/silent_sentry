@@ -21,6 +21,8 @@
 
 namespace ugv_estimation {
 
+using PreintegrationParamsPtr = decltype(gtsam::PreintegrationParams::MakeSharedU(double()));
+
 /**
  * @struct FuserConfig
  * @brief Algorithmic parameters for the SE(3) state estimator.
@@ -165,7 +167,7 @@ private:
     gtsam::imuBias::ConstantBias current_bias_; ///< Optimized IMU biases
 
     // IMU Preintegration Handle
-    std::shared_ptr<gtsam::PreintegrationParams> imu_params_;
+    PreintegrationParamsPtr imu_params_;
     std::unique_ptr<gtsam::PreintegratedImuMeasurements> pim_;
 };
 
