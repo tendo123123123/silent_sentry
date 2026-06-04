@@ -1,45 +1,30 @@
 # =============================================================================
 # Factor Graph Fuser Configuration — GTSAM iSAM2 SE(3) Dead-Reckoning Backend
 # =============================================================================
-# Uses GTSAM's iSAM2 incremental solver as a smooth local odom estimator.
-#
-# KEY FEATURES:
-#   1. iSAM2: O(log n) incremental update via Bayes tree
-#   2. Uses SE(3) IMU preintegration between keyframes
-#   3. Uses a soft body-frame wheel displacement factor for forward motion
-#   3. Stays blind to TRN and the global map to avoid frame feedback loops
-#   4. Uses IMU forward acceleration only as a kinematic slip gate
-#   5. Freezes wheel odom + inflates wheel factor covariance during slip
-# =============================================================================
-
 factor_graph_fuser:
   ros__parameters:
     # --- Output Rate ---
     publish_rate: 50.0                    # Hz
 
-    # --- Noise Sigmas (standard deviations) ---
-    # Body-frame wheel displacement factor noise.
-    odom_sigma_xy: 0.10                   # m per keyframe forward displacement
+    # --- Noise Parameters (C++ API matches) ---
+    imu_accel_noise: 0.35                 # m/s^1.5
+    imu_gyro_noise: 0.08                  # rad/s^0.5
+    imu_integration_noise: 0.01           # continuous integration noise
+    imu_accel_bias_noise: 0.005           # accel bias random walk
+    imu_gyro_bias_noise: 0.001            # gyro bias random walk
 
-    # Absolute filtered IMU attitude priors.
-    imu_yaw_sigma: 0.07                   # rad (~4 deg)
-    imu_roll_pitch_sigma: 0.05            # rad (~2.9 deg)
+    initial_pose_sigma: 1e-4              # std-dev of initial prior
+    initial_vel_sigma: 1e-4
+    initial_bias_sigma: 1e-4
 
-    # IMU preintegration sigmas.
-    imu_accel_sigma: 0.35                 # m/s^2
-    imu_gyro_sigma: 0.08                  # rad/s
-    imu_integration_sigma: 0.01           # continuous-time integration noise
+    # --- Slip Gating & Multiplier ---
+    slip_accel_threshold: 1.5            # m/s^2 wheel-vs-IMU accel mismatch gate
+    slip_cov_multiplier: 25.0            # covariance inflation during slip
 
-    # --- Frames ---
+    # --- Wheel Odometry Sigmas [rot_x, rot_y, rot_z, trans_x, trans_y, trans_z] ---
+    odom_sigmas: [0.05, 0.05, 0.01, 0.10, 0.25, 0.25]
+
+    # --- Coordinate Frames ---
+    map_frame: "map"
     odom_frame: "odom"
     base_frame: "base_footprint"
-
-    # --- Safety ---
-    max_velocity: 4.5                     # m/s (1.5x physical max)
-    imu_yaw_jump_gate: 0.5               # rad (reject jumps > 28.6 deg)
-    slip_accel_threshold: 1.5            # m/s^2 wheel-vs-IMU accel mismatch gate for detecting encoder spin-up on soft sand
-    slip_cov_multiplier: 25.0            # during slip, down-weight wheel displacement so iSAM2 follows IMU / near-zero-motion evidence instead
-
-    # --- Covariance Tracking ---
-    position_noise_per_meter: 0.01        # sigma^2 growth per meter
-    heading_variance: 0.001               # sigma^2 for IMU yaw (constant)

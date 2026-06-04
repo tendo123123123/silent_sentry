@@ -23,8 +23,11 @@ Architecture notes:
 import os
 
 from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, LogInfo
+from launch_ros.actions import Node, LifecycleNode
+from launch.actions import DeclareLaunchArgument, LogInfo, RegisterEventHandler, EmitEvent
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+import lifecycle_msgs.msg
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
@@ -216,30 +219,66 @@ def generate_launch_description():
     #
     # Node-side readiness gating waits for first filtered IMU and first
     # terramechanic odom sample before publishing odom→base_footprint.
-    fg_node = Node(
-        package='custom_ackermann_controller',
-        executable='factor_graph_fuser',
+    # ====================================================================
+    # NODE 4: Factor Graph Fuser (odom → base_footprint) [C++ LIFECYCLE]
+    # ====================================================================
+    # Local dead-reckoning backend. Fuses:
+    #   - wheel forward displacement from terramechanic_odom
+    #   - SE(3) IMU preintegration from /imu/data_filtered
+    #   - absolute IMU attitude priors from Madgwick
+    # It subscribes to /trn/match_quality for covariance scaling feedback.
+    # Global pose correction stays in the separate map→odom TF.
+    #
+    # Subscribes: /terramechanic_odom (vx, ω), /imu/data_filtered (yaw)
+    # Publishes:  /odometry/filtered, odom→base_footprint TF
+    #
+    fg_node = LifecycleNode(
+        package='ugv_estimation',
+        executable='fuser_node',
         name='factor_graph_fuser',
+        namespace='',
         parameters=[
             fg_config,
             {'use_sim_time': LaunchConfiguration('use_sim_time')},
         ],
-        additional_env=custom_pkg_env,
         output='screen',
     )
 
+    # When factor_graph_fuser transitions to inactive (after configure), activate it
+    fg_activate_event = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=fg_node,
+            start_state='unconfigured',
+            goal_state='inactive',
+            actions=[
+                LogInfo(msg="factor_graph_fuser configured to inactive. Activating..."),
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=fg_node,
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                )),
+            ],
+        )
+    )
+
+    # Configure factor_graph_fuser automatically on startup
+    fg_configure_trigger = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=fg_node,
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
+    )
+
     # ====================================================================
-    # NODE 5: TRN SLAM (map → odom)
+    # NODE 5: TRN SLAM (map → odom) [C++ LIFECYCLE]
     # ====================================================================
     # Subscribes: /elevation_map/local_dem, /odometry/filtered
     # Publishes:  map→odom TF, /trn/match_quality, /trn/entropy
     #
-    # Node-side readiness gating waits for first typed local DEM, first
-    # filtered odom sample, and first odom→base_footprint TF.
-    trn_slam_node = Node(
-        package='custom_ackermann_controller',
-        executable='trn_slam_node',
+    trn_slam_node = LifecycleNode(
+        package='ugv_trn',
+        executable='trn_node',
         name='trn_slam_node',
+        namespace='',
         parameters=[
             trn_config,
             {
@@ -247,8 +286,31 @@ def generate_launch_description():
                 'global_dem_path': LaunchConfiguration('global_dem_path'),
             },
         ],
-        additional_env=custom_pkg_env,
         output='screen',
+    )
+
+    # When trn_slam_node transitions to inactive (after configure), activate it
+    trn_activate_event = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=trn_slam_node,
+            start_state='unconfigured',
+            goal_state='inactive',
+            actions=[
+                LogInfo(msg="trn_slam_node configured to inactive. Activating..."),
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=trn_slam_node,
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                )),
+            ],
+        )
+    )
+
+    # Configure trn_slam_node automatically on startup
+    trn_configure_trigger = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=trn_slam_node,
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
     )
 
     # ====================================================================
@@ -286,9 +348,16 @@ def generate_launch_description():
         # Nodes start immediately; each node blocks on its own runtime prerequisites.
         imu_filter_node,
         terramech_odom_node,
-        fg_node,
         local_dem_node,
-        trn_slam_node,
         odom_visualizer_node,
+
+        # C++ Lifecycle Node configurations and triggers
+        fg_node,
+        fg_activate_event,
+        fg_configure_trigger,
+
+        trn_slam_node,
+        trn_activate_event,
+        trn_configure_trigger,
     ])
 

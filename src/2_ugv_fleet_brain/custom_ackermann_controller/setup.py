@@ -35,9 +35,7 @@ setup(
             # Terramechanic localization stack
             'terramechanic_odometry = custom_ackermann_controller.terramechanic_odometry:main',
             'local_dem_builder = custom_ackermann_controller.local_dem_builder:main',
-            'trn_slam_node = custom_ackermann_controller.trn_slam_node:main',
             'odom_visualizer = custom_ackermann_controller.odom_visualizer_node:main',
-            'factor_graph_fuser = custom_ackermann_controller.factor_graph_fuser:main',
         ],
     },
 )

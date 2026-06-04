@@ -8,18 +8,10 @@
 trn_slam_node:
   ros__parameters:
     # --- Global DEM ---
-    global_dem_path: "/home/sailesh/silent_sentry/src/2_ugv_fleet_brain/bot_navigation/maps/synthetic_dem.tif"
-    global_dem_resolution: 1.0
-    dem_origin_x: "auto"
-    dem_origin_y: "auto"
-
-    # --- Local DEM Grid (must match local_dem_builder) ---
-    local_grid_nx: 20
-    local_grid_ny: 20
-    local_grid_resolution: 1.0          # fallback only; live metadata now comes from /elevation_map/local_float
-
-    # --- Rolling Local DEM Coverage ---
-    min_composite_coverage: 0.15         # minimum valid-cell coverage in latest rolling DEM
+    global_dem_path: ""                  # Set dynamically via launch file
+    global_dem_res: 1.0
+    global_dem_origin_x: 0.0
+    global_dem_origin_y: 0.0
 
     # --- Bilateral Filter (replaces Perona-Malik) ---
     bilateral_d: 9                       # filter diameter (px); -1 = compute from sigma_space
@@ -29,46 +21,23 @@ trn_slam_node:
     # --- Dynamic ROI Cropping ---
     base_search_radius: 15.0
     max_search_radius: 30.0
-    covariance_scale: 2.0
     initial_search_radius: 15.0
-    initial_match_count: 5
 
     # --- MCL Particle Filter ---
-    match_rate: 3.0                      # Hz — TRN update rate
     num_particles: 800                   # number of particles (more = better coverage)
-    particle_spread_xy: 0.5              # m — tight Gaussian leash for reinjection around odom prior
-    particle_spread_yaw: 0.02            # rad (~1 deg)
     ess_threshold: 0.40                  # resample only after the particle set has genuinely lost support; avoids unnecessary panic churn
-    min_update_ess_ratio: 0.08           # harder update-accept floor; reject pose updates only when the cloud is statistically collapsed
     flatness_std_threshold: 0.05         # abort match when local DEM std-dev is below this
-    alpha_slow: 0.001                    # slow baseline keeps recovery tied to sustained degradation, not one weak desert patch
-    alpha_fast: 0.02                     # calmer short-term average; avoids overreacting to brief ambiguous dune matches
-    amcl_max_random_injection: 0.10      # cap on random recovery particle fraction per resample
-    amcl_global_random_fraction: 0.10    # keep most recovery particles near odom prior, not globally scattered
-    amcl_prior_std_scale: 0.25           # recovery sigma around the current odom prior (fraction of search radius)
+    amcl_random_fraction: 0.10           # AMCL style random recovery fraction
 
     # --- Persistent MCL Motion Model ---
-    # Between MCL cycles, particles are propagated by the odom-frame delta.
-    # Noise is added proportional to displacement / rotation.
     motion_noise_xy_frac: 0.15           # position noise = displacement * frac (+ 5cm floor)
     motion_noise_yaw_frac: 0.10          # yaw noise     = |dyaw| * frac (+ 0.005 rad floor)
-    roi_inject_fraction: 0.20            # fraction of N re-injected as exploration each cycle
 
     # --- Match Gating ---
     entropy_threshold: 0.8
-
-    # --- Correction Control ---
     min_peak_quality: 0.22               # minimum MAD likelihood to accept correction
-    # Tuned against this stack's 3 Hz TRN rate and ~3 m/s physical top speed:
-    #   1 cycle of physically possible travel ≈ 3.0 / 3.0 = 1.0 m
-    #   raw corrections up to ~8 m are accepted, but EMA-applied steps are
-    #   clamped to 0.5 m/cycle so perceptual-aliasing hits cannot teleport the TF.
-    max_correction_per_cycle: 8.0        # hard reject only extreme hallucinations (> ~2.7 s of full-speed drift)
-    max_map_shift_per_cycle: 0.5         # strict per-cycle slew limiter; prefers slow correction over a single false-positive jump
-    ema_alpha: 0.30                      # EMA smoothing for map->odom (smooth, no jumps)
-    tf_publish_rate: 10.0                # map->odom TF broadcast rate
 
-    # --- Frames ---
+    # --- Coordinate Frames ---
     map_frame: "map"
     odom_frame: "odom"
-    base_link_frame: "base_footprint"
+    base_frame: "base_footprint"
