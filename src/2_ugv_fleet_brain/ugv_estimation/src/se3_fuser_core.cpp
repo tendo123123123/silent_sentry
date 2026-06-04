@@ -219,6 +219,16 @@ gtsam::imuBias::ConstantBias SE3FuserCore::get_current_bias() const
     return current_bias_;
 }
 
+void SE3FuserCore::reset_preintegration()
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (!is_initialized_) {
+        return;
+    }
+    pim_->resetIntegrationAndSetBias(current_bias_);
+    current_velocity_ = gtsam::Vector3::Zero();
+}
+
 void SE3FuserCore::update_config(const FuserConfig& config)
 {
     std::lock_guard<std::mutex> lock(mtx_);

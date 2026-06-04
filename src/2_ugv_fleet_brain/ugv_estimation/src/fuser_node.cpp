@@ -243,6 +243,11 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     const double vx = msg->twist.twist.linear.x;
     const double omega_z = msg->twist.twist.angular.z;
 
+    // If vehicle is stationary (ZUPT / zero-velocity-update conditions), prevent IMU integration drift
+    if (std::abs(vx) < 0.01 && std::abs(omega_z) < 0.01) {
+        fuser_->reset_preintegration();
+    }
+
     // Kinematic integration of displacement and yaw rotation (tangent vector components)
     const double ds = vx * dt;
     const double dtheta = omega_z * dt;

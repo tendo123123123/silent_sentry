@@ -147,6 +147,11 @@ public:
     gtsam::imuBias::ConstantBias get_current_bias() const;
 
     /**
+     * @brief Reset the preintegration buffer and velocity to zero (used when robot is stationary).
+     */
+    void reset_preintegration();
+
+    /**
      * @brief Thread-safe configuration update.
      */
     void update_config(const FuserConfig& config);
