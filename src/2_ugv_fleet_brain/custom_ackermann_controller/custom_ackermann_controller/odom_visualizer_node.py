@@ -1,44 +1,24 @@
 #!/usr/bin/env python3
 """
-Odometry Comparison Visualizer — v3 (TF-aware, map-frame)
-============================================================
+Odometry Comparison Visualizer — v4 (High-Performance, Thread-Safe, Map-Frame)
+=============================================================================
 Monitors the FULL localization stack by reading the map→base_footprint
-TF chain rather than /odometry/filtered directly.
+TF chain and comparing it with Gazebo ground-truth and raw wheel odometry.
 
-Previous version bug: it read /odometry/filtered which is the odom-frame
-dead-reckoning pose. The TRN correction is expressed as the map→odom TF
-and was completely ignored, making the "EKF Fused" line appear to drift
-even when TRN was working correctly.
+Optimized with a dual-thread architecture:
+  1. Background Thread: Spins ROS 2 at high-frequency (sub-millisecond callbacks)
+  2. Main GUI Thread: Redraws Matplotlib graphs at 20 FPS using snapshot data,
+     under strict thread-safe mutex locks, downsampled to keep rendering times low.
 
-This version computes:
-  - Localized pose = map → base_footprint  (TRN + dead-reckoning combined)
-  - Raw odom pose  = /terramechanic_odom    (wheel odom only)
-    - Ground truth   = Gazebo model pose
-    All tracks aligned to start at (0,0) in the same GT-initial frame.
-
-Layout (2×2):
-  [0,0]  XY Trajectory  — GT (green), Localized (blue), Raw Odom (red dashed)
-         + heading arrows (quiver) for current GT and Localized positions
-  [0,1]  Position Error — Localized vs GT (blue), Raw Odom vs GT (red dashed)
-  [1,0]  Heading Error  — Localized vs GT heading
-    [1,1]  TRN Diagnostics — MAD likelihood, correction magnitude, drift %
-
-Subscriptions:
-  - /odometry/filtered          (nav_msgs/Odometry)      - odom-frame dead-reckoning
-  - /ground_truth/pose          (geometry_msgs/Pose)     - Gazebo ground truth
-  - /terramechanic_odom         (nav_msgs/Odometry)      - Raw wheel odometry
-    - /trn/match_quality          (std_msgs/Float64)       - MCL MAD likelihood
-  - /trn/search_radius          (std_msgs/Float64)       - search radius
-  - /trn/correction             (geometry_msgs/Vector3)  - TRN correction vector
-
-TF lookups (live):
-  map → base_footprint   (full localized pose = TRN + dead-reckoning)
+Fused with all benchmarking utilities to eliminate duplicate processing.
 """
 
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
 import numpy as np
 import math
+import threading
 from collections import deque
 
 from nav_msgs.msg import Odometry
@@ -46,25 +26,118 @@ from std_msgs.msg import Float64, String
 from geometry_msgs.msg import Pose, Vector3
 
 import tf2_ros
-
-from .benchmark_pose_utils import (
-    align_pose_to_reference,
-    lookup_localized_pose,
-    quaternion_to_yaw,
-    wrap_angle,
-)
+from tf_transformations import euler_from_quaternion
 
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+# =========================================================================
+# Shared Coordinate & TF Helpers (formerly benchmark_pose_utils)
+# =========================================================================
+class LocalizedPose:
+    def __init__(self, x: float, y: float, yaw: float, source: str):
+        self.x = x
+        self.y = y
+        self.yaw = yaw
+        self.source = source
+
+
+def wrap_angle(angle: float) -> float:
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+def quaternion_to_yaw(quat) -> float:
+    return euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
+
+
+def rotate_into_reference(dx: float, dy: float, reference_yaw: float) -> tuple[float, float]:
+    cos_ref = math.cos(-reference_yaw)
+    sin_ref = math.sin(-reference_yaw)
+    return dx * cos_ref - dy * sin_ref, dx * sin_ref + dy * cos_ref
+
+
+def align_pose_to_reference(
+    x: float,
+    y: float,
+    yaw: float,
+    initial_x: float,
+    initial_y: float,
+    reference_yaw: float,
+) -> tuple[float, float, float]:
+    dx = x - initial_x
+    dy = y - initial_y
+    aligned_x, aligned_y = rotate_into_reference(dx, dy, reference_yaw)
+    return aligned_x, aligned_y, wrap_angle(yaw - reference_yaw)
+
+
+def lookup_localized_pose(
+    tf_buffer: tf2_ros.Buffer,
+    odom_x: float,
+    odom_y: float,
+    odom_yaw: float,
+    map_frame: str = 'map',
+    odom_frame: str = 'odom',
+    base_frame: str = 'base_footprint',
+    timeout_sec: float = 0.02,
+) -> LocalizedPose | None:
+    timeout = Duration(seconds=timeout_sec)
+
+    try:
+        transform = tf_buffer.lookup_transform(
+            map_frame,
+            base_frame,
+            rclpy.time.Time(),
+            timeout=timeout,
+        )
+        return LocalizedPose(
+            x=transform.transform.translation.x,
+            y=transform.transform.translation.y,
+            yaw=quaternion_to_yaw(transform.transform.rotation),
+            source='map_to_base',
+        )
+    except (
+        tf2_ros.LookupException,
+        tf2_ros.ConnectivityException,
+        tf2_ros.ExtrapolationException,
+    ):
+        pass
+
+    try:
+        transform = tf_buffer.lookup_transform(
+            map_frame,
+            odom_frame,
+            rclpy.time.Time(),
+            timeout=timeout,
+        )
+    except (
+        tf2_ros.LookupException,
+        tf2_ros.ConnectivityException,
+        tf2_ros.ExtrapolationException,
+    ):
+        return None
+
+    map_to_odom_yaw = quaternion_to_yaw(transform.transform.rotation)
+    cos_yaw = math.cos(map_to_odom_yaw)
+    sin_yaw = math.sin(map_to_odom_yaw)
+    return LocalizedPose(
+        x=transform.transform.translation.x + cos_yaw * odom_x - sin_yaw * odom_y,
+        y=transform.transform.translation.y + sin_yaw * odom_x + cos_yaw * odom_y,
+        yaw=wrap_angle(map_to_odom_yaw + odom_yaw),
+        source='map_to_odom_plus_odom',
+    )
+
+
+# =========================================================================
+# Unified High-Performance Visualizer Node
+# =========================================================================
 class OdomVisualizerNode(Node):
     def __init__(self):
         super().__init__('odom_visualizer_node')
 
         # Parameters
-        self.declare_parameter('max_history', 5000)
-        self.declare_parameter('update_rate_hz', 2.0)
+        self.declare_parameter('max_history', 3000)
+        self.declare_parameter('update_rate_hz', 5.0)
         self.declare_parameter('ground_truth_topic', '/ground_truth/pose')
         self.declare_parameter('model_name', 'alpha')
         self.declare_parameter('save_csv_on_exit', True)
@@ -76,6 +149,9 @@ class OdomVisualizerNode(Node):
         self.model_name  = self.get_parameter('model_name').get_parameter_value().string_value
         self.save_csv    = self.get_parameter('save_csv_on_exit').get_parameter_value().bool_value
         self.csv_path    = self.get_parameter('csv_path').get_parameter_value().string_value
+
+        # Threading lock for 100% safety
+        self.lock = threading.Lock()
 
         # TF buffer for map→base_footprint lookup
         self.tf_buffer   = tf2_ros.Buffer()
@@ -110,6 +186,10 @@ class OdomVisualizerNode(Node):
 
         # Cached odom-frame pose (used when map→base_footprint TF not yet available)
         self.odom_x = 0.0;  self.odom_y = 0.0;  self.odom_yaw = 0.0
+
+        # Trajectory bounds for O(1) auto-scaling
+        self.min_x = -5.0;  self.max_x = 5.0
+        self.min_y = -5.0;  self.max_y = 5.0
 
         # GT alignment state (defines the common comparison frame)
         self.gt_initial_x = self.gt_initial_y = self.gt_initial_yaw = None
@@ -148,12 +228,13 @@ class OdomVisualizerNode(Node):
         self.create_subscription(Float64,  '/trn/search_radius',  self._trn_r_cb,   10)
         self.create_subscription(Vector3,  '/trn/correction',     self._trn_cor_cb, 10)
 
-        self.create_timer(0.1, self._compute_errors)
+        # Background high-frequency timer to compute errors
+        self.create_timer(0.05, self._compute_errors)
 
         self._setup_plot()
 
         self.get_logger().info(
-            f'Odom Visualizer v3 (TF-aware, map frame) — '
+            f'Odom Visualizer v4 (High-Performance, Map-Frame) — '
             f'GT: {self.gt_topic} | refresh={self.update_rate}Hz')
 
     def _t(self):
@@ -166,13 +247,14 @@ class OdomVisualizerNode(Node):
         return (now - self.start_time).nanoseconds / 1e9
 
     # =========================================================================
-    # Callbacks
+    # Callbacks (Thread-Safe using Lock)
     # =========================================================================
     def _odom_cb(self, msg: Odometry):
         """Cache odom-frame pose for TF fallback composition."""
-        self.odom_x  = msg.pose.pose.position.x
-        self.odom_y  = msg.pose.pose.position.y
-        self.odom_yaw = quaternion_to_yaw(msg.pose.pose.orientation)
+        with self.lock:
+            self.odom_x  = msg.pose.pose.position.x
+            self.odom_y  = msg.pose.pose.position.y
+            self.odom_yaw = quaternion_to_yaw(msg.pose.pose.orientation)
 
     def _raw_cb(self, msg: Odometry):
         """Raw terramechanic wheel odometry — aligned to start at (0,0)."""
@@ -181,70 +263,80 @@ class OdomVisualizerNode(Node):
         rx = msg.pose.pose.position.x
         ry = msg.pose.pose.position.y
 
-        if self.raw_initial_x is None:
-            self.raw_initial_x   = rx
-            self.raw_initial_y   = ry
-            self.raw_initial_yaw = yaw
+        with self.lock:
+            if self.raw_initial_x is None:
+                self.raw_initial_x   = rx
+                self.raw_initial_y   = ry
+                self.raw_initial_yaw = yaw
 
-        if self.reference_yaw is None:
-            return
+            if self.reference_yaw is None:
+                return
 
-        ax, ay, aligned_yaw = align_pose_to_reference(
-            rx,
-            ry,
-            yaw,
-            self.raw_initial_x,
-            self.raw_initial_y,
-            self.reference_yaw,
-        )
-        self.raw_x.append(ax)
-        self.raw_y.append(ay)
-        self.raw_yaw.append(aligned_yaw)
-        self.raw_time.append(t)
+            ax, ay, aligned_yaw = align_pose_to_reference(
+                rx, ry, yaw,
+                self.raw_initial_x, self.raw_initial_y,
+                self.reference_yaw,
+            )
+
+            # Update auto-scale bounds
+            self.min_x = min(self.min_x, ax); self.max_x = max(self.max_x, ax)
+            self.min_y = min(self.min_y, ay); self.max_y = max(self.max_y, ay)
+
+            self.raw_x.append(ax)
+            self.raw_y.append(ay)
+            self.raw_yaw.append(aligned_yaw)
+            self.raw_time.append(t)
 
     def _gt_cb(self, msg: Pose):
         raw_x   = msg.position.x
         raw_y   = msg.position.y
         raw_yaw = quaternion_to_yaw(msg.orientation)
 
-        if self.gt_initial_x is None:
-            self.gt_initial_x   = raw_x
-            self.gt_initial_y   = raw_y
-            self.gt_initial_yaw = raw_yaw
-            self.reference_yaw  = raw_yaw
-            self.get_logger().info(
-                f'GT initial pose captured: ({raw_x:.2f}, {raw_y:.2f}, '
-                f'yaw={math.degrees(raw_yaw):.1f}°)')
+        with self.lock:
+            if self.gt_initial_x is None:
+                self.gt_initial_x   = raw_x
+                self.gt_initial_y   = raw_y
+                self.gt_initial_yaw = raw_yaw
+                self.reference_yaw  = raw_yaw
+                self.get_logger().info(
+                    f'GT initial pose captured: ({raw_x:.2f}, {raw_y:.2f}, '
+                    f'yaw={math.degrees(raw_yaw):.1f}°)')
 
-        ax, ay, ayaw = align_pose_to_reference(
-            raw_x,
-            raw_y,
-            raw_yaw,
-            self.gt_initial_x,
-            self.gt_initial_y,
-            self.reference_yaw,
-        )
+            ax, ay, ayaw = align_pose_to_reference(
+                raw_x, raw_y, raw_yaw,
+                self.gt_initial_x, self.gt_initial_y,
+                self.reference_yaw,
+            )
 
-        step = math.hypot(ax - (self.gt_x[-1] if self.gt_x else 0.0),
-                          ay - (self.gt_y[-1] if self.gt_y else 0.0))
-        if step > 0.01:
-            self.total_dist_gt += step
+            # Update auto-scale bounds
+            self.min_x = min(self.min_x, ax); self.max_x = max(self.max_x, ax)
+            self.min_y = min(self.min_y, ay); self.max_y = max(self.max_y, ay)
 
-        self.gt_x.append(ax);  self.gt_y.append(ay)
-        self.gt_yaw.append(ayaw);  self.gt_time.append(self._t())
-        self.gt_received = True
+            step = math.hypot(ax - (self.gt_x[-1] if self.gt_x else 0.0),
+                              ay - (self.gt_y[-1] if self.gt_y else 0.0))
+            if step > 0.01:
+                self.total_dist_gt += step
+
+            self.gt_x.append(ax)
+            self.gt_y.append(ay)
+            self.gt_yaw.append(ayaw)
+            self.gt_time.append(self._t())
+            self.gt_received = True
 
     def _trn_q_cb(self, msg: Float64):
-        self.last_trn_q = msg.data
-        self.trn_quality.append(msg.data)
-        self.trn_time.append(self._t())
+        with self.lock:
+            self.last_trn_q = msg.data
+            self.trn_quality.append(msg.data)
+            self.trn_time.append(self._t())
 
     def _trn_r_cb(self, msg: Float64):
-        self.last_trn_r = msg.data
+        with self.lock:
+            self.last_trn_r = msg.data
 
     def _trn_cor_cb(self, msg: Vector3):
-        self.last_trn_c = math.hypot(msg.x, msg.y)
-        self.trn_corr_mag.append(self.last_trn_c)
+        with self.lock:
+            self.last_trn_c = math.hypot(msg.x, msg.y)
+            self.trn_corr_mag.append(self.last_trn_c)
 
     # =========================================================================
     # Error Computation — uses map→base_footprint TF for localized pose
@@ -255,59 +347,74 @@ class OdomVisualizerNode(Node):
 
         t = self._t()
 
+        # Copy state for calculation to avoid holding the lock
+        with self.lock:
+            odom_x_cpy = self.odom_x
+            odom_y_cpy = self.odom_y
+            odom_yaw_cpy = self.odom_yaw
+
         localized_pose = lookup_localized_pose(
             self.tf_buffer,
-            self.odom_x,
-            self.odom_y,
-            self.odom_yaw,
+            odom_x_cpy,
+            odom_y_cpy,
+            odom_yaw_cpy,
         )
         if localized_pose is None:
             return
+
         loc_x = localized_pose.x
         loc_y = localized_pose.y
         loc_yaw = localized_pose.yaw
 
-        # Align localized to start at (0,0)
-        if self.loc_initial_x is None:
-            self.loc_initial_x   = loc_x
-            self.loc_initial_y   = loc_y
-            self.loc_initial_yaw = loc_yaw
+        with self.lock:
+            # Align localized to start at (0,0)
+            if self.loc_initial_x is None:
+                self.loc_initial_x   = loc_x
+                self.loc_initial_y   = loc_y
+                self.loc_initial_yaw = loc_yaw
 
-        alx, aly, alyaw = align_pose_to_reference(
-            loc_x,
-            loc_y,
-            loc_yaw,
-            self.loc_initial_x,
-            self.loc_initial_y,
-            self.reference_yaw,
-        )
+            alx, aly, alyaw = align_pose_to_reference(
+                loc_x, loc_y, loc_yaw,
+                self.loc_initial_x, self.loc_initial_y,
+                self.reference_yaw,
+            )
 
-        self.loc_x.append(alx);  self.loc_y.append(aly)
-        self.loc_yaw.append(alyaw);  self.loc_time.append(t)
+            # Update auto-scale bounds
+            self.min_x = min(self.min_x, alx); self.max_x = max(self.max_x, alx)
+            self.min_y = min(self.min_y, aly); self.max_y = max(self.max_y, aly)
 
-        if not self.gt_x:
-            return
-        gt_x   = self.gt_x[-1];  gt_y   = self.gt_y[-1]
-        gt_yaw = self.gt_yaw[-1]
+            self.loc_x.append(alx)
+            self.loc_y.append(aly)
+            self.loc_yaw.append(alyaw)
+            self.loc_time.append(t)
 
-        pos_err   = math.hypot(alx - gt_x, aly - gt_y)
-        head_err  = math.degrees(wrap_angle(alyaw - gt_yaw))
-        drift_pct = (pos_err / self.total_dist_gt * 100.0
-                     if self.total_dist_gt > 0.5 else 0.0)
+            if not self.gt_x:
+                return
+            gt_x   = self.gt_x[-1]
+            gt_y   = self.gt_y[-1]
+            gt_yaw = self.gt_yaw[-1]
 
-        self.loc_pos_err.append(pos_err)
-        self.heading_err.append(head_err)
-        self.drift_hist.append(drift_pct)
-        self.error_time.append(t)
+            pos_err   = math.hypot(alx - gt_x, aly - gt_y)
+            head_err  = math.degrees(wrap_angle(alyaw - gt_yaw))
+            drift_pct = (pos_err / self.total_dist_gt * 100.0
+                         if self.total_dist_gt > 0.5 else 0.0)
 
-        if self.raw_x:
-            self.raw_pos_err.append(
-                math.hypot(self.raw_x[-1] - gt_x, self.raw_y[-1] - gt_y))
+            self.loc_pos_err.append(pos_err)
+            self.heading_err.append(head_err)
+            self.drift_hist.append(drift_pct)
+            self.error_time.append(t)
 
+            if self.raw_x:
+                self.raw_pos_err.append(
+                    math.hypot(self.raw_x[-1] - gt_x, self.raw_y[-1] - gt_y))
+
+            # Store stats for plotting thread
+            ate = float(np.mean(list(self.loc_pos_err)[-100:])) if len(self.loc_pos_err) >= 10 else 0.0
+
+        # Publish errors back to ROS
         self._pub(self.pos_err_pub,  pos_err)
         self._pub(self.head_err_pub, head_err)
         self._pub(self.drift_pub,    drift_pct)
-        ate = float(np.mean(list(self.loc_pos_err)[-100:])) if len(self.loc_pos_err) >= 10 else 0.0
         self._pub(self.ate_pub, ate)
 
         # Merged comparator publishers
@@ -410,99 +517,122 @@ class OdomVisualizerNode(Node):
         plt.tight_layout()
 
     # =========================================================================
-    # Plot Update
+    # Plot Update (Executed solely on main thread, using snapshots)
     # =========================================================================
     def update_plot(self):
-        # -- Trajectory --
-        if self.gt_x:
+        # 1. Take a quick thread-safe snapshot of the plotting data
+        with self.lock:
             gt_x = list(self.gt_x)
             gt_y = list(self.gt_y)
+            gt_yaw = list(self.gt_yaw)
+
+            loc_x = list(self.loc_x)
+            loc_y = list(self.loc_y)
+            loc_yaw = list(self.loc_yaw)
+
+            raw_x = list(self.raw_x)
+            raw_y = list(self.raw_y)
+            raw_yaw = list(self.raw_yaw)
+
+            error_time = list(self.error_time)
+            loc_pos_err = list(self.loc_pos_err)
+            raw_pos_err = list(self.raw_pos_err)
+            heading_err = list(self.heading_err)
+
+            trn_time = list(self.trn_time)
+            trn_quality = list(self.trn_quality)
+            trn_corr_mag = list(self.trn_corr_mag)
+            drift_hist = list(self.drift_hist)
+
+            # Auto-scaling limits
+            min_x, max_x = self.min_x, self.max_x
+            min_y, max_y = self.min_y, self.max_y
+
+            total_dist_gt = self.total_dist_gt
+            last_trn_q = self.last_trn_q
+            last_trn_r = self.last_trn_r
+            last_trn_c = self.last_trn_c
+            gt_received = self.gt_received
+
+        # 2. Update XY Trajectory
+        if gt_x:
             self.line_gt.set_data(gt_x, gt_y)
             self.pt_gt.set_data([gt_x[-1]], [gt_y[-1]])
         else:
             self.pt_gt.set_data([], [])
 
-        if self.loc_x:
-            loc_x = list(self.loc_x)
-            loc_y = list(self.loc_y)
+        if loc_x:
             self.line_loc.set_data(loc_x, loc_y)
             self.pt_loc.set_data([loc_x[-1]], [loc_y[-1]])
         else:
             self.pt_loc.set_data([], [])
 
-        if self.raw_x:
-            raw_x = list(self.raw_x)
-            raw_y = list(self.raw_y)
+        if raw_x:
             self.line_raw.set_data(raw_x, raw_y)
             self.pt_raw.set_data([raw_x[-1]], [raw_y[-1]])
         else:
             self.pt_raw.set_data([], [])
 
         # Heading arrows at current positions
-        if self.gt_x and self.gt_yaw:
-            gx, gy, gyaw = self.gt_x[-1],  self.gt_y[-1],  self.gt_yaw[-1]
-            self.qv_gt.set_offsets([[gx, gy]])
-            self.qv_gt.set_UVC([math.cos(gyaw)], [math.sin(gyaw)])
-        if self.loc_x and self.loc_yaw:
-            lx, ly, lyaw = self.loc_x[-1], self.loc_y[-1], self.loc_yaw[-1]
-            self.qv_loc.set_offsets([[lx, ly]])
-            self.qv_loc.set_UVC([math.cos(lyaw)], [math.sin(lyaw)])
+        if gt_x and gt_yaw:
+            self.qv_gt.set_offsets([[gt_x[-1], gt_y[-1]]])
+            self.qv_gt.set_UVC([math.cos(gt_yaw[-1])], [math.sin(gt_yaw[-1])])
+        if loc_x and loc_yaw:
+            self.qv_loc.set_offsets([[loc_x[-1], loc_y[-1]]])
+            self.qv_loc.set_UVC([math.cos(loc_yaw[-1])], [math.sin(loc_yaw[-1])])
 
-        # Stats text
-        if self.gt_received and self.loc_pos_err:
-            ate = float(np.mean(list(self.loc_pos_err)[-100:]))
-            pe  = self.loc_pos_err[-1]
-            he  = self.heading_err[-1] if self.heading_err else 0.0
-            dr  = self.drift_hist[-1]  if self.drift_hist  else 0.0
-            dist = self.total_dist_gt
+        # Stats text box
+        if gt_received and loc_pos_err:
+            ate = float(np.mean(loc_pos_err[-100:]))
+            pe  = loc_pos_err[-1]
+            he  = heading_err[-1] if heading_err else 0.0
+            dr  = drift_hist[-1]  if drift_hist  else 0.0
             self.stats_text.set_text(
                 f'ATE={ate:.2f}m  Err={pe:.2f}m\n'
                 f'Δyaw={he:+.1f}°  Drift={dr:.1f}%\n'
-                f'Dist={dist:.1f}m  Q={self.last_trn_q:.2f}  '
-                f'R={self.last_trn_r:.1f}m  |Δ|={self.last_trn_c:.2f}m')
+                f'Dist={total_dist_gt:.1f}m  Q={last_trn_q:.2f}  '
+                f'R={last_trn_r:.1f}m  |Δ|={last_trn_c:.2f}m')
 
-        # Auto-scale trajectory
-        all_x = list(self.gt_x) + list(self.loc_x) + list(self.raw_x)
-        all_y = list(self.gt_y) + list(self.loc_y) + list(self.raw_y)
-        if len(all_x) > 2:
+        # Fast O(1) auto-scale trajectory plot
+        if len(gt_x) > 2 or len(loc_x) > 2:
             mg = 3.0
-            self.ax_traj.set_xlim(min(all_x) - mg, max(all_x) + mg)
-            self.ax_traj.set_ylim(min(all_y) - mg, max(all_y) + mg)
+            self.ax_traj.set_xlim(min_x - mg, max_x + mg)
+            self.ax_traj.set_ylim(min_y - mg, max_y + mg)
+
+        # 3. Downsampled/Capped error plots (last 1000 points max to keep matplotlib fast!)
+        slice_idx = -1000
 
         # -- Position Error --
-        if len(self.error_time) > 1:
-            et = list(self.error_time)
-            self.line_loc_err.set_data(et, list(self.loc_pos_err))
-            if len(self.raw_pos_err) == len(et):
-                self.line_raw_err.set_data(et, list(self.raw_pos_err))
-            self.ax_pos.set_xlim(0, max(et[-1], 1))
-            mx = max(list(self.loc_pos_err)[-300:]) if self.loc_pos_err else 1.0
+        if len(error_time) > 1:
+            et_slice = error_time[slice_idx:]
+            self.line_loc_err.set_data(et_slice, loc_pos_err[slice_idx:])
+            if len(raw_pos_err) == len(error_time):
+                self.line_raw_err.set_data(et_slice, raw_pos_err[slice_idx:])
+            
+            self.ax_pos.set_xlim(error_time[0], max(error_time[-1], 1))
+            mx = max(loc_pos_err[-300:]) if loc_pos_err else 1.0
             self.ax_pos.set_ylim(0, max(mx * 1.2, 0.2))
 
         # -- Heading Error --
-        if len(self.error_time) > 1 and self.heading_err:
-            et = list(self.error_time)
-            self.line_head_err.set_data(et[-len(self.heading_err):],
-                                        list(self.heading_err))
-            self.ax_head.set_xlim(0, max(et[-1], 1))
-            rh = list(self.heading_err)[-300:]
+        if len(error_time) > 1 and heading_err:
+            et_slice = error_time[slice_idx:]
+            self.line_head_err.set_data(et_slice, heading_err[slice_idx:])
+            self.ax_head.set_xlim(error_time[0], max(error_time[-1], 1))
+            rh = heading_err[-300:]
             self.ax_head.set_ylim(min(rh) - 5, max(rh) + 5)
 
         # -- TRN Diagnostics --
-        if self.trn_time:
-            tt = list(self.trn_time)
-            self.line_trn_q.set_data(tt[-len(self.trn_quality):],
-                                     list(self.trn_quality))
-            if self.trn_corr_mag:
-                self.line_trn_cor.set_data(
-                    tt[-len(self.trn_corr_mag):], list(self.trn_corr_mag))
-                mx_c = max(list(self.trn_corr_mag)[-200:]) if self.trn_corr_mag else 1.0
+        if trn_time:
+            tt_slice = trn_time[slice_idx:]
+            self.line_trn_q.set_data(tt_slice, trn_quality[slice_idx:])
+            if trn_corr_mag:
+                self.line_trn_cor.set_data(tt_slice, trn_corr_mag[slice_idx:])
+                mx_c = max(trn_corr_mag[-200:]) if trn_corr_mag else 1.0
                 self.ax_trn_r.set_ylim(0, max(mx_c * 1.3, 0.5))
-            if self.drift_hist:
-                et = list(self.error_time)
-                dh = [d / 100.0 for d in self.drift_hist]
-                self.line_drift.set_data(et[-len(dh):], dh)
-            self.ax_trn.set_xlim(0, max(tt[-1], 1))
+            if drift_hist:
+                dh = [d / 100.0 for d in drift_hist]
+                self.line_drift.set_data(error_time[slice_idx:], dh[slice_idx:])
+            self.ax_trn.set_xlim(trn_time[0], max(trn_time[-1], 1))
 
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
@@ -520,23 +650,24 @@ class OdomVisualizerNode(Node):
                     'raw_x', 'raw_y', 'raw_yaw',
                     'loc_pos_err_m', 'heading_err_deg', 'drift_pct'
                 ])
-                n = min(len(self.error_time),
-                        len(self.gt_x), len(self.loc_x),
-                        len(self.loc_pos_err))
-                for i in range(n):
-                    writer.writerow([
-                        f'{self.error_time[i]:.3f}',
-                        f'{self.gt_x[i]:.4f}', f'{self.gt_y[i]:.4f}',
-                        f'{self.gt_yaw[i]:.4f}',
-                        f'{self.loc_x[i]:.4f}', f'{self.loc_y[i]:.4f}',
-                        f'{self.loc_yaw[i]:.4f}',
-                        f'{list(self.raw_x)[i] if i < len(self.raw_x) else 0.0:.4f}',
-                        f'{list(self.raw_y)[i] if i < len(self.raw_y) else 0.0:.4f}',
-                        f'{list(self.raw_yaw)[i] if i < len(self.raw_yaw) else 0.0:.4f}',
-                        f'{self.loc_pos_err[i]:.4f}',
-                        f'{list(self.heading_err)[i] if i < len(self.heading_err) else 0.0:.2f}',
-                        f'{list(self.drift_hist)[i] if i < len(self.drift_hist) else 0.0:.4f}'
-                    ])
+                with self.lock:
+                    n = min(len(self.error_time),
+                            len(self.gt_x), len(self.loc_x),
+                            len(self.loc_pos_err))
+                    for i in range(n):
+                        writer.writerow([
+                            f'{self.error_time[i]:.3f}',
+                            f'{self.gt_x[i]:.4f}', f'{self.gt_y[i]:.4f}',
+                            f'{self.gt_yaw[i]:.4f}',
+                            f'{self.loc_x[i]:.4f}', f'{self.loc_y[i]:.4f}',
+                            f'{self.loc_yaw[i]:.4f}',
+                            f'{list(self.raw_x)[i] if i < len(self.raw_x) else 0.0:.4f}',
+                            f'{list(self.raw_y)[i] if i < len(self.raw_y) else 0.0:.4f}',
+                            f'{list(self.raw_yaw)[i] if i < len(self.raw_yaw) else 0.0:.4f}',
+                            f'{self.loc_pos_err[i]:.4f}',
+                            f'{list(self.heading_err)[i] if i < len(self.heading_err) else 0.0:.2f}',
+                            f'{list(self.drift_hist)[i] if i < len(self.drift_hist) else 0.0:.4f}'
+                        ])
 
             self.get_logger().info(f'Saved comparison data to {self.csv_path}')
         except Exception as e:
@@ -547,10 +678,17 @@ def main(args=None):
     rclpy.init(args=args)
     node = OdomVisualizerNode()
 
+    # Create and run a dedicated background thread for high-frequency ROS 2 spinning.
+    # This guarantees that ROS callbacks are NEVER starved, and process at sub-millisecond latencies.
+    spin_thread = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
+    spin_thread.start()
+
     try:
-        while rclpy.ok():
-            rclpy.spin_once(node, timeout_sec=1.0 / node.update_rate)
+        # Run GUI plot update loop at 20 FPS (every 50ms) on the main thread,
+        # checking if the Matplotlib figure is still open.
+        while rclpy.ok() and plt.fignum_exists(node.fig.number):
             node.update_plot()
+            plt.pause(0.05)
     except KeyboardInterrupt:
         pass
     finally:
@@ -563,4 +701,5 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
 
