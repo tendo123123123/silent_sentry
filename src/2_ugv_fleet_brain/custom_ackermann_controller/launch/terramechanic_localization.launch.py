@@ -158,19 +158,17 @@ def generate_launch_description():
     )
 
     # ====================================================================
-    # NODE 3: Local DEM Builder
+    # NODE 3: Local DEM Builder [C++ LIFECYCLE]
     # ====================================================================
     # Subscribes: /scan/points (PointCloud2)
     # Publishes:  /elevation_map/local (OccupancyGrid)
     #             /elevation_map/local_dem (typed LocalDEM)
-    #             /elevation_map/local_float (legacy Float32MultiArray)
     #
-    # Node-side readiness gating waits for first filtered IMU, terramechanic
-    # odom, LiDAR, and odom→base_footprint TF availability.
-    local_dem_node = Node(
-        package='custom_ackermann_controller',
-        executable='local_dem_builder',
+    local_dem_node = LifecycleNode(
+        package='ugv_local_dem',
+        executable='dem_builder_node',
         name='local_dem_builder',
+        namespace='',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'lidar_topic': LaunchConfiguration('lidar_topic'),
@@ -181,9 +179,9 @@ def generate_launch_description():
             'grid_size_y': 20.0,
             'publish_rate': 2.0,
             'cloud_queue_size': 20,
-            'deskew_scan_period': 0.1,          # 10 Hz LiDAR => 100 ms sweep; keeps deskew timing matched to the hardware
+            'deskew_scan_period': 0.1,          # 10 Hz LiDAR => 100 ms sweep
             'deskew_clockwise': False,
-            'rolling_submap_distance': 50.0,    # captures dune-scale context while keeping the rolling 3D buffer bounded in RAM
+            'rolling_submap_distance': 50.0,    # captures dune-scale context while keeping rolling buffer bounded
             'submap_spatial_bin_size': 5.0,
             'uamc_drift_variance': 0.01,
             'ground_height_min': -0.5,
@@ -194,14 +192,33 @@ def generate_launch_description():
             'min_points_per_cell': 2,
             'min_range': 0.5,
             'max_range': 30.0,
-            # Z-height alignment: terrain elevation at spawn point.
-            # Converts robot-relative LiDAR z to world-absolute z for
-            # consistent matching against the global synthetic DEM.
-            # Value: ~7.2m (DEM center=7.207m, the terrain under spawn).
             'spawn_elevation': 7.2,
         }],
-        additional_env=custom_pkg_env,
         output='screen',
+    )
+
+    # When local_dem_builder transitions to inactive (after configure), activate it
+    dem_activate_event = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=local_dem_node,
+            start_state='unconfigured',
+            goal_state='inactive',
+            actions=[
+                LogInfo(msg="local_dem_builder configured to inactive. Activating..."),
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=local_dem_node,
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                )),
+            ],
+        )
+    )
+
+    # Configure local_dem_builder automatically on startup
+    dem_configure_trigger = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=local_dem_node,
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
     )
 
     # ====================================================================
@@ -348,10 +365,13 @@ def generate_launch_description():
         # Nodes start immediately; each node blocks on its own runtime prerequisites.
         imu_filter_node,
         terramech_odom_node,
-        local_dem_node,
         odom_visualizer_node,
 
         # C++ Lifecycle Node configurations and triggers
+        local_dem_node,
+        dem_activate_event,
+        dem_configure_trigger,
+
         fg_node,
         fg_activate_event,
         fg_configure_trigger,

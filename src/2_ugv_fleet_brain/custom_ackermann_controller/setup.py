@@ -34,7 +34,6 @@ setup(
             'ackermann_twist_controller = custom_ackermann_controller.ackermann_twist_controller:main',
             # Terramechanic localization stack
             'terramechanic_odometry = custom_ackermann_controller.terramechanic_odometry:main',
-            'local_dem_builder = custom_ackermann_controller.local_dem_builder:main',
             'odom_visualizer = custom_ackermann_controller.odom_visualizer_node:main',
         ],
     },
