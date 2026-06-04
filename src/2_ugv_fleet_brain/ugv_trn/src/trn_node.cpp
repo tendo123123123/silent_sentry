@@ -266,7 +266,7 @@ void TRNNode::match_timer_callback()
     }
 
     // Look up the current map->odom transform from the TF tree
-    gtsam::Pose3 map_to_odom_current = gtsam::Pose3::Identity();
+    gtsam::Pose3 map_to_odom_current = gtsam::Pose3();
     try {
         geometry_msgs::msg::TransformStamped tf_msg;
         tf_msg = tf_buffer_->lookupTransform(map_frame_, odom_frame_, rclcpp::Time(0), rclcpp::Duration::from_seconds(0.05));
