@@ -202,7 +202,6 @@ def generate_launch_description():
     dem_activate_event = RegisterEventHandler(
         OnStateTransition(
             target_lifecycle_node=local_dem_node,
-            start_state='unconfigured',
             goal_state='inactive',
             entities=[
                 LogInfo(msg="local_dem_builder configured to inactive. Activating..."),
@@ -266,7 +265,6 @@ def generate_launch_description():
     fg_activate_event = RegisterEventHandler(
         OnStateTransition(
             target_lifecycle_node=fg_node,
-            start_state='unconfigured',
             goal_state='inactive',
             entities=[
                 LogInfo(msg="factor_graph_fuser configured to inactive. Activating..."),
@@ -311,7 +309,6 @@ def generate_launch_description():
     trn_activate_event = RegisterEventHandler(
         OnStateTransition(
             target_lifecycle_node=trn_slam_node,
-            start_state='unconfigured',
             goal_state='inactive',
             entities=[
                 LogInfo(msg="trn_slam_node configured to inactive. Activating..."),

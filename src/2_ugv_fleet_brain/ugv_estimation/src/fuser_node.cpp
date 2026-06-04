@@ -118,6 +118,20 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
     // Active lifecycle publishers
     odom_pub_->on_activate();
 
+    // Broadcast initial map -> odom TF of identity to connect TF tree on startup
+    geometry_msgs::msg::TransformStamped initial_tf;
+    initial_tf.header.stamp = this->get_clock()->now();
+    initial_tf.header.frame_id = map_frame_;
+    initial_tf.child_frame_id = odom_frame_;
+    initial_tf.transform.translation.x = 0.0;
+    initial_tf.transform.translation.y = 0.0;
+    initial_tf.transform.translation.z = 0.0;
+    initial_tf.transform.rotation.x = 0.0;
+    initial_tf.transform.rotation.y = 0.0;
+    initial_tf.transform.rotation.z = 0.0;
+    initial_tf.transform.rotation.w = 1.0;
+    tf_broadcaster_->sendTransform(initial_tf);
+
     // Setup Topic Subscriptions
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
         "/imu/data_filtered", 10, std::bind(&FuserNode::imu_callback, this, std::placeholders::_1)
