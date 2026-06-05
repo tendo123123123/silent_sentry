@@ -34,3 +34,5 @@ src/2_ugv_fleet_brain/bot_navigation/maps/slope_map.tif
 src/2_ugv_fleet_brain/bot_navigation/maps/continuous_costmap.tif
 # src/2_ugv_fleet_brain/bot_navigation/maps/synthetic_dem.exr
 # src/2_ugv_fleet_brain/bot_navigation/maps/convert_dem.py
+.agents
+*.json
