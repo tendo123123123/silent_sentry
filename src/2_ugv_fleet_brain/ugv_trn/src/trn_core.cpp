@@ -109,17 +109,16 @@ void TRNCore::propagate_particles(double dx, double dy, double dyaw)
     const double std_dev_xy = dist * config_.motion_noise_xy_frac + 0.05;
     const double std_dev_yaw = std::abs(dyaw) * config_.motion_noise_yaw_frac + 0.005;
 
-    std::normal_distribution<double> noise_xy(0.0, std_dev_xy);
+    std::normal_distribution<double> noise_x(0.0, std_dev_xy);
+    std::normal_distribution<double> noise_y(0.0, std_dev_xy);
     std::normal_distribution<double> noise_yaw(0.0, std_dev_yaw);
 
-    // Propagate on SE(2) manifold
+    // dx,dy are global odom-frame deltas. Map and odom frames stay approximately aligned
+    // (small rotation drift bounded by factor graph), so add directly to particles in map frame.
     for (auto& p : particles_) {
+        p.x += dx + noise_x(rand_engine_);
+        p.y += dy + noise_y(rand_engine_);
         p.yaw = wrap_angle(p.yaw + dyaw + noise_yaw(rand_engine_));
-        const double c = std::cos(p.yaw);
-        const double s = std::sin(p.yaw);
-        
-        p.x += c * dx - s * dy + noise_xy(rand_engine_);
-        p.y += s * dx + c * dy + noise_xy(rand_engine_);
     }
 }
 
@@ -256,10 +255,10 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
         return -1.0;
     }
 
-    // Mean Absolute Difference (MAD) based score: higher score is better
+    // Gaussian likelihood from Mean Absolute Difference (MAD)
     double mad = accum_diff / static_cast<double>(valid_overlap_count);
-    double score = 1.0 - mad;
-    return std::max(score, 1e-6);
+    double score = std::exp(-2.0 * mad);
+    return std::max(score, 1e-12);
 }
 
 void TRNCore::systematic_resample()
@@ -302,11 +301,20 @@ void TRNCore::inject_recovery_particles(const gtsam::Pose3& prior, double radius
     std::normal_distribution<double> dist_y(py, radius * 0.5);
     std::normal_distribution<double> dist_yaw(pyaw, config_.motion_noise_yaw_frac * 5.0);
 
-    for (auto& p : particles_) {
-        p.x = dist_x(rand_engine_);
-        p.y = dist_y(rand_engine_);
-        p.yaw = wrap_angle(dist_yaw(rand_engine_));
-        p.weight = 1.0 / static_cast<double>(config_.num_particles);
+    // Inject 80% random recovery, keep 20% at current positions with small noise
+    int n_inject = static_cast<int>(particles_.size() * 0.8);
+    for (int i = 0; i < n_inject; ++i) {
+        particles_[i].x = dist_x(rand_engine_);
+        particles_[i].y = dist_y(rand_engine_);
+        particles_[i].yaw = wrap_angle(dist_yaw(rand_engine_));
+        particles_[i].weight = 1.0 / static_cast<double>(particles_.size());
+    }
+    std::normal_distribution<double> keep_noise(0.0, radius * 0.05);
+    for (int i = n_inject; i < static_cast<int>(particles_.size()); ++i) {
+        particles_[i].x += keep_noise(rand_engine_);
+        particles_[i].y += keep_noise(rand_engine_);
+        particles_[i].yaw = wrap_angle(particles_[i].yaw + keep_noise(rand_engine_));
+        particles_[i].weight = 1.0 / static_cast<double>(particles_.size());
     }
 }
 
@@ -331,6 +339,25 @@ bool TRNCore::execute_match_cycle(
     double entropy = compute_spatial_entropy(latest_local_dem_);
     if (entropy < config_.entropy_threshold) {
         return false; // Flatten surface: abort matching cycle
+    }
+
+    // Flatness standard-deviation gate (config param was previously unused)
+    double height_sum = 0.0, height_sq_sum = 0.0;
+    int valid_cells = 0;
+    for (int i = 0; i < latest_local_dem_.size(); ++i) {
+        float val = latest_local_dem_.data()[i];
+        if (std::isfinite(val)) {
+            height_sum += val;
+            height_sq_sum += val * val;
+            valid_cells++;
+        }
+    }
+    if (valid_cells > 10) {
+        double mean = height_sum / valid_cells;
+        double std_dev = std::sqrt(std::max(0.0, height_sq_sum / valid_cells - mean * mean));
+        if (std_dev < config_.flatness_std_threshold) {
+            return false; // Too flat: no texture for matching
+        }
     }
 
     // Apply high-fidelity bilateral filtering to smooth lidar scans
