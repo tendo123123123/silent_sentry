@@ -26,12 +26,12 @@ The active path is:
 2. `ackermann_twist_controller` turns `/cmd_vel` into steering and rear wheel commands.
 3. `imu_filter_madgwick` produces a gravity-aligned orientation estimate.
 4. `terramechanic_odometry` generates slip-aware wheel odometry using Bekker-Wong style terrain physics and an IMU-assisted yaw-rate filter.
-5. `factor_graph_fuser` runs a GTSAM iSAM2 dead-reckoning backend and publishes `odom -> base_footprint`.
-6. `local_dem_builder` deskews LiDAR, builds a rolling DEM, and publishes a local elevation grid.
-7. `trn_slam_node` performs MCL-based terrain matching against a global DEM and publishes `map -> odom`.
+5. `factor_graph_fuser` (C++ `fuser_node` in `ugv_estimation`) runs a GTSAM iSAM2 dead-reckoning backend and publishes `odom -> base_footprint`.
+6. `local_dem_builder` (C++ `dem_builder_node` in `ugv_local_dem`) deskews LiDAR, builds a rolling DEM, and publishes a local elevation grid.
+7. `trn_slam_node` (C++ `trn_node` in `ugv_trn`) performs MCL-based terrain matching against a global DEM and publishes `map -> odom`.
 8. Visualization and benchmarking consume `map -> base_footprint` or GT pose to assess performance.
 
-The codebase is strongest in its localization split between local dead reckoning (`odom -> base_footprint`) and global correction (`map -> odom`), and in the separation of several math-heavy cores from their ROS wrappers. Its main weaknesses are architectural drift, duplicated localization narratives, brittle launch orchestration, and reliance on loosely typed data exchange at subsystem boundaries.
+The codebase is strongest in its localization split between local dead reckoning (`odom -> base_footprint`) and global correction (`map -> odom`), and in the separation of several math-heavy cores from their ROS wrappers. Transitioning key estimation, DEM, and TRN nodes from Python to high-performance C++ has drastically reduced overhead and improved timing synchronization.
 
 ## What Is Actually Active vs. What Exists in the Repo
 
@@ -41,9 +41,9 @@ The active localization stack is launched from `custom_ackermann_controller/laun
 
 - `imu_filter_madgwick`
 - `terramechanic_odometry`
-- `factor_graph_fuser`
-- `local_dem_builder`
-- `trn_slam_node`
+- `factor_graph_fuser` (C++ lifecycle node in `ugv_estimation`)
+- `local_dem_builder` (C++ lifecycle node in `ugv_local_dem`)
+- `trn_slam_node` (C++ lifecycle node in `ugv_trn`)
 - `odom_visualizer`
 
 This is the real architecture behind the recent debugging and optimization work.
