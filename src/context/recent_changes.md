@@ -9,13 +9,13 @@
 
 ## Summary of 5 Major Changes
 
-| # | Change | File | Status |
-|---|--------|------|--------|
+| # | Change | File / Package | Status |
+|---|--------|----------------|--------|
 | 1 | Sequential controller spawning chain | `bot_controller.launch.py` | ✅ Fixed & validated |
-| 2 | Identified: factor-graph init divergence (~40 m at rest) | `factor_graph_fuser.py` | 🔄 Next fix target |
-| 3 | Identified: TRN ROI overflow from bad prior | `trn_slam_node.py` | ⏳ Pending fix |
-| 4 | Identified: odom comparator benchmarks wrong frame | `odom_ground_truth_comparator.py` | ⏳ Pending fix |
-| 5 | Diagnosed: late blue marker in visualizer (TF vs topic mismatch) | `odom_visualizer_node.py` + `terramechanic_localization.launch.py` | ⏳ Pending fix |
+| 2 | C++ Porting: GTSAM iSAM2 SE(3) Preintegration | `ugv_estimation` | ✅ Fixed (Replaces `factor_graph_fuser.py`) |
+| 3 | C++ Porting & DEM bounds gating | `ugv_trn` | ✅ Fixed (Replaces `trn_slam_node.py` & `trn_core.py`) |
+| 4 | C++ Porting: LiDAR local submap builder | `ugv_local_dem` | ✅ Fixed & validated |
+| 5 | Corrected OnStateTransition & event handlers | `terramechanic_localization.launch.py` | ✅ Fixed & validated |
 
 ---
 
@@ -713,11 +713,12 @@ ros2 topic pub --rate 10 /cmd_vel geometry_msgs/msg/Twist \
 
 ---
 
-## 7. Pending Fixes (Priority Order)
+## 7. Completed Fixes & Architectural Milestones
 
-| Priority | File | Fix |
-|----------|------|-----|
-| 1 (root cause) | `factor_graph_fuser.py` | Gate first IMU preintegration on receipt of at least one `/terramechanic_odom`. Reset iSAM2 graph to identity on first wheel tick if drift detected. |
-| 2 (defensive guard) | `trn_slam_node.py` | Prior sanity gate: skip match cycle if prior is outside `[dem_origin_x, dem_origin_x + dem_width] × [dem_origin_y, dem_origin_y + dem_height]`. |
-| 3 | `odom_ground_truth_comparator.py` | Add TF lookup `map → base_footprint` for EKF error column instead of subscribing `/odometry/filtered` directly. |
-| 4 | `terramechanic_localization.launch.py` | Replace `TimerAction` fixed delays with readiness-based gates (spin until first message on `/imu/data_filtered` before terramechanic, spin until first `/terramechanic_odom` before factor-graph). |
+| Milestone | Package / File | Resolution Details |
+|-----------|----------------|--------------------|
+| **C++ Preintegrated Factor Graph Fuser** | `ugv_estimation` | Replaced `factor_graph_fuser.py`/`factor_graph_core.py` with high-performance C++ `fuser_node.cpp`/`se3_fuser_core.cpp`. Uses standard C++ `gtsam::ImuFactor` and `gtsam::BetweenFactor`. It warm-starts solver with raw IMU orientation to compensate gravity correctly, implements dynamic slip-gated covariance inflation, and integrates Zero Velocity Update (ZUPT) to cancel IMU drift when resting. |
+| **C++ Terrain Referenced Navigation (TRN)** | `ugv_trn` | Ported the particle filter MCL terrain-matching node to high-performance C++ (`trn_node.cpp`). Integrates robust DEM bounds checking to prevent ROI size integer overflow/underflow, and has been corrected from `gtsam::Pose3::Identity()` to default constructor `gtsam::Pose3()`. |
+| **C++ Local DEM Pointcloud Builder** | `ugv_local_dem` | Replaced python RANSAC DEM builder with high-rate C++ `dem_builder_node.cpp` which performs real-time point cloud deskewing using IMU rate and median height ground surface estimation. |
+| **Corrected Lifecycle Launch Event Handling** | `custom_ackermann_controller` | Updated `terramechanic_localization.launch.py` to fix the `OnStateTransition` exception. Replaced obsolete `actions=` with `entities=`, and wrapped node matches with `matches_action(node)` calls, completely resolving `'LifecycleNode' object is not callable` exceptions. |
+| **Rot3 Euler Angle Rotation Correction** | `custom_ackermann_controller` (archive) | Fixed the Euler angle axis swap bug in python's `Rot3.RzRyRx(yaw, pitch, roll)` which was previously reversing roll and yaw. Standardized C++ `se3_fuser_core.cpp` on GTSAM's standard preintegrated `ImuFactor` which resolves the 3D rotation automatically. |
