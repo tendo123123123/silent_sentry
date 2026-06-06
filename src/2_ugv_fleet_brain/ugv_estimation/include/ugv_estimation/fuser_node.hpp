@@ -143,11 +143,6 @@ private:
     bool imu_initialized_;                     ///< IMU warm-start tracker
     bool wheel_initialized_;                   ///< Wheel warm-start tracker
 
-    // Integrated wheel motion between keyframes (global optimization epochs)
-    double accum_wheel_ds_;                   ///< Accumulated wheel displacement (meters)
-    double accum_wheel_dtheta_;               ///< Accumulated wheel rotation yaw (radians)
-    double accum_wheel_dt_;                   ///< Accumulated time since last keyframe (seconds)
-
     // Acceleration statistics for the slip-gating filter
     double last_wheel_vx_;                     ///< Last wheel speed measurement
     double accum_wheel_accel_x_;              ///< Rolling sum of wheel accelerations
@@ -160,8 +155,8 @@ private:
     std::string base_frame_;                  ///< Vehicle body footprint frame ("base_footprint")
 
     // State Tracking
-    gtsam::Pose3 latest_map_to_odom_;         ///< Cached authoritative map->odom transform
     gtsam::Pose3 pure_odom_to_base_;          ///< Continuous, jump-free wheel odometry frame
+    gtsam::Pose3 odom_at_last_keyframe_;      ///< Snapshot of odom frame at the last global correction
 };
 
 } // namespace ugv_estimation

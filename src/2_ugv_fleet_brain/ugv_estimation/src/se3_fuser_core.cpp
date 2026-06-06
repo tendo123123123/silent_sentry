@@ -123,9 +123,7 @@ Eigen::Matrix<double, 6, 6> SE3FuserCore::evaluate_slip_gate(double wheel_accel_
 gtsam::Pose3 SE3FuserCore::add_global_correction(
     const gtsam::Pose3& trn_pose,
     const Eigen::Matrix<double, 6, 6>& trn_covariance,
-    double wheel_ds,
-    double wheel_dtheta,
-    double dt_wheel,
+    const gtsam::Pose3& wheel_delta,
     double wheel_accel_x,
     double imu_accel_x)
 {
@@ -136,13 +134,12 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
 
     const uint64_t prev_idx = keyframe_index_;
     const uint64_t next_idx = keyframe_index_ + 1;
-    (void)dt_wheel;
 
-    // 1. Predict state at next_idx using IMU preintegration
+    // 1. Predict state using IMU preintegration
     gtsam::NavState anchor_state(current_pose_, current_velocity_);
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
 
-    // 2. Construct and add the high-frequency ImuFactor
+    // 2. Construct and add the IMU Factor spanning the entire optimization interval
     gtsam::ImuFactor imu_factor(
         X(prev_idx), V(prev_idx),
         X(next_idx), V(next_idx),
@@ -151,7 +148,6 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     graph_.add(imu_factor);
 
     // 3. Construct and add the slip-gated wheel BetweenFactor
-    gtsam::Pose3 wheel_delta(gtsam::Rot3::Yaw(wheel_dtheta), gtsam::Point3(wheel_ds, 0.0, 0.0));
     Eigen::Matrix<double, 6, 6> wheel_cov = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
     auto wheel_noise = gtsam::noiseModel::Gaussian::Covariance(wheel_cov);
     
@@ -183,14 +179,11 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     pim_->resetIntegrationAndSetBias(current_bias_);
     keyframe_index_ = next_idx;
 
-    // 9. Compute the residual map -> odom coordinate offset:
-    // T_{map_to_odom} = T_{map_to_base_optimized} * T_{odom_to_base_predicted}^-1
-    gtsam::Pose3 map_to_odom = current_pose_.compose(predicted_state.pose().inverse());
-
-    return map_to_odom;
+    // Return the new current_pose_
+    return current_pose_;
 }
 
-gtsam::Pose3 SE3FuserCore::get_current_pose(double wheel_ds, double wheel_dtheta) const
+gtsam::Pose3 SE3FuserCore::get_current_pose(const gtsam::Pose3& wheel_delta) const
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
@@ -201,7 +194,6 @@ gtsam::Pose3 SE3FuserCore::get_current_pose(double wheel_ds, double wheel_dtheta
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
     
     // Compose wheel odometry for exact forward displacement and yaw rotation
-    gtsam::Pose3 wheel_delta(gtsam::Rot3::Yaw(wheel_dtheta), gtsam::Point3(wheel_ds, 0.0, 0.0));
     gtsam::Pose3 wheel_predicted = current_pose_.compose(wheel_delta);
     
     // Combine IMU pitch and roll with the wheel's translation and yaw

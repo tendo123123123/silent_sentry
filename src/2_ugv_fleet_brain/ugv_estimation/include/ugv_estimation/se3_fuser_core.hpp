@@ -107,36 +107,25 @@ public:
      * @brief Fuses a new global TRN loop closure correction and optimizes the Factor Graph.
      * @param trn_pose Global absolute pose (map frame) estimated by TRN MCL.
      * @param trn_covariance 6x6 uncertainty covariance of the TRN match.
-     * @param wheel_ds Accumulated wheel longitudinal displacement (meters) since last keyframe.
-     * @param wheel_dtheta Accumulated wheel yaw rotation (radians) since last keyframe.
-     * @param dt_wheel Accumulated time duration of the wheel factor interval (seconds).
+     * @param wheel_delta SE(3) relative pose from last keyframe.
      * @param wheel_accel_x Mean wheel acceleration over the interval.
      * @param imu_accel_x Mean IMU acceleration over the interval.
      * @return gtsam::Pose3 The resulting residual transform \f$ T_{\text{map} \to \text{odom}} \f$.
-     * 
-     * Inserts the preintegrated IMU factor, the slip-gated wheel factor, and the global TRN prior 
-     * into the iSAM2 solver, executes an update cycle, and returns the map-to-odom adjustment:
-     * \f[
-     *   T_{\text{map} \to \text{odom}} = T_{\text{map} \to \text{base\_optimized}} \oplus T_{\text{odom} \to \text{base\_deadreckon}}^{-1}
-     * \f]
      */
     gtsam::Pose3 add_global_correction(
         const gtsam::Pose3& trn_pose,
         const Eigen::Matrix<double, 6, 6>& trn_covariance,
-        double wheel_ds,
-        double wheel_dtheta,
-        double dt_wheel,
+        const gtsam::Pose3& wheel_delta,
         double wheel_accel_x,
         double imu_accel_x
     );
 
     /**
      * @brief Propagate the current dead-reckoning state on the manifold using wheel odometry.
-     * @param wheel_ds Accumulated wheel longitudinal displacement (meters) since last keyframe.
-     * @param wheel_dtheta Accumulated wheel yaw rotation (radians) since last keyframe.
+     * @param wheel_delta SE(3) relative pose from last keyframe.
      * @return gtsam::Pose3 Current high-frequency estimated pose.
      */
-    gtsam::Pose3 get_current_pose(double wheel_ds, double wheel_dtheta) const;
+    gtsam::Pose3 get_current_pose(const gtsam::Pose3& wheel_delta) const;
 
     /**
      * @brief Retrieve vehicle twist velocity in body frame.
