@@ -191,7 +191,7 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
     const double dt = timestamp - last_imu_time_;
     last_imu_time_ = timestamp;
 
-    if (dt <= 0.0 || dt > 0.1) {
+    if (dt <= 0.0 || dt > 0.5) {
         return;
     }
 
@@ -219,17 +219,16 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     const double dt = timestamp - last_wheel_time_;
     last_wheel_time_ = timestamp;
 
-    if (dt <= 0.0 || dt > 0.2) {
+    if (dt <= 0.0 || dt > 1.0) {
         return;
     }
 
     const double vx = msg->twist.twist.linear.x;
     const double omega_z = msg->twist.twist.angular.z;
 
-    // If vehicle is stationary (ZUPT / zero-velocity-update conditions), prevent IMU integration drift
-    if (std::abs(vx) < 0.01 && std::abs(omega_z) < 0.01) {
-        fuser_->reset_preintegration();
-    }
+    // Wheel odometry natively provides zero-velocity updates when stationary.
+    // We do NOT reset pim_ here because it destroys the continuous IMU factor
+    // needed for the next iSAM2 optimization cycle!
 
     // Kinematic integration of displacement and yaw rotation (tangent vector components)
     const double ds = vx * dt;

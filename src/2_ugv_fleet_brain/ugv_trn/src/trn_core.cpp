@@ -55,10 +55,16 @@ bool TRNCore::load_global_dem(const std::string& filepath, double resolution, do
         const int cols = 500;
         global_dem_ = Eigen::MatrixXf::Zero(rows, cols);
 
+        // If origins are default 0.0, center the synthetic map around the origin
+        if (std::abs(origin_x) < 1e-4 && std::abs(origin_y) < 1e-4) {
+            global_origin_x_ = -(cols * resolution) / 2.0;
+            global_origin_y_ = -(rows * resolution) / 2.0;
+        }
+
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
-                double gx = origin_x + c * resolution;
-                double gy = origin_y + r * resolution;
+                double gx = global_origin_x_ + c * resolution;
+                double gy = global_origin_y_ + r * resolution;
                 // Double-sine wave representing linear wind-swept sand dunes
                 global_dem_(r, c) = static_cast<float>(
                     10.0 * std::sin(gx / 60.0) * std::cos(gy / 60.0) +
@@ -263,8 +269,22 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
         }
     }
 
-    // Reject particles with insufficient grid overlap (defense criteria: < 15% cells)
-    const uint64_t min_overlap = static_cast<uint64_t>(local_dem_filtered.size() * 0.15);
+    // Count the total number of valid local cells to compute a fair overlap percentage
+    uint64_t total_valid_local = 0;
+    for (int r = 0; r < local_rows; ++r) {
+        for (int c = 0; c < local_cols; ++c) {
+            if (std::isfinite(local_dem_filtered(r, c))) {
+                total_valid_local++;
+            }
+        }
+    }
+
+    // Reject particles with insufficient grid overlap (defense criteria: < 50% of valid local cells or < 10 absolute cells)
+    if (total_valid_local < 10) {
+        return -1.0;
+    }
+    
+    const uint64_t min_overlap = std::max(static_cast<uint64_t>(10), static_cast<uint64_t>(total_valid_local * 0.50));
     if (valid_overlap_count < min_overlap) {
         return -1.0;
     }
