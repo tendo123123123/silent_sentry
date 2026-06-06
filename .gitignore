@@ -36,3 +36,4 @@ src/2_ugv_fleet_brain/bot_navigation/maps/continuous_costmap.tif
 # src/2_ugv_fleet_brain/bot_navigation/maps/convert_dem.py
 .agents
 *.json
+.obsidian/
