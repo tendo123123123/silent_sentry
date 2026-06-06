@@ -100,8 +100,8 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
     RCLCPP_INFO(get_logger(), "FuserNode [on_activate]: Transitioning to active state.");
 
     // Initialize continuous odometry frames to identity
-    pure_odom_to_base_ = gtsam::Pose3::Identity();
-    odom_at_last_keyframe_ = gtsam::Pose3::Identity();
+    pure_odom_to_base_ = gtsam::Pose3();
+    odom_at_last_keyframe_ = gtsam::Pose3();
 
     // Reset accumulators
     accum_wheel_accel_x_ = 0.0;
