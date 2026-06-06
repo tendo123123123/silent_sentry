@@ -183,9 +183,11 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
         last_imu_time_ = timestamp;
         imu_initialized_ = true;
 
-        // Warm-start core solver with the true orientation of the IMU (which contains the true starting yaw, pitch, and roll in the simulation world)
+        // Warm-start core solver with the true pitch and roll of the IMU, but enforce 0.0 starting yaw
+        // so that the map frame perfectly aligns with the odom frame at startup.
         const auto& q = msg->orientation;
-        gtsam::Rot3 initial_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        gtsam::Rot3 full_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        gtsam::Rot3 initial_rot = gtsam::Rot3::Ypr(0.0, full_rot.pitch(), full_rot.roll());
         fuser_->initialize_graph(initial_rot);
         RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (w=%f, x=%f, y=%f, z=%f)", q.w, q.x, q.y, q.z);
         return;
