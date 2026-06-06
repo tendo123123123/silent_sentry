@@ -131,15 +131,18 @@ public:
     );
 
     /**
-     * @brief Propagate the current dead-reckoning state on the manifold.
+     * @brief Propagate the current dead-reckoning state on the manifold using wheel odometry.
+     * @param wheel_ds Accumulated wheel longitudinal displacement (meters) since last keyframe.
+     * @param wheel_dtheta Accumulated wheel yaw rotation (radians) since last keyframe.
      * @return gtsam::Pose3 Current high-frequency estimated pose.
      */
-    gtsam::Pose3 get_current_pose() const;
+    gtsam::Pose3 get_current_pose(double wheel_ds, double wheel_dtheta) const;
 
     /**
-     * @brief Retrieve optimized UGV velocity vector.
+     * @brief Retrieve vehicle twist velocity in body frame.
+     * @param wheel_vx The actual measured wheel linear velocity.
      */
-    Eigen::Vector3d get_current_velocity() const;
+    Eigen::Vector3d get_current_velocity(double wheel_vx) const;
 
     /**
      * @brief Retrieve optimized IMU biases.

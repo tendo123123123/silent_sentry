@@ -333,9 +333,9 @@ void FuserNode::publish_odometry()
         return;
     }
 
-    // Get current high-frequency dead-reckoned state from math core
-    gtsam::Pose3 pose = fuser_->get_current_pose();
-    Eigen::Vector3d velocity = fuser_->get_current_velocity();
+    // Get current high-frequency dead-reckoned state from math core using true wheel odometry
+    gtsam::Pose3 pose = fuser_->get_current_pose(accum_wheel_ds_, accum_wheel_dtheta_);
+    Eigen::Vector3d velocity = fuser_->get_current_velocity(last_wheel_vx_);
 
     rclcpp::Time now = this->get_clock()->now();
 

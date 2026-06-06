@@ -190,27 +190,36 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     return map_to_odom;
 }
 
-gtsam::Pose3 SE3FuserCore::get_current_pose() const
+gtsam::Pose3 SE3FuserCore::get_current_pose(double wheel_ds, double wheel_dtheta) const
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
         return gtsam::Pose3();
     }
-    // High-frequency propagation: predict from last keyframe using active IMU buffer
+    // High-frequency propagation: predict from last keyframe using active IMU buffer to get good pitch/roll
     gtsam::NavState anchor_state(current_pose_, current_velocity_);
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
-    return predicted_state.pose();
+    
+    // Compose wheel odometry for exact forward displacement and yaw rotation
+    gtsam::Pose3 wheel_delta(gtsam::Rot3::Yaw(wheel_dtheta), gtsam::Point3(wheel_ds, 0.0, 0.0));
+    gtsam::Pose3 wheel_predicted = current_pose_.compose(wheel_delta);
+    
+    // Combine IMU pitch and roll with the wheel's translation and yaw
+    gtsam::Rot3 imu_rot = predicted_state.pose().rotation();
+    gtsam::Rot3 combined_rot = gtsam::Rot3::Ypr(wheel_predicted.rotation().yaw(), imu_rot.pitch(), imu_rot.roll());
+    
+    return gtsam::Pose3(combined_rot, wheel_predicted.translation());
 }
 
-Eigen::Vector3d SE3FuserCore::get_current_velocity() const
+Eigen::Vector3d SE3FuserCore::get_current_velocity(double wheel_vx) const
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
         return Eigen::Vector3d::Zero();
     }
-    gtsam::NavState anchor_state(current_pose_, current_velocity_);
-    gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
-    return predicted_state.v();
+    // Return the actual wheel linear velocity in the body frame.
+    // UGV is non-holonomic, so vy and vz are zero.
+    return Eigen::Vector3d(wheel_vx, 0.0, 0.0);
 }
 
 gtsam::imuBias::ConstantBias SE3FuserCore::get_current_bias() const
