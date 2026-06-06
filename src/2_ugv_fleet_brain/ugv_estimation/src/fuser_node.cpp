@@ -104,6 +104,7 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
 
     // Initialize map->odom transform to identity
     latest_map_to_odom_ = gtsam::Pose3();
+    pure_odom_to_base_ = gtsam::Pose3();
 
     // Reset accumulators
     accum_wheel_ds_ = 0.0;
@@ -244,6 +245,10 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     accum_wheel_dtheta_ += dtheta;
     accum_wheel_dt_ += dt;
 
+    // Track pure continuous dead-reckoning for the odom->base TF
+    gtsam::Pose3 delta(gtsam::Rot3::Yaw(dtheta), gtsam::Point3(ds, 0.0, 0.0));
+    pure_odom_to_base_ = pure_odom_to_base_.compose(delta);
+
     // Compute longitudinal acceleration from wheel encoders
     const double wheel_accel = (vx - last_wheel_vx_) / dt;
     last_wheel_vx_ = vx;
@@ -334,19 +339,30 @@ void FuserNode::publish_odometry()
     }
 
     // Get current high-frequency dead-reckoned state from math core using true wheel odometry
-    gtsam::Pose3 pose = fuser_->get_current_pose(accum_wheel_ds_, accum_wheel_dtheta_);
+    // This returns the precise map->base pose (with exact TRN updates applied)
+    gtsam::Pose3 map_to_base = fuser_->get_current_pose(accum_wheel_ds_, accum_wheel_dtheta_);
     Eigen::Vector3d velocity = fuser_->get_current_velocity(last_wheel_vx_);
+
+    // Dynamically compute the jump-correction TF (map -> odom)
+    // T_{map->base} = T_{map->odom} * T_{odom->base}
+    // T_{map->odom} = T_{map->base} * (T_{odom->base})^-1
+    gtsam::Pose3 map_to_odom = map_to_base.compose(pure_odom_to_base_.inverse());
 
     rclcpp::Time now = this->get_clock()->now();
 
-    // Publish high-frequency filtered Odometry
+    // Publish high-frequency filtered Odometry using the continuous odom frame
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = now;
     odom_msg.header.frame_id = odom_frame_;
     odom_msg.child_frame_id = base_frame_;
 
-    const auto& t = pose.translation();
-    const auto& q = pose.rotation().toQuaternion();
+    // Odometry is published in the pure odom frame, but to avoid the robot pitching 
+    // down through the floor in Rviz, we fuse IMU pitch/roll into the published msg.
+    gtsam::Rot3 imu_rot = map_to_base.rotation();
+    gtsam::Rot3 odom_rot = gtsam::Rot3::Ypr(pure_odom_to_base_.rotation().yaw(), imu_rot.pitch(), imu_rot.roll());
+
+    const auto& t = pure_odom_to_base_.translation();
+    const auto& q = odom_rot.toQuaternion();
 
     odom_msg.pose.pose.position.x = t.x();
     odom_msg.pose.pose.position.y = t.y();
@@ -378,14 +394,14 @@ void FuserNode::publish_odometry()
 
     tf_broadcaster_->sendTransform(tf_msg);
 
-    // Broadcast authoritative map -> odom TF continuously at 50Hz to keep TF tree alive and in sync
+    // Broadcast authoritative map -> odom TF continuously
     geometry_msgs::msg::TransformStamped map_tf;
     map_tf.header.stamp = now;
     map_tf.header.frame_id = map_frame_;
     map_tf.child_frame_id = odom_frame_;
 
-    const auto& mt = latest_map_to_odom_.translation();
-    const auto& mq = latest_map_to_odom_.rotation().toQuaternion();
+    const auto& mt = map_to_odom.translation();
+    const auto& mq = map_to_odom.rotation().toQuaternion();
 
     map_tf.transform.translation.x = mt.x();
     map_tf.transform.translation.y = mt.y();

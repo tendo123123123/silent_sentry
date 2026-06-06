@@ -161,6 +161,7 @@ private:
 
     // State Tracking
     gtsam::Pose3 latest_map_to_odom_;         ///< Cached authoritative map->odom transform
+    gtsam::Pose3 pure_odom_to_base_;          ///< Continuous, jump-free wheel odometry frame
 };
 
 } // namespace ugv_estimation
