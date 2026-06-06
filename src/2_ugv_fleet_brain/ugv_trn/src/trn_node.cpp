@@ -215,8 +215,14 @@ void TRNNode::odom_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg)
     const double dy = cy - last_odom_y_;
     const double dyaw = std::remainder(cyaw - last_odom_yaw_, 2.0 * M_PI);
 
+    // Convert odom-frame deltas to base-frame (robot-relative) deltas
+    const double cos_odom_yaw = std::cos(last_odom_yaw_);
+    const double sin_odom_yaw = std::sin(last_odom_yaw_);
+    const double local_dx = dx * cos_odom_yaw + dy * sin_odom_yaw;
+    const double local_dy = -dx * sin_odom_yaw + dy * cos_odom_yaw;
+
     // Call mathematical core to propagate the global particles (Layer 1 -> Layer 2 boundary)
-    trn_core_->propagate_particles(dx, dy, dyaw);
+    trn_core_->propagate_particles(local_dx, local_dy, dyaw);
 
     // Update EKF state values
     last_odom_time_ = timestamp;

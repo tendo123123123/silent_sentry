@@ -106,7 +106,7 @@ public:
      *   x_k^{(t+1)} = x_k^{(t)} + dx \cos(\theta_k^{(t)}) - dy \sin(\theta_k^{(t)}) + w_x
      * \f]
      */
-    void propagate_particles(double dx, double dy, double dyaw);
+    void propagate_particles(double local_dx, double local_dy, double dyaw);
 
     /**
      * @brief Perform high-fidelity bilateral filtering to smooth local height scanning noise.
@@ -163,7 +163,7 @@ private:
     /**
      * @brief Compute the Mean Absolute Difference (MAD) score of a particle.
      */
-    double evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered) const;
+    double evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior) const;
 
     /**
      * @brief Perform systematic resampling of the particles.

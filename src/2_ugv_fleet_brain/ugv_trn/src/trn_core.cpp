@@ -98,14 +98,14 @@ void TRNCore::update_local_dem(const Eigen::MatrixXf& local_grid, double resolut
     local_dem_ready_ = true;
 }
 
-void TRNCore::propagate_particles(double dx, double dy, double dyaw)
+void TRNCore::propagate_particles(double local_dx, double local_dy, double dyaw)
 {
     std::lock_guard<std::mutex> lock(mtx_);
     if (particles_.empty()) {
         return;
     }
 
-    const double dist = std::hypot(dx, dy);
+    const double dist = std::hypot(local_dx, local_dy);
     const double std_dev_xy = dist * config_.motion_noise_xy_frac + 0.05;
     const double std_dev_yaw = std::abs(dyaw) * config_.motion_noise_yaw_frac + 0.005;
 
@@ -113,11 +113,14 @@ void TRNCore::propagate_particles(double dx, double dy, double dyaw)
     std::normal_distribution<double> noise_y(0.0, std_dev_xy);
     std::normal_distribution<double> noise_yaw(0.0, std_dev_yaw);
 
-    // dx,dy are global odom-frame deltas. Map and odom frames stay approximately aligned
-    // (small rotation drift bounded by factor graph), so add directly to particles in map frame.
+    // local_dx, local_dy are in the robot's base frame.
+    // We project them into the map frame using each particle's own map->base yaw.
     for (auto& p : particles_) {
-        p.x += dx + noise_x(rand_engine_);
-        p.y += dy + noise_y(rand_engine_);
+        double cos_p = std::cos(p.yaw);
+        double sin_p = std::sin(p.yaw);
+        
+        p.x += local_dx * cos_p - local_dy * sin_p + noise_x(rand_engine_);
+        p.y += local_dx * sin_p + local_dy * cos_p + noise_y(rand_engine_);
         p.yaw = wrap_angle(p.yaw + dyaw + noise_yaw(rand_engine_));
     }
 }
@@ -208,7 +211,7 @@ double TRNCore::compute_spatial_entropy(const Eigen::MatrixXf& grid) const
     return entropy;
 }
 
-double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered) const
+double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior) const
 {
     double accum_diff = 0.0;
     uint64_t valid_overlap_count = 0;
@@ -216,8 +219,19 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
     const int local_rows = local_dem_filtered.rows();
     const int local_cols = local_dem_filtered.cols();
 
-    const double cos_yaw = std::cos(p.yaw);
-    const double sin_yaw = std::sin(p.yaw);
+    // The particle p represents the robot's base_footprint pose in the map frame (map->base).
+    // The grid cells are aligned to the odom frame.
+    // To transform an odom coordinate to the map frame using the particle's hypothesis,
+    // we compute the implied map->odom transform: T_{map->odom} = T_{map->base} * (T_{odom->base})^-1
+    
+    gtsam::Pose2 map_to_base(p.x, p.y, p.yaw);
+    gtsam::Pose2 odom_to_base(odom_prior.x(), odom_prior.y(), odom_prior.rotation().yaw());
+    gtsam::Pose2 map_to_odom = map_to_base.compose(odom_to_base.inverse());
+
+    const double cos_yaw = std::cos(map_to_odom.theta());
+    const double sin_yaw = std::sin(map_to_odom.theta());
+    const double tx = map_to_odom.x();
+    const double ty = map_to_odom.y();
 
     // Loop over the local scan cells
     for (int r = 0; r < local_rows; ++r) {
@@ -227,13 +241,13 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
                 continue;
             }
 
-            // Convert cell grid index to local metric body coordinates
+            // Convert cell grid index to metric coordinates in the odom frame
             double u = local_origin_x_ + c * local_res_;
             double v = local_origin_y_ + r * local_res_;
 
-            // Rigid transform onto map frame using particle pose
-            double gx = p.x + u * cos_yaw - v * sin_yaw;
-            double gy = p.y + u * sin_yaw + v * cos_yaw;
+            // Rigid transform onto map frame using the implied map->odom transform
+            double gx = tx + u * cos_yaw - v * sin_yaw;
+            double gy = ty + u * sin_yaw + v * cos_yaw;
 
             // Map continuous metric coordinates to nearest global reference pixel index
             int gc = static_cast<int>(std::round((gx - global_origin_x_) / global_res_));
@@ -389,7 +403,7 @@ bool TRNCore::execute_match_cycle(
     int valid_scores_count = 0;
 
     for (int i = 0; i < n; ++i) {
-        double likelihood = evaluate_particle_likelihood(particles_[i], local_filtered);
+        double likelihood = evaluate_particle_likelihood(particles_[i], local_filtered, odom_prior);
         if (likelihood >= 0.0) {
             scores[i] = likelihood;
             score_sum += likelihood;
