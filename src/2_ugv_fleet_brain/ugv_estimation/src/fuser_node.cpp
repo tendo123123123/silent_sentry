@@ -99,16 +99,19 @@ FuserNode::on_activate(const rclcpp_lifecycle::State& /*state*/)
 {
     RCLCPP_INFO(get_logger(), "FuserNode [on_activate]: Transitioning to active state.");
 
-    // Initialize continuous odometry frames to identity
-    pure_odom_to_base_ = gtsam::Pose3();
-    odom_at_last_keyframe_ = gtsam::Pose3();
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        // Initialize continuous odometry frames to identity
+        pure_odom_to_base_ = gtsam::Pose3();
+        odom_at_last_keyframe_ = gtsam::Pose3();
 
-    // Reset accumulators
-    accum_wheel_accel_x_ = 0.0;
-    accum_imu_accel_x_ = 0.0;
-    accum_accel_count_ = 0;
-    imu_initialized_ = false;
-    wheel_initialized_ = false;
+        // Reset accumulators
+        accum_wheel_accel_x_ = 0.0;
+        accum_imu_accel_x_ = 0.0;
+        accum_accel_count_ = 0;
+        imu_initialized_ = false;
+        wheel_initialized_ = false;
+    }
 
     // Active lifecycle publishers
     odom_pub_->on_activate();
@@ -209,6 +212,8 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
 void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg)
 {
     const double timestamp = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
+    
+    std::lock_guard<std::mutex> lock(state_mtx_);
     if (!wheel_initialized_) {
         last_wheel_time_ = timestamp;
         last_wheel_vx_ = msg->twist.twist.linear.x;
@@ -272,13 +277,17 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     // Extract statistics and average them over the epoch interval
     double mean_wheel_accel = 0.0;
     double mean_imu_accel = 0.0;
-    if (accum_accel_count_ > 0) {
-        mean_wheel_accel = accum_wheel_accel_x_ / static_cast<double>(accum_accel_count_);
-        mean_imu_accel = accum_imu_accel_x_ / static_cast<double>(accum_accel_count_);
+    gtsam::Pose3 wheel_delta;
+    
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        if (accum_accel_count_ > 0) {
+            mean_wheel_accel = accum_wheel_accel_x_ / static_cast<double>(accum_accel_count_);
+            mean_imu_accel = accum_imu_accel_x_ / static_cast<double>(accum_accel_count_);
+        }
+        // Compute precise SE(3) relative motion since the last global correction
+        wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
     }
-
-    // Compute precise SE(3) relative motion since the last global correction
-    gtsam::Pose3 wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
 
     // Call mathematical core to execute iSAM2 optimization update
     fuser_->add_global_correction(
@@ -289,13 +298,16 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         mean_imu_accel
     );
 
-    // Snapshot the current pure odom state as the anchor for the next interval
-    odom_at_last_keyframe_ = pure_odom_to_base_;
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        // Snapshot the current pure odom state as the anchor for the next interval
+        odom_at_last_keyframe_ = pure_odom_to_base_;
 
-    // Reset acceleration accumulators (since ds and dtheta are no longer needed)
-    accum_wheel_accel_x_ = 0.0;
-    accum_imu_accel_x_ = 0.0;
-    accum_accel_count_ = 0;
+        // Reset acceleration accumulators (since ds and dtheta are no longer needed)
+        accum_wheel_accel_x_ = 0.0;
+        accum_imu_accel_x_ = 0.0;
+        accum_accel_count_ = 0;
+    }
 }
 
 
@@ -305,18 +317,25 @@ void FuserNode::publish_odometry()
         return;
     }
 
-    // Compute precise SE(3) relative motion since the last global correction
-    gtsam::Pose3 wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
+    gtsam::Pose3 wheel_delta;
+    gtsam::Pose3 local_pure_odom;
+    double current_vx;
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
+        local_pure_odom = pure_odom_to_base_;
+        current_vx = last_wheel_vx_;
+    }
 
     // Get current high-frequency dead-reckoned state from math core using true wheel odometry
     // This returns the precise map->base pose (with exact TRN updates applied)
     gtsam::Pose3 map_to_base = fuser_->get_current_pose(wheel_delta);
-    Eigen::Vector3d velocity = fuser_->get_current_velocity(last_wheel_vx_);
+    Eigen::Vector3d velocity = fuser_->get_current_velocity(current_vx);
 
     // Dynamically compute the jump-correction TF (map -> odom)
     // T_{map->base} = T_{map->odom} * T_{odom->base}
     // T_{map->odom} = T_{map->base} * (T_{odom->base})^-1
-    gtsam::Pose3 map_to_odom = map_to_base.compose(pure_odom_to_base_.inverse());
+    gtsam::Pose3 map_to_odom = map_to_base.compose(local_pure_odom.inverse());
 
     rclcpp::Time now = this->get_clock()->now();
 
@@ -329,9 +348,9 @@ void FuserNode::publish_odometry()
     // Odometry is published in the pure odom frame, but to avoid the robot pitching 
     // down through the floor in Rviz, we fuse IMU pitch/roll into the published msg.
     gtsam::Rot3 imu_rot = map_to_base.rotation();
-    gtsam::Rot3 odom_rot = gtsam::Rot3::Ypr(pure_odom_to_base_.rotation().yaw(), imu_rot.pitch(), imu_rot.roll());
+    gtsam::Rot3 odom_rot = gtsam::Rot3::Ypr(local_pure_odom.rotation().yaw(), imu_rot.pitch(), imu_rot.roll());
 
-    const auto& t = pure_odom_to_base_.translation();
+    const auto& t = local_pure_odom.translation();
     const auto& q = odom_rot.toQuaternion();
 
     odom_msg.pose.pose.position.x = t.x();

@@ -155,6 +155,7 @@ private:
     std::string base_frame_;                  ///< Vehicle body footprint frame ("base_footprint")
 
     // State Tracking
+    std::mutex state_mtx_;                    ///< Mutex protecting local odometry state
     gtsam::Pose3 pure_odom_to_base_;          ///< Continuous, jump-free wheel odometry frame
     gtsam::Pose3 odom_at_last_keyframe_;      ///< Snapshot of odom frame at the last global correction
 };
