@@ -28,6 +28,8 @@ using PreintegrationParamsPtr = decltype(gtsam::PreintegrationParams::MakeShared
  * @brief Algorithmic parameters for the SE(3) state estimator.
  */
 struct FuserConfig {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     double imu_accel_noise;      ///< Accel noise density (m/s^1.5)
     double imu_gyro_noise;       ///< Gyro noise density (rad/s^0.5)
     double imu_integration_noise; ///< Continuous-time integration noise
@@ -55,6 +57,7 @@ struct FuserConfig {
  */
 class SE3FuserCore {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     /**
      * @brief Construct a new SE3FuserCore object.
      * @param config Configuration parameters containing noise models and slip gates.

@@ -36,6 +36,8 @@ namespace ugv_estimation {
  */
 class FuserNode : public rclcpp_lifecycle::LifecycleNode {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     /**
      * @brief Construct a new FuserNode lifecycle node.
      * @param options ROS 2 node options.
