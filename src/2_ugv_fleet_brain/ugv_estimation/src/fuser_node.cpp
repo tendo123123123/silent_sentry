@@ -177,13 +177,22 @@ FuserNode::on_shutdown(const rclcpp_lifecycle::State& /*state*/)
 void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
 {
     const double timestamp = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
+    
+    if (!std::isfinite(timestamp)) return;
+
     if (!imu_initialized_) {
+        const auto& q = msg->orientation;
+        double norm_sq = q.w*q.w + q.x*q.x + q.y*q.y + q.z*q.z;
+        if (!std::isfinite(norm_sq) || norm_sq < 0.5) {
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "FuserNode [imu_callback]: Invalid initial quaternion (norm_sq=%f). Waiting for filter convergence.", norm_sq);
+            return;
+        }
+
         last_imu_time_ = timestamp;
         imu_initialized_ = true;
 
         // Warm-start core solver with the true pitch and roll of the IMU, but enforce 0.0 starting yaw
         // so that the map frame perfectly aligns with the odom frame at startup.
-        const auto& q = msg->orientation;
         gtsam::Rot3 full_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
         gtsam::Rot3 initial_rot = gtsam::Rot3::Ypr(0.0, full_rot.pitch(), full_rot.roll());
         fuser_->initialize_graph(initial_rot);
@@ -194,13 +203,18 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
     const double dt = timestamp - last_imu_time_;
     last_imu_time_ = timestamp;
 
-    if (dt <= 0.0 || dt > 0.5) {
+    if (!std::isfinite(dt) || dt <= 0.0 || dt > 0.5) {
         return;
     }
 
     // Convert ROS Imu vectors to Eigen structures (Layer 1 -> Layer 2 boundary)
     Eigen::Vector3d accel(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     Eigen::Vector3d gyro(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+
+    if (!accel.allFinite() || !gyro.allFinite()) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "FuserNode [imu_callback]: Non-finite IMU accel or gyro. Dropping message.");
+        return;
+    }
 
     // Call mathematical core
     fuser_->add_imu_measurement(dt, accel, gyro);
@@ -213,6 +227,8 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
 {
     const double timestamp = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
     
+    if (!std::isfinite(timestamp)) return;
+
     std::lock_guard<std::mutex> lock(state_mtx_);
     if (!wheel_initialized_) {
         last_wheel_time_ = timestamp;
@@ -224,12 +240,17 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     const double dt = timestamp - last_wheel_time_;
     last_wheel_time_ = timestamp;
 
-    if (dt <= 0.0 || dt > 1.0) {
+    if (!std::isfinite(dt) || dt <= 0.0 || dt > 1.0) {
         return;
     }
 
     const double vx = msg->twist.twist.linear.x;
     const double omega_z = msg->twist.twist.angular.z;
+
+    if (!std::isfinite(vx) || !std::isfinite(omega_z)) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "FuserNode [wheel_callback]: Non-finite Odometry velocity. Dropping message.");
+        return;
+    }
 
     // Wheel odometry natively provides zero-velocity updates when stationary.
     // We do NOT reset pim_ here because it destroys the continuous IMU factor
@@ -248,8 +269,10 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     last_wheel_vx_ = vx;
 
     // Accumulate statistics for the slip-gating filter
-    accum_wheel_accel_x_ += wheel_accel;
-    accum_accel_count_++;
+    if (std::isfinite(wheel_accel)) {
+        accum_wheel_accel_x_ += wheel_accel;
+        accum_accel_count_++;
+    }
 }
 
 void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg)
