@@ -30,7 +30,7 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
     gtsam::ISAM2Params params;
     params.relinearizeThreshold = 0.01;
     params.relinearizeSkip = 1;
-    isam2_->reset(new gtsam::ISAM2(params));
+    isam2_.reset(new gtsam::ISAM2(params));
 
     // Initialize IMU parameters
     // MakeSharedU(9.81) constructs parameters with vertical gravity along negative Z-axis.
