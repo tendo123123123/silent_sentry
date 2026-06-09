@@ -88,20 +88,10 @@ void SE3FuserCore::initialize_graph(const gtsam::Rot3& initial_rotation)
     initial_values_.insert(V(0), current_velocity_);
     initial_values_.insert(B(0), current_bias_);
 
-    std::cout << "[TRACE] SE3FuserCore: Calling isam2_->update()." << std::endl;
-    // Run initial ISAM2 update
-    try {
-        isam2_->update(graph_, initial_values_);
-    } catch (const std::exception& e) {
-        std::cerr << "[CRITICAL ERROR] GTSAM ISAM2 Update threw an exception: " << e.what() << std::endl;
-        // Optionally rethrow or handle
-    } catch (...) {
-        std::cerr << "[CRITICAL ERROR] GTSAM ISAM2 Update threw an UNKNOWN exception!" << std::endl;
-    }
-    
-    std::cout << "[TRACE] SE3FuserCore: Clearing graph buffers." << std::endl;
-    graph_.resize(0);
-    initial_values_.clear();
+    std::cout << "[TRACE] SE3FuserCore: Defereing isam2_->update() until first IMU edge is added to prevent COLAMD segfault on disconnected graph." << std::endl;
+    // DO NOT call isam2_->update() or clear the buffers! 
+    // Leave the Priors in graph_ and initial_values_ so they are committed 
+    // simultaneously with the first ImuFactor in add_global_correction().
 
     keyframe_index_ = 0;
     is_initialized_ = true;
@@ -174,6 +164,14 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     
     gtsam::BetweenFactor<gtsam::Pose3> odom_factor(X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
     graph_.add(odom_factor);
+
+    // 3.5 Add BetweenFactor for IMU Bias Random Walk to prevent isolated variable segfault
+    gtsam::Matrix66 bias_cov = gtsam::Matrix66::Zero();
+    bias_cov.block<3,3>(0,0) = gtsam::Matrix33::Identity() * (config_.imu_accel_bias_noise * config_.imu_accel_bias_noise);
+    bias_cov.block<3,3>(3,3) = gtsam::Matrix33::Identity() * (config_.imu_gyro_bias_noise * config_.imu_gyro_bias_noise);
+    auto bias_noise_model = gtsam::noiseModel::Gaussian::Covariance(bias_cov);
+    gtsam::BetweenFactor<gtsam::imuBias::ConstantBias> bias_factor(B(prev_idx), B(next_idx), gtsam::imuBias::ConstantBias(), bias_noise_model);
+    graph_.add(bias_factor);
 
     // 4. Construct and add the global TRN PriorFactor in map frame
     auto trn_noise = gtsam::noiseModel::Gaussian::Covariance(trn_covariance);
