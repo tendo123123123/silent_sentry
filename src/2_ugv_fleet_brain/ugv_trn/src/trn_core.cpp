@@ -239,30 +239,29 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
     const double tx = map_to_odom.x();
     const double ty = map_to_odom.y();
 
-    // Loop over the local scan cells
+    // First pass: compute mean height for both local and global overlapping cells
+    double local_sum = 0.0;
+    double global_sum = 0.0;
+
     for (int r = 0; r < local_rows; ++r) {
         for (int c = 0; c < local_cols; ++c) {
             float local_height = local_dem_filtered(r, c);
-            if (!std::isfinite(local_height)) {
-                continue;
-            }
+            if (!std::isfinite(local_height)) continue;
 
-            // Convert cell grid index to metric coordinates in the odom frame
             double u = local_origin_x_ + c * local_res_;
             double v = local_origin_y_ + r * local_res_;
 
-            // Rigid transform onto map frame using the implied map->odom transform
             double gx = tx + u * cos_yaw - v * sin_yaw;
             double gy = ty + u * sin_yaw + v * cos_yaw;
 
-            // Map continuous metric coordinates to nearest global reference pixel index
             int gc = static_cast<int>(std::round((gx - global_origin_x_) / global_res_));
             int gr = static_cast<int>(std::round((gy - global_origin_y_) / global_res_));
 
             if (gc >= 0 && gc < global_dem_.cols() && gr >= 0 && gr < global_dem_.rows()) {
                 float global_height = global_dem_(gr, gc);
                 if (std::isfinite(global_height)) {
-                    accum_diff += std::abs(local_height - global_height);
+                    local_sum += local_height;
+                    global_sum += global_height;
                     valid_overlap_count++;
                 }
             }
@@ -287,6 +286,37 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
     const uint64_t min_overlap = std::max(static_cast<uint64_t>(10), static_cast<uint64_t>(total_valid_local * 0.50));
     if (valid_overlap_count < min_overlap) {
         return -1.0;
+    }
+
+    // Compute means to perform zero-mean normalized matching
+    double local_mean = local_sum / valid_overlap_count;
+    double global_mean = global_sum / valid_overlap_count;
+    double z_offset = global_mean - local_mean;
+
+    // Second pass: compute Mean Absolute Difference (MAD) with Z-offset compensation
+    for (int r = 0; r < local_rows; ++r) {
+        for (int c = 0; c < local_cols; ++c) {
+            float local_height = local_dem_filtered(r, c);
+            if (!std::isfinite(local_height)) continue;
+
+            double u = local_origin_x_ + c * local_res_;
+            double v = local_origin_y_ + r * local_res_;
+
+            double gx = tx + u * cos_yaw - v * sin_yaw;
+            double gy = ty + u * sin_yaw + v * cos_yaw;
+
+            int gc = static_cast<int>(std::round((gx - global_origin_x_) / global_res_));
+            int gr = static_cast<int>(std::round((gy - global_origin_y_) / global_res_));
+
+            if (gc >= 0 && gc < global_dem_.cols() && gr >= 0 && gr < global_dem_.rows()) {
+                float global_height = global_dem_(gr, gc);
+                if (std::isfinite(global_height)) {
+                    // Apply Z-offset to local height to compare pure topographical shape
+                    double compensated_local = local_height + z_offset;
+                    accum_diff += std::abs(compensated_local - global_height);
+                }
+            }
+        }
     }
 
     // Gaussian likelihood from Mean Absolute Difference (MAD)
