@@ -82,7 +82,7 @@ FuserNode::on_configure(const rclcpp_lifecycle::State& /*state*/)
     this->get_parameter("base_frame", base_frame_);
 
     // Allocate core estimation object (Layer 2)
-    fuser_ = std::make_unique<SE3FuserCore>(config);
+    fuser_ = std::unique_ptr<SE3FuserCore>(new SE3FuserCore(config));
 
     // Setup Publishers
     odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odometry/filtered", 10);
@@ -220,7 +220,10 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
     fuser_->add_imu_measurement(dt, accel, gyro);
 
     // Accumulate IMU linear acceleration statistics for slip filter
-    accum_imu_accel_x_ += msg->linear_acceleration.x;
+    {
+        std::lock_guard<std::mutex> lock(state_mtx_);
+        accum_imu_accel_x_ += msg->linear_acceleration.x;
+    }
 }
 
 void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg)
@@ -431,7 +434,7 @@ void FuserNode::publish_odometry()
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<ugv_estimation::FuserNode>();
+    auto node = std::shared_ptr<ugv_estimation::FuserNode>(new ugv_estimation::FuserNode());
     rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
     return 0;

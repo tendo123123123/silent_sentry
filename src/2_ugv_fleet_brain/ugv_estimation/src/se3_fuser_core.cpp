@@ -48,7 +48,7 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
     imu_params_->setOmegaCoriolis(gtsam::Vector3::Zero());
 
     // Create the preintegration buffer
-    pim_ = std::make_unique<gtsam::PreintegratedImuMeasurements>(imu_params_, current_bias_);
+    pim_ = std::unique_ptr<gtsam::PreintegratedImuMeasurements>(new gtsam::PreintegratedImuMeasurements(imu_params_, current_bias_));
 }
 
 void SE3FuserCore::initialize_graph(const gtsam::Rot3& initial_rotation)
