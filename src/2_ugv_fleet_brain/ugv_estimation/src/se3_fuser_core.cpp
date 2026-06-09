@@ -184,15 +184,25 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     initial_values_.insert(B(next_idx), current_bias_);
 
     // 6. Execute ISAM2 optimization update
-    isam2_->update(graph_, initial_values_);
+    try {
+        isam2_->update(graph_, initial_values_);
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR] SE3FuserCore::add_global_correction ISAM2 update exception: " << e.what() << std::endl;
+        throw; // Rethrow to maintain standard behavior, but now we'll see the message
+    }
     graph_.resize(0);
     initial_values_.clear();
 
     // 7. Extract the fully optimized states at next_idx
-    gtsam::Values results = isam2_->calculateEstimate();
-    current_pose_ = results.at<gtsam::Pose3>(X(next_idx));
-    current_velocity_ = results.at<gtsam::Vector3>(V(next_idx));
-    current_bias_ = results.at<gtsam::imuBias::ConstantBias>(B(next_idx));
+    try {
+        gtsam::Values results = isam2_->calculateEstimate();
+        current_pose_ = results.at<gtsam::Pose3>(X(next_idx));
+        current_velocity_ = results.at<gtsam::Vector3>(V(next_idx));
+        current_bias_ = results.at<gtsam::imuBias::ConstantBias>(B(next_idx));
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR] SE3FuserCore::calculateEstimate exception: " << e.what() << std::endl;
+        throw;
+    }
 
     // 8. Reset the preintegration buffer using the newly optimized bias
     pim_->resetIntegrationAndSetBias(current_bias_);
