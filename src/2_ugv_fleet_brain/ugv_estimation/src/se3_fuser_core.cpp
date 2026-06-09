@@ -53,38 +53,47 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
 
 void SE3FuserCore::initialize_graph(const gtsam::Rot3& initial_rotation)
 {
+    std::cout << "[TRACE] SE3FuserCore: Entering initialize_graph lock." << std::endl;
     std::lock_guard<std::mutex> lock(mtx_);
     if (is_initialized_) {
         return;
     }
 
+    std::cout << "[TRACE] SE3FuserCore: Setting initial states." << std::endl;
     // Set starting states with initial orientation to compensate gravity correctly
     current_pose_ = gtsam::Pose3(initial_rotation, gtsam::Point3(0.0, 0.0, 0.0));
     current_velocity_ = gtsam::Vector3::Zero();
     current_bias_ = gtsam::imuBias::ConstantBias();
 
+    std::cout << "[TRACE] SE3FuserCore: Configuring noise models." << std::endl;
     // Configure initial noise models
     auto pose_noise = gtsam::noiseModel::Isotropic::Sigma(6, config_.initial_pose_sigma);
     auto vel_noise = gtsam::noiseModel::Isotropic::Sigma(3, config_.initial_vel_sigma);
     auto bias_noise = gtsam::noiseModel::Isotropic::Sigma(6, config_.initial_bias_sigma);
 
+    std::cout << "[TRACE] SE3FuserCore: Adding prior factors." << std::endl;
     // Add prior factors to mathematically anchor keyframe 0
     graph_.addPrior(X(0), current_pose_, pose_noise);
     graph_.addPrior(V(0), current_velocity_, vel_noise);
     graph_.addPrior(B(0), current_bias_, bias_noise);
 
+    std::cout << "[TRACE] SE3FuserCore: Inserting initial values." << std::endl;
     // Add initial values for optimization
     initial_values_.insert(X(0), current_pose_);
     initial_values_.insert(V(0), current_velocity_);
     initial_values_.insert(B(0), current_bias_);
 
+    std::cout << "[TRACE] SE3FuserCore: Calling isam2_.update()." << std::endl;
     // Run initial ISAM2 update
     isam2_.update(graph_, initial_values_);
+    
+    std::cout << "[TRACE] SE3FuserCore: Clearing graph buffers." << std::endl;
     graph_.resize(0);
     initial_values_.clear();
 
     keyframe_index_ = 0;
     is_initialized_ = true;
+    std::cout << "[TRACE] SE3FuserCore: initialize_graph COMPLETE." << std::endl;
 }
 
 void SE3FuserCore::add_imu_measurement(double dt, const Eigen::Vector3d& accel, const Eigen::Vector3d& gyro)

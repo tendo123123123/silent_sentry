@@ -193,9 +193,15 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
 
         // Warm-start core solver with the true pitch and roll of the IMU, but enforce 0.0 starting yaw
         // so that the map frame perfectly aligns with the odom frame at startup.
+        RCLCPP_INFO(get_logger(), "[TRACE] FuserNode: Converting msg->orientation to gtsam::Rot3.");
         gtsam::Rot3 full_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        
+        RCLCPP_INFO(get_logger(), "[TRACE] FuserNode: Computing Ypr from full_rot.");
         gtsam::Rot3 initial_rot = gtsam::Rot3::Ypr(0.0, full_rot.pitch(), full_rot.roll());
+        
+        RCLCPP_INFO(get_logger(), "[TRACE] FuserNode: Calling fuser_->initialize_graph().");
         fuser_->initialize_graph(initial_rot);
+        
         RCLCPP_INFO(get_logger(), "FuserNode [imu_callback]: Warm-started solver with IMU initial orientation (w=%f, x=%f, y=%f, z=%f)", q.w, q.x, q.y, q.z);
         return;
     }
