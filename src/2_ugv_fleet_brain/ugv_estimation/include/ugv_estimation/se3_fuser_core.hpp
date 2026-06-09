@@ -155,7 +155,7 @@ private:
     FuserConfig config_;                    ///< Configuration parameters
     mutable std::mutex mtx_;                ///< Thread-safety guard
 
-    gtsam::ISAM2 isam2_;                    ///< Incremental iSAM2 Bayes Tree solver
+    std::unique_ptr<gtsam::ISAM2> isam2_;   ///< Incremental iSAM2 Bayes Tree solver
     gtsam::NonlinearFactorGraph graph_;     ///< Factor graph container for incremental steps
     gtsam::Values initial_values_;          ///< Initial values for new nodes
 

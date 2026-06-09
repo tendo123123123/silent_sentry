@@ -27,6 +27,11 @@ SE3FuserCore::SE3FuserCore(const FuserConfig& config)
       current_velocity_(gtsam::Vector3::Zero()),
       current_bias_(gtsam::imuBias::ConstantBias())
 {
+    gtsam::ISAM2Params params;
+    params.relinearizeThreshold = 0.01;
+    params.relinearizeSkip = 1;
+    isam2_->reset(new gtsam::ISAM2(params));
+
     // Initialize IMU parameters
     // MakeSharedU(9.81) constructs parameters with vertical gravity along negative Z-axis.
     imu_params_ = gtsam::PreintegrationParams::MakeSharedU(9.81);
@@ -83,9 +88,16 @@ void SE3FuserCore::initialize_graph(const gtsam::Rot3& initial_rotation)
     initial_values_.insert(V(0), current_velocity_);
     initial_values_.insert(B(0), current_bias_);
 
-    std::cout << "[TRACE] SE3FuserCore: Calling isam2_.update()." << std::endl;
+    std::cout << "[TRACE] SE3FuserCore: Calling isam2_->update()." << std::endl;
     // Run initial ISAM2 update
-    isam2_.update(graph_, initial_values_);
+    try {
+        isam2_->update(graph_, initial_values_);
+    } catch (const std::exception& e) {
+        std::cerr << "[CRITICAL ERROR] GTSAM ISAM2 Update threw an exception: " << e.what() << std::endl;
+        // Optionally rethrow or handle
+    } catch (...) {
+        std::cerr << "[CRITICAL ERROR] GTSAM ISAM2 Update threw an UNKNOWN exception!" << std::endl;
+    }
     
     std::cout << "[TRACE] SE3FuserCore: Clearing graph buffers." << std::endl;
     graph_.resize(0);
@@ -174,12 +186,12 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     initial_values_.insert(B(next_idx), current_bias_);
 
     // 6. Execute ISAM2 optimization update
-    isam2_.update(graph_, initial_values_);
+    isam2_->update(graph_, initial_values_);
     graph_.resize(0);
     initial_values_.clear();
 
     // 7. Extract the fully optimized states at next_idx
-    gtsam::Values results = isam2_.calculateEstimate();
+    gtsam::Values results = isam2_->calculateEstimate();
     current_pose_ = results.at<gtsam::Pose3>(X(next_idx));
     current_velocity_ = results.at<gtsam::Vector3>(V(next_idx));
     current_bias_ = results.at<gtsam::imuBias::ConstantBias>(B(next_idx));
