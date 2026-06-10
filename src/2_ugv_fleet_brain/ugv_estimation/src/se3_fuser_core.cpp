@@ -107,7 +107,7 @@ void SE3FuserCore::add_imu_measurement(double dt, const Eigen::Vector3d& accel, 
     pim_->integrateMeasurement(accel, gyro, dt);
 }
 
-Eigen::Matrix<double, 6, 6> SE3FuserCore::evaluate_slip_gate(double wheel_accel_x, double imu_accel_x) const
+gtsam::SharedNoiseModel SE3FuserCore::evaluate_slip_gate(double wheel_accel_x, double imu_accel_x) const
 {
     // Compare structural wheel acceleration with physical accelerometer measurement
     const double accel_diff = std::abs(wheel_accel_x - imu_accel_x);
@@ -128,7 +128,7 @@ Eigen::Matrix<double, 6, 6> SE3FuserCore::evaluate_slip_gate(double wheel_accel_
     Eigen::Matrix<double, 6, 6> covariance = Eigen::Matrix<double, 6, 6>::Zero();
     covariance.diagonal().noalias() = sigmas.array().square().matrix();
 
-    return covariance;
+    return gtsam::noiseModel::Gaussian::Covariance(covariance);
 }
 
 gtsam::Pose3 SE3FuserCore::add_global_correction(
@@ -159,8 +159,7 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     graph_.add(imu_factor);
 
     // 3. Construct and add the slip-gated wheel BetweenFactor
-    Eigen::Matrix<double, 6, 6> wheel_cov = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
-    auto wheel_noise = gtsam::noiseModel::Gaussian::Covariance(wheel_cov);
+    auto wheel_noise = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
     
     gtsam::BetweenFactor<gtsam::Pose3> odom_factor(X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
     graph_.add(odom_factor);

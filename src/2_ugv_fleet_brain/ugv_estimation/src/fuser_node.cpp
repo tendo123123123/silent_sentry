@@ -81,8 +81,8 @@ FuserNode::on_configure(const rclcpp_lifecycle::State& /*state*/)
     this->get_parameter("odom_frame", odom_frame_);
     this->get_parameter("base_frame", base_frame_);
 
-    // Allocate core estimation object (Layer 2)
-    fuser_ = std::unique_ptr<SE3FuserCore>(new SE3FuserCore(config));
+    // Allocate core estimation object (Layer 2) using explicit new to preserve Eigen AVX 32-byte alignment
+    fuser_.reset(new SE3FuserCore(config));
 
     // Setup Publishers
     odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odometry/filtered", 10);
