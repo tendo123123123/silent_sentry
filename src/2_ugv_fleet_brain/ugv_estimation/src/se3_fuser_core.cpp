@@ -150,32 +150,33 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     gtsam::NavState anchor_state(current_pose_, current_velocity_);
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
 
-    // 2. Construct and add the IMU Factor spanning the entire optimization interval
-    gtsam::ImuFactor imu_factor(
+    // 2. Add ImuFactor via emplace_shared to avoid stack-local construction.
+    //    ImuFactor contains Matrix9 (9×9) requiring 32-byte AVX alignment.
+    //    ROS executor pthread stacks are only 16-byte aligned → stack construction segfaults.
+    //    emplace_shared uses Eigen::aligned_allocator for heap allocation.
+    graph_.emplace_shared<gtsam::ImuFactor>(
         X(prev_idx), V(prev_idx),
         X(next_idx), V(next_idx),
         B(prev_idx), *pim_
     );
-    graph_.add(imu_factor);
 
-    // 3. Construct and add the slip-gated wheel BetweenFactor
+    // 3. Add slip-gated wheel BetweenFactor via emplace_shared
     auto wheel_noise = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
-    
-    gtsam::BetweenFactor<gtsam::Pose3> odom_factor(X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
-    graph_.add(odom_factor);
+    graph_.emplace_shared<gtsam::BetweenFactor<gtsam::Pose3>>(
+        X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
 
     // 3.5 Add BetweenFactor for IMU Bias Random Walk to prevent isolated variable segfault
     gtsam::Matrix66 bias_cov = gtsam::Matrix66::Zero();
     bias_cov.block<3,3>(0,0) = gtsam::Matrix33::Identity() * (config_.imu_accel_bias_noise * config_.imu_accel_bias_noise);
     bias_cov.block<3,3>(3,3) = gtsam::Matrix33::Identity() * (config_.imu_gyro_bias_noise * config_.imu_gyro_bias_noise);
     auto bias_noise_model = gtsam::noiseModel::Gaussian::Covariance(bias_cov);
-    gtsam::BetweenFactor<gtsam::imuBias::ConstantBias> bias_factor(B(prev_idx), B(next_idx), gtsam::imuBias::ConstantBias(), bias_noise_model);
-    graph_.add(bias_factor);
+    graph_.emplace_shared<gtsam::BetweenFactor<gtsam::imuBias::ConstantBias>>(
+        B(prev_idx), B(next_idx), gtsam::imuBias::ConstantBias(), bias_noise_model);
 
-    // 4. Construct and add the global TRN PriorFactor in map frame
+    // 4. Add global TRN PriorFactor via emplace_shared
     auto trn_noise = gtsam::noiseModel::Gaussian::Covariance(trn_covariance);
-    gtsam::PriorFactor<gtsam::Pose3> trn_prior(X(next_idx), trn_pose, trn_noise);
-    graph_.add(trn_prior);
+    graph_.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
+        X(next_idx), trn_pose, trn_noise);
 
     // 5. Insert initial value predictions for the new node states
     initial_values_.insert(X(next_idx), predicted_state.pose());
