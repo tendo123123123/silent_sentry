@@ -5,8 +5,9 @@ project(ugv_estimation)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Optimization Flags for High-Performance Defense-Grade Code
-add_compile_options(-O3 -march=native -Wall -Wextra -Wpedantic)
+# DIAGNOSTIC BUILD: Debug symbols + no optimization for readable crash backtrace
+# Revert to -O3 -march=native after diagnosis
+add_compile_options(-g -O0 -fno-omit-frame-pointer -rdynamic -Wall -Wextra -Wpedantic)
 
 # Find Dependencies
 find_package(ament_cmake REQUIRED)
@@ -60,6 +61,8 @@ ament_target_dependencies(fuser_node
   tf2_eigen
   tf2_geometry_msgs
 )
+# Export ALL symbols for backtrace_symbols_fd crash diagnostics
+target_link_options(fuser_node PRIVATE -rdynamic)
 
 # Install Rules
 install(TARGETS se3_fuser_core

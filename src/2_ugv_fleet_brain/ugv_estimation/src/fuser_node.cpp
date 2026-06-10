@@ -12,6 +12,39 @@
 #include <lifecycle_msgs/msg/state.hpp>
 
 #include <chrono>
+#include <csignal>
+#include <execinfo.h>
+#include <cstdlib>
+#include <unistd.h>
+
+// ─── SIGSEGV crash handler ───────────────────────────────────────────────
+static void crash_handler(int sig)
+{
+    const char msg[] = "\n\n=== FUSER_NODE CRASH HANDLER ==="
+                       "\nSignal: ";
+    write(STDERR_FILENO, msg, sizeof(msg) - 1);
+
+    // Write signal number
+    char sigbuf[4];
+    int s = sig;
+    int i = 0;
+    if (s >= 10) { sigbuf[i++] = '0' + (s / 10); s %= 10; }
+    sigbuf[i++] = '0' + s;
+    sigbuf[i++] = '\n';
+    write(STDERR_FILENO, sigbuf, i);
+
+    // Print backtrace (max 64 frames)
+    void* frames[64];
+    int n = backtrace(frames, 64);
+    backtrace_symbols_fd(frames, n, STDERR_FILENO);
+
+    const char end[] = "=== END CRASH HANDLER ===\n";
+    write(STDERR_FILENO, end, sizeof(end) - 1);
+
+    // Restore default handler and re-raise to get core dump
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
 
 namespace ugv_estimation {
 
@@ -286,18 +319,23 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
 
 void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg)
 {
-    RCLCPP_INFO(get_logger(), "FuserNode [trn_callback]: Received global TRN correction.");
+    std::cerr << "[DIAG] trn_callback ENTER" << std::endl;
 
     // Convert ROS Pose definition to GTSAM Pose3
     const auto& pos = msg->pose.pose.position;
     const auto& ori = msg->pose.pose.orientation;
     
+    std::cerr << "[DIAG] trn_callback: TRN pos=(" << pos.x << "," << pos.y << "," << pos.z
+              << ") ori=(" << ori.w << "," << ori.x << "," << ori.y << "," << ori.z << ")" << std::endl;
+
     gtsam::Rot3 trn_rot = gtsam::Rot3::Quaternion(ori.w, ori.x, ori.y, ori.z);
     gtsam::Point3 trn_pos(pos.x, pos.y, pos.z);
     gtsam::Pose3 trn_pose(trn_rot, trn_pos);
+    std::cerr << "[DIAG] trn_callback: Pose3 constructed" << std::endl;
 
     // Convert 6x6 Row-major covariance matrix to Eigen::Matrix (ROS order: [Trans, Rot])
     Eigen::Matrix<double, 6, 6> ros_cov = Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(msg->pose.covariance.data());
+    std::cerr << "[DIAG] trn_callback: ros_cov mapped" << std::endl;
 
     // Swap 3x3 blocks to map ROS [Trans, Rot] to GTSAM [Rot, Trans]
     Eigen::Matrix<double, 6, 6> trn_covariance;
@@ -305,6 +343,10 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     trn_covariance.block<3,3>(3,3).noalias() = ros_cov.block<3,3>(0,0);
     trn_covariance.block<3,3>(0,3).noalias() = ros_cov.block<3,3>(3,0);
     trn_covariance.block<3,3>(3,0).noalias() = ros_cov.block<3,3>(0,3);
+    std::cerr << "[DIAG] trn_callback: cov swapped, diag=(" 
+              << trn_covariance(0,0) << "," << trn_covariance(1,1) << ","
+              << trn_covariance(2,2) << "," << trn_covariance(3,3) << ","
+              << trn_covariance(4,4) << "," << trn_covariance(5,5) << ")" << std::endl;
 
     // Extract statistics and average them over the epoch interval
     double mean_wheel_accel = 0.0;
@@ -320,8 +362,10 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         // Compute precise SE(3) relative motion since the last global correction
         wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
     }
+    std::cerr << "[DIAG] trn_callback: wheel_delta computed, accel_count=" << accum_accel_count_ << std::endl;
 
     // Call mathematical core to execute iSAM2 optimization update
+    std::cerr << "[DIAG] trn_callback: CALLING add_global_correction" << std::endl;
     fuser_->add_global_correction(
         trn_pose,
         trn_covariance,
@@ -329,6 +373,7 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         mean_wheel_accel,
         mean_imu_accel
     );
+    std::cerr << "[DIAG] trn_callback: add_global_correction RETURNED" << std::endl;
 
     {
         std::lock_guard<std::mutex> lock(state_mtx_);
@@ -439,6 +484,13 @@ void FuserNode::publish_odometry()
 
 int main(int argc, char** argv)
 {
+    // Install crash handler BEFORE anything else
+    signal(SIGSEGV, crash_handler);
+    signal(SIGABRT, crash_handler);
+    signal(SIGFPE,  crash_handler);
+    signal(SIGBUS,  crash_handler);
+    std::cerr << "[DIAG] fuser_node main(): crash handler installed" << std::endl;
+
     rclcpp::init(argc, argv);
     auto node = std::shared_ptr<ugv_estimation::FuserNode>(new ugv_estimation::FuserNode());
     rclcpp::spin(node->get_node_base_interface());

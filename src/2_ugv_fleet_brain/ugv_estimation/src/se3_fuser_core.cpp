@@ -138,76 +138,94 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     double wheel_accel_x,
     double imu_accel_x)
 {
+    std::cerr << "[DIAG] add_global_correction ENTER" << std::endl;
     std::lock_guard<std::mutex> lock(mtx_);
     if (!is_initialized_) {
+        std::cerr << "[DIAG] add_global_correction: NOT INITIALIZED, returning" << std::endl;
         return gtsam::Pose3();
     }
 
     const uint64_t prev_idx = keyframe_index_;
     const uint64_t next_idx = keyframe_index_ + 1;
+    std::cerr << "[DIAG] add_global_correction: prev=" << prev_idx << " next=" << next_idx << std::endl;
 
     // 1. Predict state using IMU preintegration
+    std::cerr << "[DIAG] step 1: pim_->predict" << std::endl;
     gtsam::NavState anchor_state(current_pose_, current_velocity_);
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
+    std::cerr << "[DIAG] step 1: predict DONE" << std::endl;
 
-    // 2. Add ImuFactor via emplace_shared to avoid stack-local construction.
-    //    ImuFactor contains Matrix9 (9×9) requiring 32-byte AVX alignment.
-    //    ROS executor pthread stacks are only 16-byte aligned → stack construction segfaults.
-    //    emplace_shared uses Eigen::aligned_allocator for heap allocation.
+    // 2. Add ImuFactor via emplace_shared
+    std::cerr << "[DIAG] step 2: emplace ImuFactor" << std::endl;
     graph_.emplace_shared<gtsam::ImuFactor>(
         X(prev_idx), V(prev_idx),
         X(next_idx), V(next_idx),
         B(prev_idx), *pim_
     );
+    std::cerr << "[DIAG] step 2: ImuFactor DONE" << std::endl;
 
     // 3. Add slip-gated wheel BetweenFactor via emplace_shared
+    std::cerr << "[DIAG] step 3: evaluate_slip_gate" << std::endl;
     auto wheel_noise = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
+    std::cerr << "[DIAG] step 3: emplace BetweenFactor<Pose3>" << std::endl;
     graph_.emplace_shared<gtsam::BetweenFactor<gtsam::Pose3>>(
         X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
+    std::cerr << "[DIAG] step 3: BetweenFactor DONE" << std::endl;
 
-    // 3.5 Add BetweenFactor for IMU Bias Random Walk to prevent isolated variable segfault
+    // 3.5 Add BetweenFactor for IMU Bias Random Walk
+    std::cerr << "[DIAG] step 3.5: bias random walk" << std::endl;
     gtsam::Matrix66 bias_cov = gtsam::Matrix66::Zero();
     bias_cov.block<3,3>(0,0) = gtsam::Matrix33::Identity() * (config_.imu_accel_bias_noise * config_.imu_accel_bias_noise);
     bias_cov.block<3,3>(3,3) = gtsam::Matrix33::Identity() * (config_.imu_gyro_bias_noise * config_.imu_gyro_bias_noise);
     auto bias_noise_model = gtsam::noiseModel::Gaussian::Covariance(bias_cov);
     graph_.emplace_shared<gtsam::BetweenFactor<gtsam::imuBias::ConstantBias>>(
         B(prev_idx), B(next_idx), gtsam::imuBias::ConstantBias(), bias_noise_model);
+    std::cerr << "[DIAG] step 3.5: bias DONE" << std::endl;
 
     // 4. Add global TRN PriorFactor via emplace_shared
+    std::cerr << "[DIAG] step 4: TRN prior" << std::endl;
     auto trn_noise = gtsam::noiseModel::Gaussian::Covariance(trn_covariance);
     graph_.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
         X(next_idx), trn_pose, trn_noise);
+    std::cerr << "[DIAG] step 4: TRN prior DONE" << std::endl;
 
     // 5. Insert initial value predictions for the new node states
+    std::cerr << "[DIAG] step 5: insert initial values" << std::endl;
     initial_values_.insert(X(next_idx), predicted_state.pose());
     initial_values_.insert(V(next_idx), predicted_state.v());
     initial_values_.insert(B(next_idx), current_bias_);
+    std::cerr << "[DIAG] step 5: initial values DONE, graph size=" << graph_.size() << " values size=" << initial_values_.size() << std::endl;
 
     // 6. Execute ISAM2 optimization update
+    std::cerr << "[DIAG] step 6: isam2_->update()" << std::endl;
     try {
         isam2_->update(graph_, initial_values_);
     } catch (const std::exception& e) {
-        std::cerr << "[ERROR] SE3FuserCore::add_global_correction ISAM2 update exception: " << e.what() << std::endl;
-        throw; // Rethrow to maintain standard behavior, but now we'll see the message
+        std::cerr << "[ERROR] isam2_->update() exception: " << e.what() << std::endl;
+        throw;
     }
+    std::cerr << "[DIAG] step 6: isam2 update DONE" << std::endl;
     graph_.resize(0);
     initial_values_.clear();
 
     // 7. Extract the fully optimized states at next_idx
+    std::cerr << "[DIAG] step 7: calculateEstimate" << std::endl;
     try {
         gtsam::Values results = isam2_->calculateEstimate();
         current_pose_ = results.at<gtsam::Pose3>(X(next_idx));
         current_velocity_ = results.at<gtsam::Vector3>(V(next_idx));
         current_bias_ = results.at<gtsam::imuBias::ConstantBias>(B(next_idx));
     } catch (const std::exception& e) {
-        std::cerr << "[ERROR] SE3FuserCore::calculateEstimate exception: " << e.what() << std::endl;
+        std::cerr << "[ERROR] calculateEstimate exception: " << e.what() << std::endl;
         throw;
     }
+    std::cerr << "[DIAG] step 7: estimate DONE" << std::endl;
 
     // 8. Reset the preintegration buffer using the newly optimized bias
     pim_->resetIntegrationAndSetBias(current_bias_);
     keyframe_index_ = next_idx;
 
+    std::cerr << "[DIAG] add_global_correction COMPLETE, keyframe=" << keyframe_index_ << std::endl;
     // Return the new current_pose_
     return current_pose_;
 }
