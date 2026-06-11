@@ -5,9 +5,10 @@ project(ugv_estimation)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# DIAGNOSTIC BUILD: Debug symbols + no optimization for readable crash backtrace
-# Revert to -O3 -march=native after diagnosis
-add_compile_options(-g -O0 -fno-omit-frame-pointer -rdynamic -Wall -Wextra -Wpedantic)
+# -O2 instead of -O3: GCC's -O3 aggressive inlining defeats stack realignment
+# for 32-byte AVX operands in Eigen matrices, causing SIGSEGV on -march=native.
+# -O2 is the standard safe optimization level for Eigen/GTSAM code.
+add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
 
 # Find Dependencies
 find_package(ament_cmake REQUIRED)
