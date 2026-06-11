@@ -343,7 +343,14 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     trn_covariance.block<3,3>(3,3).noalias() = ros_cov.block<3,3>(0,0);
     trn_covariance.block<3,3>(0,3).noalias() = ros_cov.block<3,3>(3,0);
     trn_covariance.block<3,3>(3,0).noalias() = ros_cov.block<3,3>(0,3);
-    std::cerr << "[DIAG] trn_callback: cov swapped, diag=(" 
+
+    // Scale TRN Covariance for Factor Graph (Fix 5 from diagnosis)
+    // The particle filter search area inflates uncertainty. 
+    // Scaling by 0.1 trusts TRN 10x more relative to wheel odometry.
+    double trn_cov_scale = 0.1;
+    trn_covariance *= trn_cov_scale;
+
+    std::cerr << "[DIAG] trn_callback: cov swapped and scaled, diag=(" 
               << trn_covariance(0,0) << "," << trn_covariance(1,1) << ","
               << trn_covariance(2,2) << "," << trn_covariance(3,3) << ","
               << trn_covariance(4,4) << "," << trn_covariance(5,5) << ")" << std::endl;

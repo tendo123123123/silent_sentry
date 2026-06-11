@@ -10,8 +10,8 @@ trn_slam_node:
     # --- Global DEM ---
     global_dem_path: ""                  # Set dynamically via launch file
     global_dem_res: 1.0
-    global_dem_origin_x: 0.0
-    global_dem_origin_y: 0.0
+    global_dem_origin_x: -450.0
+    global_dem_origin_y: -150.0
 
     # --- Bilateral Filter (replaces Perona-Malik) ---
     bilateral_d: 9                       # filter diameter (px); -1 = compute from sigma_space
@@ -19,9 +19,9 @@ trn_slam_node:
     bilateral_sigma_space: 75.0          # filter sigma in spatial domain (px)
 
     # --- Dynamic ROI Cropping ---
-    base_search_radius: 15.0
+    base_search_radius: 5.0
     max_search_radius: 30.0
-    initial_search_radius: 15.0
+    initial_search_radius: 5.0
 
     # --- MCL Particle Filter ---
     num_particles: 800                   # number of particles (more = better coverage)
