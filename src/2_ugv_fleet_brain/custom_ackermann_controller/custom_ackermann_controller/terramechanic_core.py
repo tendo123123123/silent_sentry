@@ -449,12 +449,22 @@ class TerramechanicOdometryCore:
 
             left_pos = positions[left_index]
             right_pos = positions[right_index]
-            left_steer = positions[left_steer_index]
-            right_steer = positions[right_steer_index]
+            # Invert steering polarity: On this machine's URDF/Gazebo setup, positive 
+            # joint states mean a RIGHT turn, but kinematics expect positive for LEFT.
+            left_steer = -positions[left_steer_index]
+            right_steer = -positions[right_steer_index]
 
             if dt > 0.001:
-                omega_left = (left_pos - self.last_wheel_pos['left']) / dt
-                omega_right = (right_pos - self.last_wheel_pos['right']) / dt
+                delta_left = left_pos - self.last_wheel_pos['left']
+                delta_right = right_pos - self.last_wheel_pos['right']
+                
+                # Wrap wheel position deltas to [-pi, pi] to prevent massive velocity 
+                # spikes when Gazebo continuous joints wrap at pi or -pi.
+                delta_left = math.atan2(math.sin(delta_left), math.cos(delta_left))
+                delta_right = math.atan2(math.sin(delta_right), math.cos(delta_right))
+
+                omega_left = delta_left / dt
+                omega_right = delta_right / dt
 
                 raw_left_vel = omega_left * self.r_eff
                 raw_right_vel = omega_right * self.r_eff
@@ -540,27 +550,10 @@ class TerramechanicOdometryCore:
                     else:
                         self.is_stalled = False
 
-                    if self.is_stalled:
-                        self.current_linear_velocity = 0.0
-                    elif (
-                        abs(self.current_slip_ratio)
-                        > self.stall_slip_ratio_thresh
-                    ):
-                        self.current_linear_velocity = self.v_true_imu
-                    else:
-                        slip_weight = min(abs(self.current_slip_ratio), 1.0)
-                        self.current_linear_velocity = (
-                            (1.0 - slip_weight * 0.7) * v_encoder
-                            + (slip_weight * 0.7) * self.v_true_imu
-                        )
-
-                    if abs(self.ahrs_pitch) > 0.02:
-                        gravity_slip = (
-                            9.81
-                            * math.sin(self.ahrs_pitch)
-                            * self.sand_slip_coeff
-                        )
-                        self.current_linear_velocity -= gravity_slip
+                    # Decoupled raw_odom from IMU: We use pure encoder velocity.
+                    # We DO NOT zero velocity based on stall detection because 
+                    # high-slip sand driving triggers false positives.
+                    self.current_linear_velocity = v_encoder
                 else:
                     self.is_stalled = False
                     self.stall_accumulator = 0.0
@@ -572,20 +565,12 @@ class TerramechanicOdometryCore:
                     self.current_linear_velocity,
                 )
 
-                if self.is_stalled:
+                # DYNAMIC OBSERVABILITY ARCHITECTURE:
+                # We restore pure kinematic yaw rate (omega_kinematic) for the wheel odometry!
+                # The C++ Factor Graph now dynamically tightens yaw_sigma when driving straight
+                # to learn IMU gyro bias, and relaxes it during turns to let the IMU shine.
+                if self.is_zupt:
                     self.current_angular_velocity = 0.0
-                elif self.imu_received and not self.is_zupt:
-                    self.current_angular_velocity = self._fuse_angular_velocity(
-                        self.omega_kinematic,
-                        self.imu_gyro_yaw_rate,
-                        dt,
-                    )
-                elif self.is_zupt:
-                    self.current_angular_velocity = 0.0
-                    self.gyro_kf_x = np.array(
-                        [0.0, self.gyro_kf_x[1]],
-                        dtype=np.float64,
-                    )
                 else:
                     self.current_angular_velocity = self.omega_kinematic
 
