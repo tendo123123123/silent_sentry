@@ -35,7 +35,7 @@ trn_slam_node:
 
     # --- Match Gating ---
     entropy_threshold: 0.8
-    min_peak_quality: 0.22               # minimum MAD likelihood to accept correction
+    min_peak_quality: 0.40               # minimum MAD likelihood to accept correction (restored to 0.40)
 
     # --- Coordinate Frames ---
     map_frame: "map"

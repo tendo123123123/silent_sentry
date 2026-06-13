@@ -22,7 +22,9 @@ factor_graph_fuser:
     slip_cov_multiplier: 25.0            # covariance inflation during slip
 
     # --- Wheel Odometry Sigmas [rot_x, rot_y, rot_z, trans_x, trans_y, trans_z] ---
-    odom_sigmas: [0.05, 0.05, 0.20, 0.10, 0.25, 0.25]
+    # Decouple raw_odom completely from rotation. We rely on the IMU for orientation
+    # and the wheels purely for 2D translation (Vx, Vy).
+    odom_sigmas: [1000.0, 1000.0, 1000.0, 0.10, 0.25, 1000.0]
 
     # --- Coordinate Frames ---
     map_frame: "map"

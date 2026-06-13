@@ -17,7 +17,7 @@ terramechanic_odometry_node:
     # --- Robot Geometry ---
     wheelbase: 0.9                      # Front-to-rear axle distance (m)
     track_width: 0.67                   # Left-to-right wheel distance (m)
-    wheel_radius_nominal: 0.175         # Unloaded tire radius (m)
+    wheel_radius_nominal: 0.190         # Unloaded tire radius (m) (Increased to fix speed under-prediction)
     tire_width: 0.10                    # Tire contact patch width (m)
 
     # --- Vehicle Properties ---
