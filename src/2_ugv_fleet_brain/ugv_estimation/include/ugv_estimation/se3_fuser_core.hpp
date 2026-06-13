@@ -103,8 +103,9 @@ public:
      * \f]
      * Under slip conditions, the wheel odometry factor is heavily down-weighted by inflating 
      * its covariance by the slip_cov_multiplier to force iSAM2 to follow IMU and near-zero motion cues.
+     * Furthermore, if driving straight, yaw constraint is tightened to learn IMU gyro bias.
      */
-    gtsam::SharedNoiseModel evaluate_slip_gate(double wheel_accel_x, double imu_accel_x) const;
+    gtsam::SharedNoiseModel evaluate_slip_gate(double wheel_accel_x, double imu_accel_x, double wheel_yaw_delta) const;
 
     /**
      * @brief Fuses a new global TRN loop closure correction and optimizes the Factor Graph.
@@ -120,7 +121,8 @@ public:
         const Eigen::Matrix<double, 6, 6>& trn_covariance,
         const gtsam::Pose3& wheel_delta,
         double wheel_accel_x,
-        double imu_accel_x
+        double imu_accel_x,
+        const gtsam::Rot3& ahrs_rotation
     );
 
     /**

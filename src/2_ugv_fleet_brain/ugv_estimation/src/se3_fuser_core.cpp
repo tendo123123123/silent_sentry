@@ -107,7 +107,7 @@ void SE3FuserCore::add_imu_measurement(double dt, const Eigen::Vector3d& accel, 
     pim_->integrateMeasurement(accel, gyro, dt);
 }
 
-gtsam::SharedNoiseModel SE3FuserCore::evaluate_slip_gate(double wheel_accel_x, double imu_accel_x) const
+gtsam::SharedNoiseModel SE3FuserCore::evaluate_slip_gate(double wheel_accel_x, double imu_accel_x, double /* wheel_yaw_delta */) const
 {
     // Compare structural wheel acceleration with physical accelerometer measurement
     const double accel_diff = std::abs(wheel_accel_x - imu_accel_x);
@@ -115,6 +115,21 @@ gtsam::SharedNoiseModel SE3FuserCore::evaluate_slip_gate(double wheel_accel_x, d
 
     // Initialize sigmas with base tight parameters
     Eigen::Matrix<double, 6, 1> sigmas = config_.odom_sigmas;
+
+    // --- PURE IMU HEADING & 3D OBSERVABILITY ---
+    // Wheel encoders ONLY measure longitudinal (forward) movement along the chassis.
+    // They have absolutely zero observability over Roll, Pitch, lateral slip (Y), or vertical bounce (Z).
+    // If we constrain these to 0 (which the flat 2D wheel_delta assumes), the Factor Graph 
+    // will violently fight the IMU when the robot climbs a dune, resulting in massive fake biases.
+    // We completely decouple all non-longitudinal constraints from the wheel factor.
+    sigmas(0) = 1e6; // Ignore wheel Roll
+    sigmas(1) = 1e6; // Ignore wheel Pitch
+    sigmas(2) = 1e6; // Ignore wheel Yaw
+    
+    // sigmas(3) is Forward X (WE KEEP THIS!)
+    
+    sigmas(4) = 1e6; // Ignore wheel lateral Y
+    sigmas(5) = 1e6; // Ignore wheel vertical Z
 
     if (is_slipping) {
         // Inflate the translational translation noise sigmas (indices 3, 4, 5) by the multiplier
@@ -136,7 +151,8 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     const Eigen::Matrix<double, 6, 6>& trn_covariance,
     const gtsam::Pose3& wheel_delta,
     double wheel_accel_x,
-    double imu_accel_x)
+    double imu_accel_x,
+    const gtsam::Rot3& ahrs_rotation)
 {
     std::cerr << "[DIAG] add_global_correction ENTER" << std::endl;
     std::lock_guard<std::mutex> lock(mtx_);
@@ -166,7 +182,7 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
 
     // 3. Add slip-gated wheel BetweenFactor via emplace_shared
     std::cerr << "[DIAG] step 3: evaluate_slip_gate" << std::endl;
-    auto wheel_noise = evaluate_slip_gate(wheel_accel_x, imu_accel_x);
+    auto wheel_noise = evaluate_slip_gate(wheel_accel_x, imu_accel_x, wheel_delta.rotation().yaw());
     std::cerr << "[DIAG] step 3: emplace BetweenFactor<Pose3>" << std::endl;
     graph_.emplace_shared<gtsam::BetweenFactor<gtsam::Pose3>>(
         X(prev_idx), X(next_idx), wheel_delta, wheel_noise);
@@ -188,6 +204,15 @@ gtsam::Pose3 SE3FuserCore::add_global_correction(
     graph_.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
         X(next_idx), trn_pose, trn_noise);
     std::cerr << "[DIAG] step 4: TRN prior DONE" << std::endl;
+
+    // 4.5 Add absolute heading prior from AHRS filter (ALIGNED to map frame)
+    std::cerr << "[DIAG] step 4.5: AHRS orientation prior" << std::endl;
+    // We constrain the 3D rotation, but leave translation completely unconstrained (1e6)
+    auto ahrs_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 0.05, 0.05, 0.05, 1e6, 1e6, 1e6).finished());
+    gtsam::Pose3 ahrs_pose(ahrs_rotation, gtsam::Point3(0.0, 0.0, 0.0));
+    graph_.emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
+        X(next_idx), ahrs_pose, ahrs_noise);
+    std::cerr << "[DIAG] step 4.5: AHRS prior DONE" << std::endl;
 
     // 5. Insert initial value predictions for the new node states
     std::cerr << "[DIAG] step 5: insert initial values" << std::endl;
@@ -240,14 +265,10 @@ gtsam::Pose3 SE3FuserCore::get_current_pose(const gtsam::Pose3& wheel_delta) con
     gtsam::NavState anchor_state(current_pose_, current_velocity_);
     gtsam::NavState predicted_state = pim_->predict(anchor_state, current_bias_);
     
-    // Compose wheel odometry for exact forward displacement and yaw rotation
-    gtsam::Pose3 wheel_predicted = current_pose_.compose(wheel_delta);
-    
-    // Combine IMU pitch and roll with the wheel's translation and yaw
-    gtsam::Rot3 imu_rot = predicted_state.pose().rotation();
-    gtsam::Rot3 combined_rot = gtsam::Rot3::Ypr(wheel_predicted.rotation().yaw(), imu_rot.pitch(), imu_rot.roll());
-    
-    return gtsam::Pose3(combined_rot, wheel_predicted.translation());
+    // As requested: In dead reckoning, both Rotation and Translation should be taken from IMU data.
+    // The continuous smooth trajectory relies 100% on the preintegrated IMU, while the 
+    // Factor Graph fuses the IMU and Encoders periodically to correct the IMU biases.
+    return predicted_state.pose();
 }
 
 Eigen::Vector3d SE3FuserCore::get_current_velocity(double wheel_vx) const
