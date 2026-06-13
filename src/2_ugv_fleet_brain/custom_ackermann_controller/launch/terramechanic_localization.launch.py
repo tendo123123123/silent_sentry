@@ -26,6 +26,7 @@ from launch import LaunchDescription
 from launch.events import matches_action
 from launch_ros.actions import Node, LifecycleNode
 from launch.actions import DeclareLaunchArgument, LogInfo, RegisterEventHandler, EmitEvent
+from launch.event_handlers import OnProcessStart
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
 import lifecycle_msgs.msg
@@ -214,10 +215,15 @@ def generate_launch_description():
     )
 
     # Configure local_dem_builder automatically on startup
-    dem_configure_trigger = EmitEvent(
-        event=ChangeState(
-            lifecycle_node_matcher=matches_action(local_dem_node),
-            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+    dem_configure_trigger = RegisterEventHandler(
+        OnProcessStart(
+            target_action=local_dem_node,
+            on_start=[
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(local_dem_node),
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                ))
+            ]
         )
     )
 
@@ -277,10 +283,15 @@ def generate_launch_description():
     )
 
     # Configure factor_graph_fuser automatically on startup
-    fg_configure_trigger = EmitEvent(
-        event=ChangeState(
-            lifecycle_node_matcher=matches_action(fg_node),
-            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+    fg_configure_trigger = RegisterEventHandler(
+        OnProcessStart(
+            target_action=fg_node,
+            on_start=[
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(fg_node),
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                ))
+            ]
         )
     )
 
@@ -321,10 +332,15 @@ def generate_launch_description():
     )
 
     # Configure trn_slam_node automatically on startup
-    trn_configure_trigger = EmitEvent(
-        event=ChangeState(
-            lifecycle_node_matcher=matches_action(trn_slam_node),
-            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+    trn_configure_trigger = RegisterEventHandler(
+        OnProcessStart(
+            target_action=trn_slam_node,
+            on_start=[
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(trn_slam_node),
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                ))
+            ]
         )
     )
 
