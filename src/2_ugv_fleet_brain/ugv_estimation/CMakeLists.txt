@@ -5,10 +5,8 @@ project(ugv_estimation)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# -O2 instead of -O3: GCC's -O3 aggressive inlining defeats stack realignment
-# for 32-byte AVX operands in Eigen matrices, causing SIGSEGV on -march=native.
 # -O2 is the standard safe optimization level for Eigen/GTSAM code.
-add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
+add_compile_options(-O2 -Wall -Wextra -Wpedantic)
 
 # Find Dependencies
 find_package(ament_cmake REQUIRED)
