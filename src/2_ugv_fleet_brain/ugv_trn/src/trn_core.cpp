@@ -217,7 +217,7 @@ double TRNCore::compute_spatial_entropy(const Eigen::MatrixXf& grid) const
     return entropy;
 }
 
-double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior) const
+double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior, double& out_z_offset) const
 {
     double accum_diff = 0.0;
     uint64_t valid_overlap_count = 0;
@@ -292,6 +292,7 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
     double local_mean = local_sum / valid_overlap_count;
     double global_mean = global_sum / valid_overlap_count;
     double z_offset = global_mean - local_mean;
+    out_z_offset = z_offset;
 
     // Second pass: compute Mean Absolute Difference (MAD) with Z-offset compensation
     for (int r = 0; r < local_rows; ++r) {
@@ -448,19 +449,23 @@ bool TRNCore::execute_match_cycle(
 
     // Evaluate scores for active particles
     std::vector<double> scores(n, 0.0);
+    std::vector<double> z_offsets(n, 0.0);
     double score_sum = 0.0;
     double max_score = 0.0;
     int valid_scores_count = 0;
 
     for (int i = 0; i < n; ++i) {
-        double likelihood = evaluate_particle_likelihood(particles_[i], local_filtered, odom_prior);
+        double z_offset = 0.0;
+        double likelihood = evaluate_particle_likelihood(particles_[i], local_filtered, odom_prior, z_offset);
         if (likelihood >= 0.0) {
             scores[i] = likelihood;
+            z_offsets[i] = z_offset;
             score_sum += likelihood;
             max_score = std::max(max_score, likelihood);
             valid_scores_count++;
         } else {
             scores[i] = 1e-12; // Out of bounds or invalid overlap
+            z_offsets[i] = 0.0;
         }
     }
 
@@ -512,34 +517,41 @@ bool TRNCore::execute_match_cycle(
         return false;
     }
 
-    // Compute weighted mean pose (Global Output Pose on SE(2) manifold)
+    // Compute weighted mean pose (Global Output Pose on SE(2) manifold + Z offset)
     double mean_x = 0.0;
     double mean_y = 0.0;
+    double mean_z_offset = 0.0;
     double sin_yaw_sum = 0.0;
     double cos_yaw_sum = 0.0;
 
-    for (const auto& p : particles_) {
+    for (int i = 0; i < n; ++i) {
+        const auto& p = particles_[i];
         mean_x += p.weight * p.x;
         mean_y += p.weight * p.y;
+        mean_z_offset += p.weight * z_offsets[i];
         sin_yaw_sum += p.weight * std::sin(p.yaw);
         cos_yaw_sum += p.weight * std::cos(p.yaw);
     }
     double mean_yaw = std::atan2(sin_yaw_sum, cos_yaw_sum);
 
-    // Compute weighted covariance matrix on SE(2)
+    // Compute weighted covariance matrix on SE(2) + Z
     double var_x = 0.0;
     double var_y = 0.0;
     double var_yaw = 0.0;
+    double var_z = 0.0;
     double cov_xy = 0.0;
 
-    for (const auto& p : particles_) {
+    for (int i = 0; i < n; ++i) {
+        const auto& p = particles_[i];
         double dx = p.x - mean_x;
         double dy = p.y - mean_y;
         double dyaw = wrap_angle(p.yaw - mean_yaw);
+        double dz = z_offsets[i] - mean_z_offset;
 
         var_x += p.weight * dx * dx;
         var_y += p.weight * dy * dy;
         var_yaw += p.weight * dyaw * dyaw;
+        var_z += p.weight * dz * dz;
         cov_xy += p.weight * dx * dy;
     }
 
@@ -555,9 +567,10 @@ bool TRNCore::execute_match_cycle(
     out_covariance(4, 4) = std::max(var_y, 0.04);
     out_covariance(3, 4) = cov_xy;
     out_covariance(4, 3) = cov_xy;
-    out_covariance(5, 5) = 1e-4; // Vertical Z variance (tight planar constraint)
+    out_covariance(5, 5) = std::max(var_z, 0.04); // Vertical Z variance
 
-    out_pose = gtsam::Pose3(gtsam::Rot3::Yaw(mean_yaw), gtsam::Point3(mean_x, mean_y, map_prior.z()));
+    double absolute_z = odom_prior.z() + mean_z_offset;
+    out_pose = gtsam::Pose3(gtsam::Rot3::Yaw(mean_yaw), gtsam::Point3(mean_x, mean_y, absolute_z));
 
     return true;
 }

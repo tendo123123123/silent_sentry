@@ -163,7 +163,7 @@ private:
     /**
      * @brief Compute the Mean Absolute Difference (MAD) score of a particle.
      */
-    double evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior) const;
+    double evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior, double& out_z_offset) const;
 
     /**
      * @brief Perform systematic resampling of the particles.
