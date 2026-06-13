@@ -228,6 +228,7 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
         // so that the map frame perfectly aligns with the odom frame at startup.
         RCLCPP_INFO(get_logger(), "[TRACE] FuserNode: Converting msg->orientation to gtsam::Rot3.");
         gtsam::Rot3 full_rot = gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z);
+        ahrs_yaw_offset_ = full_rot.yaw();
         
         RCLCPP_INFO(get_logger(), "[TRACE] FuserNode: Computing Ypr from full_rot.");
         gtsam::Rot3 initial_rot = gtsam::Rot3::Ypr(0.0, full_rot.pitch(), full_rot.roll());
@@ -247,21 +248,32 @@ void FuserNode::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr msg)
     }
 
     // Convert ROS Imu vectors to Eigen structures (Layer 1 -> Layer 2 boundary)
-    Eigen::Vector3d accel(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
-    Eigen::Vector3d gyro(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+    gtsam::Vector3 measured_acc(
+        msg->linear_acceleration.x,
+        msg->linear_acceleration.y,
+        msg->linear_acceleration.z
+    );
 
-    if (!accel.allFinite() || !gyro.allFinite()) {
+    gtsam::Vector3 measured_omega(
+        msg->angular_velocity.x,
+        msg->angular_velocity.y,
+        msg->angular_velocity.z
+    );
+
+    if (!measured_acc.allFinite() || !measured_omega.allFinite()) {
         RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "FuserNode [imu_callback]: Non-finite IMU accel or gyro. Dropping message.");
         return;
     }
 
     // Call mathematical core
-    fuser_->add_imu_measurement(dt, accel, gyro);
+    fuser_->add_imu_measurement(dt, measured_acc, measured_omega);
 
     // Accumulate IMU linear acceleration statistics for slip filter
     {
         std::lock_guard<std::mutex> lock(state_mtx_);
         accum_imu_accel_x_ += msg->linear_acceleration.x;
+        last_ahrs_rot_ = gtsam::Rot3::Quaternion(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
+        last_imu_omega_z_ = msg->angular_velocity.z;
     }
 }
 
@@ -299,8 +311,12 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     // needed for the next iSAM2 optimization cycle!
 
     // Kinematic integration of displacement and yaw rotation (tangent vector components)
+    // CRITICAL: We decouple the wheel-encoder yaw entirely. Since wheel_radius tuning 
+    // scales both v_right and v_left, the wheel's omega_z is scaled and wildly incorrect.
+    // By using the IMU's omega_z, the Factor Graph's relative wheel_delta perfectly 
+    // matches the true curved path, leaving ONLY the forward ds to be optimized!
     const double ds = vx * dt;
-    const double dtheta = omega_z * dt;
+    const double dtheta = last_imu_omega_z_ * dt;
 
     // Track pure continuous dead-reckoning for the odom->base TF
     gtsam::Pose3 delta(gtsam::Rot3::Yaw(dtheta), gtsam::Point3(ds, 0.0, 0.0));
@@ -350,6 +366,18 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     double trn_cov_scale = 0.1;
     trn_covariance *= trn_cov_scale;
 
+    // FIX: TRN SLAM only does 2D position and 1D yaw matching, but publishes a Pose3 with 
+    // Identity roll/pitch and 1e-5 variance. This conflicts violently with the 
+    // IMU's initialized orientation (w=-0.21, etc), causing GTSAM to crash with 
+    // a double-free during isam2 update due to the massive initial error.
+    // We inflate the Roll/Pitch rotational covariance to 1e6 so the graph ignores TRN's roll/pitch.
+    // However, we DO trust the TRN's calculated Yaw (index 2).
+    trn_covariance(0,0) = 1e6; // Roll
+    trn_covariance(1,1) = 1e6; // Pitch (CRITICAL FIX: Prevents TRN from forcing robot to face East!)
+    
+    // We also trust the TRN's calculated absolute Z translation (index 5) 
+    // which is computed via zero-mean normalized elevation offsets.
+
     std::cerr << "[DIAG] trn_callback: cov swapped and scaled, diag=(" 
               << trn_covariance(0,0) << "," << trn_covariance(1,1) << ","
               << trn_covariance(2,2) << "," << trn_covariance(3,3) << ","
@@ -359,6 +387,7 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
     double mean_wheel_accel = 0.0;
     double mean_imu_accel = 0.0;
     gtsam::Pose3 wheel_delta;
+    gtsam::Rot3 aligned_ahrs_rot;
     
     {
         std::lock_guard<std::mutex> lock(state_mtx_);
@@ -368,6 +397,13 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         }
         // Compute precise SE(3) relative motion since the last global correction
         wheel_delta = odom_at_last_keyframe_.between(pure_odom_to_base_);
+        
+        // Align the absolute AHRS orientation to the Factor Graph's initialized 0.0 yaw frame
+        aligned_ahrs_rot = gtsam::Rot3::Ypr(
+            last_ahrs_rot_.yaw() - ahrs_yaw_offset_,
+            last_ahrs_rot_.pitch(),
+            last_ahrs_rot_.roll()
+        );
     }
     std::cerr << "[DIAG] trn_callback: wheel_delta computed, accel_count=" << accum_accel_count_ << std::endl;
 
@@ -378,7 +414,8 @@ void FuserNode::trn_callback(const geometry_msgs::msg::PoseWithCovarianceStamped
         trn_covariance,
         wheel_delta,
         mean_wheel_accel,
-        mean_imu_accel
+        mean_imu_accel,
+        aligned_ahrs_rot
     );
     std::cerr << "[DIAG] trn_callback: add_global_correction RETURNED" << std::endl;
 

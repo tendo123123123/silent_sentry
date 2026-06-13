@@ -145,8 +145,12 @@ private:
     bool imu_initialized_;                     ///< IMU warm-start tracker
     bool wheel_initialized_;                   ///< Wheel warm-start tracker
 
+    gtsam::Rot3 last_ahrs_rot_;               ///< Latest Madgwick filtered orientation
+    double ahrs_yaw_offset_;                  ///< Initial yaw offset to align AHRS with Factor Graph
+
     // Acceleration statistics for the slip-gating filter
     double last_wheel_vx_;                     ///< Last wheel speed measurement
+    double last_imu_omega_z_;                 ///< Last IMU yaw rate
     double accum_wheel_accel_x_;              ///< Rolling sum of wheel accelerations
     double accum_imu_accel_x_;                ///< Rolling sum of IMU longitudinal accelerations
     uint64_t accum_accel_count_;              ///< Number of samples in rolling acceleration window
