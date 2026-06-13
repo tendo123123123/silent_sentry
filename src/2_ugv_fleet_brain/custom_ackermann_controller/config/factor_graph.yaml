@@ -23,8 +23,10 @@ factor_graph_fuser:
 
     # --- Wheel Odometry Sigmas [rot_x, rot_y, rot_z, trans_x, trans_y, trans_z] ---
     # Decouple raw_odom completely from rotation. We rely on the IMU for orientation
-    # and the wheels purely for 2D translation (Vx, Vy).
-    odom_sigmas: [1000.0, 1000.0, 1000.0, 0.10, 0.25, 1000.0]
+    # and the wheels purely for 2D translation (Vx, Vy). We use a loose sigma (0.25)
+    # for forward speed (X) to avoid hardcoding wheel radius. The IMU preintegration
+    # (calibrated by TRN loop closures) will naturally govern the true speed scale!
+    odom_sigmas: [1000.0, 1000.0, 1000.0, 0.25, 1000.0, 1000.0]
 
     # --- Coordinate Frames ---
     map_frame: "map"
