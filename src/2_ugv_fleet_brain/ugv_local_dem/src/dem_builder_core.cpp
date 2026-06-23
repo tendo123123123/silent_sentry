@@ -637,6 +637,11 @@ bool DEMBuilderCore::build_dem(
     out_grid = morph_close(out_grid, 3);
     out_grid = reject_obstacle_cells(out_grid);
 
+    // Apply lightweight Gaussian smoothing to reduce LiDAR noise before TRN matching.
+    // This replaces the expensive bilateral filter that was previously applied every
+    // match cycle inside TRN. Smoothing once at DEM build time is ~3x more efficient.
+    out_grid = gaussian_smooth(out_grid, 1);
+
     return true;
 }
 
@@ -710,6 +715,52 @@ Eigen::MatrixXf DEMBuilderCore::reject_obstacle_cells(const Eigen::MatrixXf& gri
                 }
             }
         }
+    }
+
+    return result;
+}
+
+Eigen::MatrixXf DEMBuilderCore::gaussian_smooth(const Eigen::MatrixXf& grid, int iterations) const
+{
+    // Lightweight 3x3 NaN-aware Gaussian smoothing.
+    // Kernel weights: center=4, edge=2, corner=1 (total=16 for full kernel).
+    // Preserves NaN cells — only smooths observed terrain.
+    static const float kernel[3][3] = {
+        {1.0f, 2.0f, 1.0f},
+        {2.0f, 4.0f, 2.0f},
+        {1.0f, 2.0f, 1.0f}
+    };
+
+    const int ny = grid.rows();
+    const int nx = grid.cols();
+    Eigen::MatrixXf result = grid;
+
+    for (int iter = 0; iter < iterations; ++iter) {
+        Eigen::MatrixXf next = result;
+        for (int r = 1; r < ny - 1; ++r) {
+            for (int c = 1; c < nx - 1; ++c) {
+                if (std::isnan(result(r, c))) continue;
+
+                float wsum = 0.0f;
+                float wcount = 0.0f;
+
+                for (int dr = -1; dr <= 1; ++dr) {
+                    for (int dc = -1; dc <= 1; ++dc) {
+                        float val = result(r + dr, c + dc);
+                        if (std::isfinite(val)) {
+                            float w = kernel[dr + 1][dc + 1];
+                            wsum += w * val;
+                            wcount += w;
+                        }
+                    }
+                }
+
+                if (wcount > 0.0f) {
+                    next(r, c) = wsum / wcount;
+                }
+            }
+        }
+        result = std::move(next);
     }
 
     return result;

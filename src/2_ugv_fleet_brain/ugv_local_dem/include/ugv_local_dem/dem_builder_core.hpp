@@ -135,6 +135,14 @@ public:
     Eigen::MatrixXf reject_obstacle_cells(const Eigen::MatrixXf& grid) const;
 
     /**
+     * @brief Apply lightweight NaN-aware Gaussian smoothing to reduce LiDAR measurement noise.
+     * @param grid Input elevation grid (NaNs mark unobserved cells).
+     * @param iterations Number of smoothing passes (1 = light, 2 = medium).
+     * @return Eigen::MatrixXf Smoothed grid with NaN cells preserved.
+     */
+    Eigen::MatrixXf gaussian_smooth(const Eigen::MatrixXf& grid, int iterations = 1) const;
+
+    /**
      * @brief Thread-safe configuration update.
      */
     void update_config(const DEMBuilderConfig& config);
