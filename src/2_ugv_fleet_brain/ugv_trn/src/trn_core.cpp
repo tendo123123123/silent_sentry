@@ -219,9 +219,6 @@ double TRNCore::compute_spatial_entropy(const Eigen::MatrixXf& grid) const
 
 double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::MatrixXf& local_dem_filtered, const gtsam::Pose3& odom_prior, double& out_z_offset) const
 {
-    double accum_diff = 0.0;
-    uint64_t valid_overlap_count = 0;
-
     const int local_rows = local_dem_filtered.rows();
     const int local_cols = local_dem_filtered.cols();
 
@@ -239,14 +236,20 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
     const double tx = map_to_odom.x();
     const double ty = map_to_odom.y();
 
-    // First pass: compute mean height for both local and global overlapping cells
-    double local_sum = 0.0;
-    double global_sum = 0.0;
+    // === SINGLE-PASS NCC (Normalized Cross-Correlation) ===
+    // Compute running sums: ΣL, ΣG, ΣL², ΣG², ΣLG, N, and total_valid_local
+    // in one traversal. NCC is invariant to both Z-offset and amplitude scaling.
+    double sum_L = 0.0, sum_G = 0.0;
+    double sum_L2 = 0.0, sum_G2 = 0.0, sum_LG = 0.0;
+    uint64_t valid_overlap_count = 0;
+    uint64_t total_valid_local = 0;
 
     for (int r = 0; r < local_rows; ++r) {
         for (int c = 0; c < local_cols; ++c) {
             float local_height = local_dem_filtered(r, c);
             if (!std::isfinite(local_height)) continue;
+
+            total_valid_local++;
 
             double u = local_origin_x_ + c * local_res_;
             double v = local_origin_y_ + r * local_res_;
@@ -260,20 +263,15 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
             if (gc >= 0 && gc < global_dem_.cols() && gr >= 0 && gr < global_dem_.rows()) {
                 float global_height = global_dem_(gr, gc);
                 if (std::isfinite(global_height)) {
-                    local_sum += local_height;
-                    global_sum += global_height;
+                    double L = local_height;
+                    double G = global_height;
+                    sum_L  += L;
+                    sum_G  += G;
+                    sum_L2 += L * L;
+                    sum_G2 += G * G;
+                    sum_LG += L * G;
                     valid_overlap_count++;
                 }
-            }
-        }
-    }
-
-    // Count the total number of valid local cells to compute a fair overlap percentage
-    uint64_t total_valid_local = 0;
-    for (int r = 0; r < local_rows; ++r) {
-        for (int c = 0; c < local_cols; ++c) {
-            if (std::isfinite(local_dem_filtered(r, c))) {
-                total_valid_local++;
             }
         }
     }
@@ -288,42 +286,30 @@ double TRNCore::evaluate_particle_likelihood(const Particle& p, const Eigen::Mat
         return -1.0;
     }
 
-    // Compute means to perform zero-mean normalized matching
-    double local_mean = local_sum / valid_overlap_count;
-    double global_mean = global_sum / valid_overlap_count;
-    double z_offset = global_mean - local_mean;
-    out_z_offset = z_offset;
+    const double N = static_cast<double>(valid_overlap_count);
 
-    // Second pass: compute Mean Absolute Difference (MAD) with Z-offset compensation
-    for (int r = 0; r < local_rows; ++r) {
-        for (int c = 0; c < local_cols; ++c) {
-            float local_height = local_dem_filtered(r, c);
-            if (!std::isfinite(local_height)) continue;
+    // Compute Z-offset for absolute height correction (mean difference)
+    double local_mean = sum_L / N;
+    double global_mean = sum_G / N;
+    out_z_offset = global_mean - local_mean;
 
-            double u = local_origin_x_ + c * local_res_;
-            double v = local_origin_y_ + r * local_res_;
+    // Compute NCC analytically from running sums:
+    // NCC = (N·ΣLG - ΣL·ΣG) / sqrt((N·ΣL² - (ΣL)²) · (N·ΣG² - (ΣG)²))
+    double numerator   = N * sum_LG - sum_L * sum_G;
+    double denom_L_sq  = N * sum_L2 - sum_L * sum_L;
+    double denom_G_sq  = N * sum_G2 - sum_G * sum_G;
 
-            double gx = tx + u * cos_yaw - v * sin_yaw;
-            double gy = ty + u * sin_yaw + v * cos_yaw;
-
-            int gc = static_cast<int>(std::round((gx - global_origin_x_) / global_res_));
-            int gr = static_cast<int>(std::round((gy - global_origin_y_) / global_res_));
-
-            if (gc >= 0 && gc < global_dem_.cols() && gr >= 0 && gr < global_dem_.rows()) {
-                float global_height = global_dem_(gr, gc);
-                if (std::isfinite(global_height)) {
-                    // Apply Z-offset to local height to compare pure topographical shape
-                    double compensated_local = local_height + z_offset;
-                    accum_diff += std::abs(compensated_local - global_height);
-                }
-            }
-        }
+    // Guard against zero-variance patches (perfectly flat terrain)
+    if (denom_L_sq < 1e-8 || denom_G_sq < 1e-8) {
+        return 1e-12;
     }
 
-    // Gaussian likelihood from Mean Absolute Difference (MAD)
-    double mad = accum_diff / static_cast<double>(valid_overlap_count);
-    double score = std::exp(-2.0 * mad);
-    return std::max(score, 1e-12);
+    double ncc = numerator / std::sqrt(denom_L_sq * denom_G_sq);
+
+    // NCC ∈ [-1, 1]. Map to likelihood ∈ [0, 1]:
+    // score = (ncc + 1) / 2  →  perfect match = 1.0, anti-correlated = 0.0
+    double score = std::max((ncc + 1.0) / 2.0, 1e-12);
+    return score;
 }
 
 void TRNCore::systematic_resample()
@@ -425,8 +411,9 @@ bool TRNCore::execute_match_cycle(
         }
     }
 
-    // Apply high-fidelity bilateral filtering to smooth lidar scans
-    Eigen::MatrixXf local_filtered = bilateral_filter(latest_local_dem_);
+    // Local DEM is now pre-smoothed by the DEM builder (Gaussian smoothing at build time).
+    // No bilateral filter needed at match time — saves ~3x CPU per match cycle.
+    const Eigen::MatrixXf& local_filtered = latest_local_dem_;
 
     const int n = config_.num_particles;
     
