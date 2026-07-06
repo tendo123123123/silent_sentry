@@ -517,32 +517,43 @@ class OdomVisualizerNode(Node):
         plt.tight_layout()
 
     # =========================================================================
+    # Decimation Helper - stride-based downsample to max N points
+    # =========================================================================
+    @staticmethod
+    def _decimate(arr, max_pts=200):
+        """Return a numpy array with at most max_pts elements using stride slicing."""
+        if len(arr) <= max_pts:
+            return np.asarray(arr)
+        stride = max(1, len(arr) // max_pts)
+        return np.asarray(arr)[::stride]
+
+    # =========================================================================
     # Plot Update (Executed solely on main thread, using snapshots)
     # =========================================================================
     def update_plot(self):
         # 1. Take a quick thread-safe snapshot of the plotting data
         with self.lock:
-            gt_x = list(self.gt_x)
-            gt_y = list(self.gt_y)
+            gt_x = np.array(self.gt_x)
+            gt_y = np.array(self.gt_y)
             gt_yaw = list(self.gt_yaw)
 
-            loc_x = list(self.loc_x)
-            loc_y = list(self.loc_y)
+            loc_x = np.array(self.loc_x)
+            loc_y = np.array(self.loc_y)
             loc_yaw = list(self.loc_yaw)
 
-            raw_x = list(self.raw_x)
-            raw_y = list(self.raw_y)
+            raw_x = np.array(self.raw_x)
+            raw_y = np.array(self.raw_y)
             raw_yaw = list(self.raw_yaw)
 
-            error_time = list(self.error_time)
-            loc_pos_err = list(self.loc_pos_err)
-            raw_pos_err = list(self.raw_pos_err)
-            heading_err = list(self.heading_err)
+            error_time = np.array(self.error_time)
+            loc_pos_err = np.array(self.loc_pos_err)
+            raw_pos_err = np.array(self.raw_pos_err)
+            heading_err = np.array(self.heading_err)
 
-            trn_time = list(self.trn_time)
-            trn_quality = list(self.trn_quality)
-            trn_corr_mag = list(self.trn_corr_mag)
-            drift_hist = list(self.drift_hist)
+            trn_time = np.array(self.trn_time)
+            trn_quality = np.array(self.trn_quality)
+            trn_corr_mag = np.array(self.trn_corr_mag)
+            drift_hist = np.array(self.drift_hist)
 
             # Auto-scaling limits
             min_x, max_x = self.min_x, self.max_x
@@ -554,39 +565,41 @@ class OdomVisualizerNode(Node):
             last_trn_c = self.last_trn_c
             gt_received = self.gt_received
 
-        # 2. Update XY Trajectory
-        if gt_x:
-            self.line_gt.set_data(gt_x, gt_y)
+        MAX_PTS = 200  # Hard cap per line
+
+        # 2. Update XY Trajectory (decimated)
+        if len(gt_x) > 0:
+            self.line_gt.set_data(self._decimate(gt_x, MAX_PTS), self._decimate(gt_y, MAX_PTS))
             self.pt_gt.set_data([gt_x[-1]], [gt_y[-1]])
         else:
             self.pt_gt.set_data([], [])
 
-        if loc_x:
-            self.line_loc.set_data(loc_x, loc_y)
+        if len(loc_x) > 0:
+            self.line_loc.set_data(self._decimate(loc_x, MAX_PTS), self._decimate(loc_y, MAX_PTS))
             self.pt_loc.set_data([loc_x[-1]], [loc_y[-1]])
         else:
             self.pt_loc.set_data([], [])
 
-        if raw_x:
-            self.line_raw.set_data(raw_x, raw_y)
+        if len(raw_x) > 0:
+            self.line_raw.set_data(self._decimate(raw_x, MAX_PTS), self._decimate(raw_y, MAX_PTS))
             self.pt_raw.set_data([raw_x[-1]], [raw_y[-1]])
         else:
             self.pt_raw.set_data([], [])
 
         # Heading arrows at current positions
-        if gt_x and gt_yaw:
+        if len(gt_x) > 0 and gt_yaw:
             self.qv_gt.set_offsets([[gt_x[-1], gt_y[-1]]])
             self.qv_gt.set_UVC([math.cos(gt_yaw[-1])], [math.sin(gt_yaw[-1])])
-        if loc_x and loc_yaw:
+        if len(loc_x) > 0 and loc_yaw:
             self.qv_loc.set_offsets([[loc_x[-1], loc_y[-1]]])
             self.qv_loc.set_UVC([math.cos(loc_yaw[-1])], [math.sin(loc_yaw[-1])])
 
         # Stats text box
-        if gt_received and loc_pos_err:
+        if gt_received and len(loc_pos_err) > 0:
             ate = float(np.mean(loc_pos_err[-100:]))
             pe  = loc_pos_err[-1]
-            he  = heading_err[-1] if heading_err else 0.0
-            dr  = drift_hist[-1]  if drift_hist  else 0.0
+            he  = heading_err[-1] if len(heading_err) > 0 else 0.0
+            dr  = drift_hist[-1]  if len(drift_hist) > 0  else 0.0
             self.stats_text.set_text(
                 f'ATE={ate:.2f}m  Err={pe:.2f}m\n'
                 f'Δyaw={he:+.1f}°  Drift={dr:.1f}%\n'
@@ -599,39 +612,36 @@ class OdomVisualizerNode(Node):
             self.ax_traj.set_xlim(min_x - mg, max_x + mg)
             self.ax_traj.set_ylim(min_y - mg, max_y + mg)
 
-        # 3. Downsampled/Capped error plots (last 1000 points max to keep matplotlib fast!)
-        slice_idx = -1000
-
+        # 3. Decimated error plots (max 200 pts per line)
         # -- Position Error --
         if len(error_time) > 1:
-            et_slice = error_time[slice_idx:]
-            self.line_loc_err.set_data(et_slice, loc_pos_err[slice_idx:])
+            et_d = self._decimate(error_time, MAX_PTS)
+            self.line_loc_err.set_data(et_d, self._decimate(loc_pos_err, MAX_PTS))
             if len(raw_pos_err) == len(error_time):
-                self.line_raw_err.set_data(et_slice, raw_pos_err[slice_idx:])
+                self.line_raw_err.set_data(et_d, self._decimate(raw_pos_err, MAX_PTS))
             
             self.ax_pos.set_xlim(error_time[0], max(error_time[-1], 1))
-            mx = max(loc_pos_err[-300:]) if loc_pos_err else 1.0
+            mx = max(loc_pos_err[-300:]) if len(loc_pos_err) > 0 else 1.0
             self.ax_pos.set_ylim(0, max(mx * 1.2, 0.2))
 
         # -- Heading Error --
-        if len(error_time) > 1 and heading_err:
-            et_slice = error_time[slice_idx:]
-            self.line_head_err.set_data(et_slice, heading_err[slice_idx:])
+        if len(error_time) > 1 and len(heading_err) > 0:
+            self.line_head_err.set_data(self._decimate(error_time, MAX_PTS), self._decimate(heading_err, MAX_PTS))
             self.ax_head.set_xlim(error_time[0], max(error_time[-1], 1))
             rh = heading_err[-300:]
             self.ax_head.set_ylim(min(rh) - 5, max(rh) + 5)
 
         # -- TRN Diagnostics --
-        if trn_time:
-            tt_slice = trn_time[slice_idx:]
-            self.line_trn_q.set_data(tt_slice, trn_quality[slice_idx:])
-            if trn_corr_mag:
-                self.line_trn_cor.set_data(tt_slice, trn_corr_mag[slice_idx:])
-                mx_c = max(trn_corr_mag[-200:]) if trn_corr_mag else 1.0
+        if len(trn_time) > 0:
+            tt_d = self._decimate(trn_time, MAX_PTS)
+            self.line_trn_q.set_data(tt_d, self._decimate(trn_quality, MAX_PTS))
+            if len(trn_corr_mag) > 0:
+                self.line_trn_cor.set_data(tt_d, self._decimate(trn_corr_mag, MAX_PTS))
+                mx_c = max(trn_corr_mag[-200:]) if len(trn_corr_mag) > 0 else 1.0
                 self.ax_trn_r.set_ylim(0, max(mx_c * 1.3, 0.5))
-            if drift_hist:
-                dh = [d / 100.0 for d in drift_hist]
-                self.line_drift.set_data(error_time[slice_idx:], dh[slice_idx:])
+            if len(drift_hist) > 0:
+                dh = drift_hist / 100.0
+                self.line_drift.set_data(self._decimate(error_time, MAX_PTS), self._decimate(dh, MAX_PTS))
             self.ax_trn.set_xlim(trn_time[0], max(trn_time[-1], 1))
 
         self.fig.canvas.draw_idle()
@@ -684,11 +694,11 @@ def main(args=None):
     spin_thread.start()
 
     try:
-        # Run GUI plot update loop at 20 FPS (every 50ms) on the main thread,
-        # checking if the Matplotlib figure is still open.
+        # Run GUI plot update loop at 4 FPS (every 250ms) on the main thread.
+        # 4 FPS is plenty for a monitoring dashboard and eliminates all lag.
         while rclpy.ok() and plt.fignum_exists(node.fig.number):
             node.update_plot()
-            plt.pause(0.05)
+            plt.pause(0.25)
     except KeyboardInterrupt:
         pass
     finally:

@@ -318,8 +318,12 @@ void FuserNode::wheel_callback(const nav_msgs::msg::Odometry::ConstSharedPtr msg
     const double ds = vx * dt;
     const double dtheta = last_imu_omega_z_ * dt;
 
-    // Track pure continuous dead-reckoning for the odom->base TF
-    gtsam::Pose3 delta(gtsam::Rot3::Yaw(dtheta), gtsam::Point3(ds, 0.0, 0.0));
+    // Track continuous dead-reckoning for the odom->base TF
+    // SE(3) Expmap: propagate on the manifold so rotation and translation
+    // are integrated jointly, eliminating arc-vs-chord error during curves.
+    gtsam::Vector6 twist;
+    twist << 0.0, 0.0, dtheta, ds, 0.0, 0.0;
+    gtsam::Pose3 delta = gtsam::Pose3::Expmap(twist);
     pure_odom_to_base_ = pure_odom_to_base_.compose(delta);
 
     // Compute longitudinal acceleration from wheel encoders

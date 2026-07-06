@@ -119,14 +119,26 @@ void TRNCore::propagate_particles(double local_dx, double local_dy, double dyaw)
     std::normal_distribution<double> noise_y(0.0, std_dev_xy);
     std::normal_distribution<double> noise_yaw(0.0, std_dev_yaw);
 
+    // SE(2) left-Jacobian integration: compute the effective translation
+    // so particles follow proper arcs during turns instead of chords.
+    double dx_eff = local_dx;
+    double dy_eff = local_dy;
+
+    if (std::abs(dyaw) > 1e-5) {
+        double sin_th = std::sin(dyaw);
+        double cos_th = std::cos(dyaw);
+        dx_eff = (local_dx * sin_th + local_dy * (cos_th - 1.0)) / dyaw;
+        dy_eff = (local_dx * (1.0 - cos_th) + local_dy * sin_th) / dyaw;
+    }
+
     // local_dx, local_dy are in the robot's base frame.
     // We project them into the map frame using each particle's own map->base yaw.
     for (auto& p : particles_) {
         double cos_p = std::cos(p.yaw);
         double sin_p = std::sin(p.yaw);
         
-        p.x += local_dx * cos_p - local_dy * sin_p + noise_x(rand_engine_);
-        p.y += local_dx * sin_p + local_dy * cos_p + noise_y(rand_engine_);
+        p.x += dx_eff * cos_p - dy_eff * sin_p + noise_x(rand_engine_);
+        p.y += dx_eff * sin_p + dy_eff * cos_p + noise_y(rand_engine_);
         p.yaw = wrap_angle(p.yaw + dyaw + noise_yaw(rand_engine_));
     }
 }
