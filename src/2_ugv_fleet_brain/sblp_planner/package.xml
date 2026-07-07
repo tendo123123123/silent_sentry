@@ -2,10 +2,8 @@
 <package format="3">
   <name>sblp_planner</name>
   <version>0.1.0</version>
-  <description>
-    Scenario-Based Local Planner (SBLP). Switches trajectory primitives
-    (dune-crossing, rock-avoidance, open-corridor sprint) based on terrain
-    class inferred from the VLM costmap layer.
+    Spatially-Bounded Lévy Patrol (SBLP) local planner. Guarantees unpredictable,
+    geo-fenced sector coverage with zero inter-agent communication.
   </description>
   <maintainer email="aditya@example.com">Aditya Pachauri</maintainer>
   <license>MIT</license>

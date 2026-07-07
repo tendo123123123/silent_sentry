@@ -15,10 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Python deps (VLM + plotting) ─────────────────────────────────────────────
+# ── Python deps (plotting) ───────────────────────────────────────────────────
 RUN pip3 install --no-cache-dir \
-    transformers>=4.40 \
-    torch --index-url https://download.pytorch.org/whl/cpu \
     opencv-python-headless \
     matplotlib \
     numpy \

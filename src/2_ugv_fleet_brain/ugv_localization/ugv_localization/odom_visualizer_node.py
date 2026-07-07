@@ -136,7 +136,9 @@ class OdomVisualizerNode(Node):
         super().__init__('odom_visualizer_node')
 
         # Parameters
-        self.declare_parameter('max_history', 3000)
+        # Large enough to retain a full long-run trajectory for all traces
+        # without maxlen eviction (which desyncs GT/raw/loc time coverage).
+        self.declare_parameter('max_history', 100000)
         self.declare_parameter('update_rate_hz', 5.0)
         self.declare_parameter('ground_truth_topic', '/ground_truth/pose')
         self.declare_parameter('model_name', 'alpha')
@@ -661,25 +663,62 @@ class OdomVisualizerNode(Node):
                     'loc_pos_err_m', 'heading_err_deg', 'drift_pct'
                 ])
                 with self.lock:
-                    n = min(len(self.error_time),
-                            len(self.gt_x), len(self.loc_x),
-                            len(self.loc_pos_err))
-                    for i in range(n):
-                        writer.writerow([
-                            f'{self.error_time[i]:.3f}',
-                            f'{self.gt_x[i]:.4f}', f'{self.gt_y[i]:.4f}',
-                            f'{self.gt_yaw[i]:.4f}',
-                            f'{self.loc_x[i]:.4f}', f'{self.loc_y[i]:.4f}',
-                            f'{self.loc_yaw[i]:.4f}',
-                            f'{list(self.raw_x)[i] if i < len(self.raw_x) else 0.0:.4f}',
-                            f'{list(self.raw_y)[i] if i < len(self.raw_y) else 0.0:.4f}',
-                            f'{list(self.raw_yaw)[i] if i < len(self.raw_yaw) else 0.0:.4f}',
-                            f'{self.loc_pos_err[i]:.4f}',
-                            f'{list(self.heading_err)[i] if i < len(self.heading_err) else 0.0:.2f}',
-                            f'{list(self.drift_hist)[i] if i < len(self.drift_hist) else 0.0:.4f}'
-                        ])
+                    # Use time-synced arrays: loc and error are same length (from _compute_errors).
+                    # GT and raw are at different rates, so interpolate by nearest time.
+                    gt_t = list(self.gt_time)
+                    gt_x_l = list(self.gt_x)
+                    gt_y_l = list(self.gt_y)
+                    gt_yaw_l = list(self.gt_yaw)
 
-            self.get_logger().info(f'Saved comparison data to {self.csv_path}')
+                    raw_t = list(self.raw_time)
+                    raw_x_l = list(self.raw_x)
+                    raw_y_l = list(self.raw_y)
+                    raw_yaw_l = list(self.raw_yaw)
+
+                    loc_x_l = list(self.loc_x)
+                    loc_y_l = list(self.loc_y)
+                    loc_yaw_l = list(self.loc_yaw)
+
+                    err_t = list(self.error_time)
+                    err_pos = list(self.loc_pos_err)
+                    err_head = list(self.heading_err)
+                    err_drift = list(self.drift_hist)
+
+                n = min(len(err_t), len(loc_x_l), len(err_pos))
+
+                # Binary search helper for nearest-time lookup
+                import bisect
+
+                def nearest(time_arr, data_arr, target_t):
+                    if not time_arr:
+                        return 0.0
+                    idx = bisect.bisect_left(time_arr, target_t)
+                    if idx >= len(time_arr):
+                        idx = len(time_arr) - 1
+                    elif idx > 0:
+                        if abs(time_arr[idx - 1] - target_t) < abs(time_arr[idx] - target_t):
+                            idx -= 1
+                    return data_arr[idx]
+
+                for i in range(n):
+                    t = err_t[i]
+                    writer.writerow([
+                        f'{t:.3f}',
+                        f'{nearest(gt_t, gt_x_l, t):.4f}',
+                        f'{nearest(gt_t, gt_y_l, t):.4f}',
+                        f'{nearest(gt_t, gt_yaw_l, t):.4f}',
+                        f'{loc_x_l[i]:.4f}',
+                        f'{loc_y_l[i]:.4f}',
+                        f'{loc_yaw_l[i]:.4f}',
+                        f'{nearest(raw_t, raw_x_l, t):.4f}',
+                        f'{nearest(raw_t, raw_y_l, t):.4f}',
+                        f'{nearest(raw_t, raw_yaw_l, t):.4f}',
+                        f'{err_pos[i]:.4f}',
+                        f'{err_head[i]:.2f}',
+                        f'{err_drift[i]:.4f}'
+                    ])
+
+            self.get_logger().info(f'Saved comparison data to {self.csv_path} ({n} rows)')
         except Exception as e:
             self.get_logger().error(f'Failed to save CSV: {e}')
 

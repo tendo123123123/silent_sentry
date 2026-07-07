@@ -7,8 +7,7 @@
 Silent Sentry presents a multi-layer autonomous navigation stack for Unmanned Ground Vehicles (UGVs) operating in unstructured, GPS-degraded desert corridors. The system integrates:
 
 - **EMCON Controller** — Emission-Control-aware command arbitration that suppresses unnecessary RF/sensor emissions during adversarial exposure windows
-- **SBLP Planner** — Scenario-Based Local Planner that switches trajectory primitives based on terrain class (sand dune, rock field, open corridor)
-- **VLM Costmap** — Vision-Language Model costmap layer that annotates traversability using zero-shot scene understanding (no fine tuning required)
+- **SBLP Planner** — Spatially-Bounded Lévy Patrol local planner that guarantees unpredictable, geo-fenced sector coverage
 
 Experiments are conducted in a photorealistic Gazebo Harmonic simulation of the Thar Desert corridor (1735 × 4144 m heightmap, 187 vegetation models).
 
@@ -20,10 +19,10 @@ Experiments are conducted in a photorealistic Gazebo Harmonic simulation of the 
 /cmd_vel (Twist)
       │
       ▼
-┌─────────────┐     terrain class     ┌──────────────┐
-│ VLM Costmap │ ──────────────────▶  │ SBLP Planner │
-│  (vlm_costmap)│                    │ (sblp_planner)│
-└─────────────┘                      └──────┬───────┘
+                                     ┌──────────────┐
+                                     │ SBLP Planner │
+                                     │ (sblp_planner)│
+                                     └──────┬───────┘
                                             │ waypoints
                                             ▼
                                    ┌─────────────────┐
@@ -51,8 +50,7 @@ silent_sentry_ros2/
 │   └── final_graphs/         # PNGs used in the IEEE submission
 ├── src/
 │   ├── emcon_controller/     # EMCON-aware command arbitration node
-│   ├── sblp_planner/         # Scenario-based local planner
-│   └── vlm_costmap/          # VLM traversability costmap layer
+│   └── sblp_planner/         # Scenario-based local planner
 └── world/
     └── thar_corridor.sdf     # Gazebo world (references local .tif heightmap)
 ```
@@ -67,7 +65,6 @@ silent_sentry_ros2/
 | Gazebo | Harmonic 8.10+ |
 | Python | 3.12 |
 | OpenCV | 4.x |
-| Transformers (HuggingFace) | ≥ 4.40 |
 | robot_localization | Jazzy |
 
 ---

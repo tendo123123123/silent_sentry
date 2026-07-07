@@ -355,7 +355,10 @@ def generate_launch_description():
         name='odom_visualizer_node',
         parameters=[{
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'max_history': 3000,
+            # Large enough to retain a full long-run trajectory for ALL traces
+            # without ring-buffer eviction (which desyncs GT/raw/loc coverage
+            # and produces truncated ground-truth in the exported CSV).
+            'max_history': 200000,
             'update_rate_hz': 5.0,
             'ground_truth_topic': '/ground_truth/pose',
             'model_name': LaunchConfiguration('model_name'),
