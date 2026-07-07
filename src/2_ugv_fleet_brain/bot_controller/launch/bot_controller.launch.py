@@ -129,7 +129,7 @@ def generate_launch_description():
     )
 
     ackermann_twist_controller_node = Node(
-        package='custom_ackermann_controller',
+        package='ugv_ackermann_controller',
         executable='ackermann_twist_controller',
         name='ackermann_twist_controller',
         output='screen',
@@ -144,7 +144,7 @@ def generate_launch_description():
     )
 
     # wheel_odometry_node = Node(
-    #     package='custom_ackermann_controller',
+    #     package='ugv_terramechanics',
     #     executable='wheel_odometry',
     #     name='wheel_odometry_node',
     #     output='screen',
@@ -170,7 +170,7 @@ def generate_launch_description():
     #     output='screen',
     #     parameters=[
     #         PathJoinSubstitution([
-    #             FindPackageShare('custom_ackermann_controller'),
+    #             FindPackageShare('ugv_localization'),
     #             'config',
     #             'robot_localization.yaml',
     #         ]),

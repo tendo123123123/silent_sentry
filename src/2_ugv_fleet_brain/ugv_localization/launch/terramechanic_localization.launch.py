@@ -40,7 +40,7 @@ def generate_launch_description():
     source_config_dir = os.path.join(package_root, 'config')
     source_package_init = os.path.join(
         package_root,
-        'custom_ackermann_controller',
+        'ugv_localization',
         '__init__.py',
     )
     use_source_tree = (
@@ -64,7 +64,7 @@ def generate_launch_description():
             )
         )
     else:
-        pkg_share = FindPackageShare('custom_ackermann_controller')
+        pkg_share = FindPackageShare('ugv_localization')
         terramech_config = PathJoinSubstitution([
             pkg_share, 'config', 'terramechanic_odometry.yaml'
         ])
@@ -148,7 +148,7 @@ def generate_launch_description():
     # Publishes:  /terramechanic_odom (Odometry with slip-scaled covariance)
     #
     terramech_odom_node = Node(
-        package='custom_ackermann_controller',
+        package='ugv_terramechanics',
         executable='terramechanic_odometry',
         name='terramechanic_odometry_node',
         parameters=[
@@ -350,7 +350,7 @@ def generate_launch_description():
     # Real-time matplotlib visualization of odometry vs ground truth
     # Displays: XY trajectory, position error, heading error, drift %
     odom_visualizer_node = Node(
-        package='custom_ackermann_controller',
+        package='ugv_localization',
         executable='odom_visualizer',
         name='odom_visualizer_node',
         parameters=[{

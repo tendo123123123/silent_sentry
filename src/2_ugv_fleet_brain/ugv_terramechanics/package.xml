@@ -1,27 +1,19 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>custom_ackermann_controller</name>
+  <name>ugv_terramechanics</name>
   <version>1.0.0</version>
-  <description>Ackermann UGV controller with Bekker-Wong terramechanics localization for desert environments</description>
+  <description>Bekker-Wong terramechanics odometry estimation for UGV in desert environments</description>
   <maintainer email="adi.pachauri.444@gmail.com">aditya-pachauri</maintainer>
   <license>TODO: License declaration</license>
 
-  <!-- Core ROS 2 dependencies -->
   <depend>rclpy</depend>
-  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>nav_msgs</depend>
   <depend>tf2_ros</depend>
-  <depend>tf2_msgs</depend>
   <depend>tf_transformations</depend>
-  <depend>robot_localization</depend>
-  <depend>silent_sentry_interfaces</depend>
-
-  <!-- Terramechanic localization stack -->
   <depend>imu_tools</depend>
-  <depend>message_filters</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
