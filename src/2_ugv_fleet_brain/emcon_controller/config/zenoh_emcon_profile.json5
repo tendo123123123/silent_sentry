@@ -1,0 +1,29 @@
+{
+  // Eclipse Zenoh RMW Configuration Profile for EMCON Border Surveillance
+  // Guarantees zero RF discovery spam by replacing DDS multicast discovery (SPDP/SEDP)
+  mode: "peer",
+
+  // Suppress UDP multicast scouting/discovery to prevent RF emission detection by enemy EW
+  scouting: {
+    multicast: {
+      enabled: false
+    }
+  },
+
+  // Static unicast peering to Base Station / Gateway router
+  connect: {
+    endpoints: ["tcp/10.0.0.1:7447"]
+  },
+
+  // Micro-burst QoS and low-latency transport tuning
+  transport: {
+    shared_memory: {
+      enabled: true
+    },
+    unicast: {
+      qos: {
+        enabled: true
+      }
+    }
+  }
+}

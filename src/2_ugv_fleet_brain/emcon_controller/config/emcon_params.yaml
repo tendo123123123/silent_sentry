@@ -1,0 +1,10 @@
+emcon_controller:
+  ros__parameters:
+    emcon_slowdown_factor: 0.35
+    emcon_max_angular: 0.4
+    stealth_max_linear_vel: 0.3
+    default_emcon_state: 0  # 0=NORMAL, 1=RADIO_SILENCE, 2=ZERO_EMISSION, 3=EMERGENCY_BURST
+    burst_buffer_size: 50
+    hmac_secret_key: "sentry_emcon_secret_key_2026"
+    zenoh_rmw_enabled: true
+    suppress_discovery_multicast: true

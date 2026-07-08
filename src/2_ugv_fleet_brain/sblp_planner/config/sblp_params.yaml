@@ -1,0 +1,16 @@
+sblp_planner:
+  ros__parameters:
+    max_linear_vel: 1.5
+    max_angular_vel: 0.6
+    levy_beta: 1.8
+    l_min: 3.0
+    l_max: 35.0
+    waypoint_tolerance: 1.5
+    max_rejection_attempts: 50
+    # Default patrol sector polygon (in meters, map/odom frame)
+    geofence_polygon: [
+      [-60.0, -60.0],
+      [ 60.0, -60.0],
+      [ 60.0,  60.0],
+      [-60.0,  60.0]
+    ]

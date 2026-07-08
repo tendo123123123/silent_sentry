@@ -1,0 +1,14 @@
+base_station_bringup:
+  ros__parameters:
+    grid_size_x: 60.0
+    grid_size_y: 60.0
+    grid_rows: 4
+    grid_cols: 4
+    decay_rate: 0.05       # Uncertainty growth per second
+    breach_threshold: 0.80 # Uncertainty level triggering RL reallocation
+    default_beta: 1.8
+    stretched_beta: 1.3    # Stretched Lévy exponent for super-diffusion healing
+    default_l_max: 35.0
+    stretched_l_max: 65.0
+    hmac_secret_key: "sentry_emcon_secret_key_2026"
+    zenoh_rmw_enabled: true

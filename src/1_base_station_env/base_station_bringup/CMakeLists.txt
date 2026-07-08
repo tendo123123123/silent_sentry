@@ -8,8 +8,13 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY launch worlds models scripts
+  DIRECTORY launch worlds models scripts config
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS scripts/rl_coverage_brain.py scripts/fetch_world.sh
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
