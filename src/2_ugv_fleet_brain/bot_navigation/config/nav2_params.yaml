@@ -223,7 +223,11 @@ global_costmap:
       use_sim_time: true
       # Remove robot_radius: 0.7
       footprint: "[[-0.7, -0.4], [0.7, -0.4], [0.7, 0.4], [-0.7, 0.4]]"             # Conservative radius based on robot dimensions (1.4m x 0.8m)
-      resolution: 0.05
+      # NOTE: the terrain static map spans 900 x 300 m. At 0.05 m this global
+      # costmap would be 18000x6000 = 108M cells, which OOMs / stalls activation
+      # (and blocks the whole Nav2 lifecycle bring-up). 0.25 m -> 3600x1200 =
+      # 4.3M cells, matching the terrain scale while remaining tractable.
+      resolution: 0.25
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
