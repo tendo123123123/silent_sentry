@@ -7,10 +7,7 @@ sblp_planner:
     l_max: 35.0
     waypoint_tolerance: 1.5
     max_rejection_attempts: 50
-    # Default patrol sector polygon (in meters, map/odom frame)
-    geofence_polygon: [
-      [-60.0, -60.0],
-      [ 60.0, -60.0],
-      [ 60.0,  60.0],
-      [-60.0,  60.0]
-    ]
+    seed: -1  # >=0 for reproducible patrols, <0 for nondeterministic
+    # Patrol sector polygon as a FLAT [x0, y0, x1, y1, ...] array (metres,
+    # map/odom frame). ROS 2 parameters cannot hold nested lists.
+    geofence_polygon: [-60.0, -60.0, 60.0, -60.0, 60.0, 60.0, -60.0, 60.0]

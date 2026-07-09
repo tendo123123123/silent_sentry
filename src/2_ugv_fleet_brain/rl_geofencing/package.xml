@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rl_geofencing</name>
+  <version>0.1.0</version>
+  <description>
+    Base Station Reinforcement Learning brain for EMCON-compliant elastic
+    geo-fencing. Detects patrol-net breaches from single Zenoh micro-bursts and
+    broadcasts one reallocation message that stretches the remaining sentinels'
+    Spatially-Bounded Lévy Patrol sectors to heal the coverage gap.
+  </description>
+  <maintainer email="adi.pachauri.444@gmail.com">Aditya Pachauri</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>silent_sentry_interfaces</depend>
+  <depend>python3-numpy</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

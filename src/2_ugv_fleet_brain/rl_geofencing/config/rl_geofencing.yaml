@@ -1,0 +1,18 @@
+base_station_rl_node:
+  ros__parameters:
+    # Path to an offline-trained SB3 model (.zip). Empty -> analytical fallback.
+    model_path: ""
+    # Path to a global costmap .npy (values 0-255, 255=traversable). Empty -> flat.
+    costmap_path: ""
+    # Border strip the fleet patrols: [min_x, min_y, max_x, max_y] in meters.
+    border_bounds: [0.0, 0.0, 900.0, 300.0]
+    costmap_origin: [0.0, 0.0]
+    costmap_resolution: 1.0
+    robot_ids: ["alpha", "beta", "gamma"]
+    # Reward weights: R = w_coverage*C - w_travel*E - w_terrain*T
+    w_coverage: 1.0
+    w_travel: 0.3
+    w_terrain: 0.6
+    # Optional explicit initial sectors, one rectangle [x0,y0,x1,y1] per robot.
+    # Leave empty to auto-tile the border strip.
+    initial_sectors: []
