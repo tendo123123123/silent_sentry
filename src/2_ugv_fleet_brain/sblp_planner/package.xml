@@ -2,6 +2,7 @@
 <package format="3">
   <name>sblp_planner</name>
   <version>0.1.0</version>
+  <description>
     Spatially-Bounded Lévy Patrol (SBLP) local planner. Guarantees unpredictable,
     geo-fenced sector coverage with zero inter-agent communication.
   </description>
