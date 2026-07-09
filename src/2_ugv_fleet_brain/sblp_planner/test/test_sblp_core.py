@@ -75,7 +75,7 @@ def test_levy_step_is_heavy_tailed():
 
 
 def test_levy_step_degenerate_beta():
-    core = _core(seed=3, levy_beta=1.0)  # beta<=1 → uniform fallback
+    core = _core(seed=3, l_min=3.0, l_max=35.0, levy_beta=1.0)  # beta<=1 → uniform fallback
     for _ in range(500):
         s = core.sample_levy_step()
         assert 3.0 <= s <= 35.0 + 1e-9
@@ -103,6 +103,37 @@ def test_waypoint_recovery_when_outside():
     assert wp.source == 'recovery'
     # Recovery heading should point back toward the centroid (down-left).
     assert math.cos(wp.yaw) < 0 and math.sin(wp.yaw) < 0
+
+
+def test_waypoint_never_lands_inside_turning_circle():
+    """Every Lévy waypoint must be reachable: >= 2*r_min from the robot.
+
+    Guards against the orbit trap where the pure-pursuit controller is stuck
+    on a target that lies inside its minimum turning circle.
+    """
+    core = _core(seed=42)  # defaults: l_min=8.0, r_min=2.5 → 2*r_min=5.0
+    r_min = core.cfg.max_linear_vel / core.cfg.max_angular_vel
+    for _ in range(500):
+        wp = core.generate_waypoint(0.0, 0.0, 0.0)
+        if wp.source == 'levy_flight':
+            assert math.hypot(wp.x, wp.y) >= 2.0 * r_min - 1e-6
+
+
+def test_correlated_turn_biases_forward():
+    """A correlated random walk should keep most steps within a forward cone."""
+    core = _core(seed=7, turn_sigma_rad=1.0, reorient_probability=0.0)
+    turns = [core.sample_turn_angle() for _ in range(2000)]
+    # With sigma=1 rad, ~68% of turns should be within ±1 rad of straight ahead.
+    within_one = sum(1 for t in turns if abs(t) < 1.0)
+    assert within_one / len(turns) > 0.55
+
+
+def test_correlated_turn_reorient_gives_full_coverage():
+    """With reorient_probability=1, turns fill all four quadrants."""
+    core = _core(seed=8, reorient_probability=1.0)
+    turns = [core.sample_turn_angle() for _ in range(2000)]
+    assert any(t < -1.0 for t in turns)
+    assert any(t > 1.0 for t in turns)
 
 
 # ── Navigation ────────────────────────────────────────────────────────────────

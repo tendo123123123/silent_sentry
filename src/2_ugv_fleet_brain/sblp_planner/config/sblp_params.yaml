@@ -2,12 +2,22 @@ sblp_planner:
   ros__parameters:
     max_linear_vel: 1.5
     max_angular_vel: 0.6
+    # Heavy-tailed step length P(l) ~ l^(-beta), 1 < beta <= 3.
     levy_beta: 1.8
-    l_min: 3.0
-    l_max: 35.0
-    waypoint_tolerance: 1.5
+    # l_min MUST exceed 2 * r_min (r_min = max_linear/max_angular) so that
+    # every Lévy step lands outside the UGV's minimum turning circle.
+    # With the defaults here, r_min = 2.5 m, so l_min >= 5 m; 8 m is safe.
+    l_min: 8.0
+    l_max: 60.0
+    waypoint_tolerance: 2.0
+    waypoint_timeout_s: 30.0
     max_rejection_attempts: 50
-    seed: -1  # >=0 for reproducible patrols, <0 for nondeterministic
+    # Correlated random walk: turn angles drawn from a wrapped normal
+    # centered at 0 (kinematically friendly), with an occasional isotropic
+    # reorientation to preserve full angular coverage.
+    turn_sigma_rad: 1.4          # ~80 deg std dev
+    reorient_probability: 0.05
+    seed: -1                     # >=0 for reproducible patrols
     # Patrol sector polygon as a FLAT [x0, y0, x1, y1, ...] array (metres,
-    # map/odom frame). ROS 2 parameters cannot hold nested lists.
-    geofence_polygon: [-60.0, -60.0, 60.0, -60.0, 60.0, 60.0, -60.0, 60.0]
+    # map/odom frame). Default: 200 x 150 m centered on the odom origin.
+    geofence_polygon: [-100.0, -75.0, 100.0, -75.0, 100.0, 75.0, -100.0, 75.0]

@@ -79,13 +79,28 @@ class SBLPConfig:
     max_linear_vel: float = 1.5
     max_angular_vel: float = 0.6
     levy_beta: float = 1.8          # exponent in P(l) ~ l^(-beta), 1 < beta <= 3
-    l_min: float = 3.0
-    l_max: float = 35.0
-    waypoint_tolerance: float = 1.5
+    # l_min MUST exceed 2 * r_min (r_min = max_linear/max_angular) so that every
+    # Lévy waypoint lies outside the UGV's minimum turning circle. With the
+    # defaults above, r_min = 2.5 m, so l_min >= 5 m; 8 m adds safety margin.
+    l_min: float = 8.0
+    l_max: float = 60.0
+    waypoint_tolerance: float = 2.0
+    # Watchdog: if a waypoint isn't reached in this many seconds, regenerate a
+    # new one. Prevents residual unreachability traps.
+    waypoint_timeout_s: float = 30.0
     max_rejection_attempts: int = 50
+    # Correlated random walk: heading changes drawn from a wrapped normal
+    # centered at 0 with std deviation ``turn_sigma_rad``. Larger sigma ->
+    # closer to a pure (isotropic) Lévy flight; smaller sigma -> straighter
+    # paths. A ~90° std keeps the walk exploratory but Ackermann-friendly.
+    turn_sigma_rad: float = 1.4
+    # Occasional isotropic reorientation to guarantee full-plane coverage
+    # (this preserves the mathematical Lévy character over long horizons).
+    reorient_probability: float = 0.05
+    # Default patrol sector: 200 x 150 m rectangle centered on the odom origin.
     geofence_polygon: list = field(
-        default_factory=lambda: [(-60.0, -60.0), (60.0, -60.0),
-                                 (60.0, 60.0), (-60.0, 60.0)])
+        default_factory=lambda: [(-100.0, -75.0), (100.0, -75.0),
+                                 (100.0, 75.0), (-100.0, 75.0)])
 
 
 @dataclass
@@ -125,6 +140,21 @@ class SBLPCore:
         step = self.cfg.l_min * (u ** (-1.0 / (self.beta - 1.0)))
         return min(step, self.l_max)
 
+    def sample_turn_angle(self) -> float:
+        """Draw a heading change for a *correlated* Lévy walk.
+
+        Real foraging trajectories are not isotropic: consecutive step
+        directions are correlated (the animal doesn't teleport around).
+        Using a wrapped-normal turn distribution respects the UGV's Ackermann
+        kinematics while preserving the heavy-tailed step length that makes
+        the walk Lévy. An occasional isotropic reorientation restores full
+        angular coverage over long horizons.
+        """
+        if self.rng.random() < self.cfg.reorient_probability:
+            return self.rng.uniform(-math.pi, math.pi)
+        d = self.rng.gauss(0.0, self.cfg.turn_sigma_rad)
+        return math.atan2(math.sin(d), math.cos(d))  # wrap to [-pi, pi]
+
     def generate_waypoint(self, x: float, y: float, yaw: float) -> Waypoint:
         """Rejection-sample the next geo-fenced Lévy waypoint.
 
@@ -135,7 +165,7 @@ class SBLPCore:
         attempts = 0
         for attempts in range(1, self.cfg.max_rejection_attempts + 1):
             step = self.sample_levy_step()
-            turn = self.rng.uniform(-math.pi, math.pi)
+            turn = self.sample_turn_angle()
             heading = yaw + turn
             cx = x + step * math.cos(heading)
             cy = y + step * math.sin(heading)

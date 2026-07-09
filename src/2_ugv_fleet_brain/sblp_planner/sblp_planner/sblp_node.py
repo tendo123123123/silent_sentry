@@ -65,6 +65,10 @@ class SBLPPlanner(Node):
         seed = gp('seed').value
         rng = random.Random(seed) if seed is not None and seed >= 0 else random.Random()
 
+        self.declare_parameter('waypoint_timeout_s', 30.0)
+        self.declare_parameter('turn_sigma_rad', 1.4)
+        self.declare_parameter('reorient_probability', 0.05)
+
         config = SBLPConfig(
             max_linear_vel=gp('max_linear_vel').value,
             max_angular_vel=gp('max_angular_vel').value,
@@ -72,10 +76,22 @@ class SBLPPlanner(Node):
             l_min=gp('l_min').value,
             l_max=gp('l_max').value,
             waypoint_tolerance=gp('waypoint_tolerance').value,
+            waypoint_timeout_s=gp('waypoint_timeout_s').value,
             max_rejection_attempts=gp('max_rejection_attempts').value,
+            turn_sigma_rad=gp('turn_sigma_rad').value,
+            reorient_probability=gp('reorient_probability').value,
             geofence_polygon=reshape_flat_polygon(list(gp('geofence_polygon').value)),
         )
         self.core = SBLPCore(config, rng=rng)
+
+        # Guard: an achievable l_min must exceed 2 * r_min (minimum-turning-
+        # circle diameter), or the robot may orbit unreachable waypoints.
+        r_min = config.max_linear_vel / max(config.max_angular_vel, 1e-6)
+        if config.l_min < 2.0 * r_min:
+            self.get_logger().warn(
+                f'SBLP: l_min ({config.l_min:.2f} m) is smaller than 2*r_min '
+                f'({2.0 * r_min:.2f} m); waypoints inside the turning circle '
+                'may be unreachable and cause orbiting.')
 
         # ── Robot state ───────────────────────────────────────────────────
         self.current_x = 0.0
@@ -84,6 +100,7 @@ class SBLPPlanner(Node):
         self.odom_received = False
         self.target = None          # (x, y, yaw)
         self.waypoint_source = 'none'
+        self._target_set_time = None  # wall-clock stamp for the watchdog
 
         # ── Subscribers ───────────────────────────────────────────────────
         self.create_subscription(PoseStamped, '/goal_pose', self._goal_cb, 10)
@@ -134,6 +151,7 @@ class SBLPPlanner(Node):
     def _set_target(self, x: float, y: float, yaw: float, source: str):
         self.target = (x, y, yaw)
         self.waypoint_source = source
+        self._target_set_time = self.get_clock().now()
         wp = PoseStamped()
         wp.header.stamp = self.get_clock().now().to_msg()
         wp.header.frame_id = 'odom'
@@ -158,6 +176,15 @@ class SBLPPlanner(Node):
 
         if self.core.reached(self.current_x, self.current_y, self.target):
             self._new_levy_target()
+
+        # Watchdog: retire waypoints that have gone stale (unreachable, or
+        # slower than expected due to slip). Prevents indefinite orbiting.
+        elif self._target_set_time is not None:
+            age_s = (self.get_clock().now() - self._target_set_time).nanoseconds / 1e9
+            if age_s > self.core.cfg.waypoint_timeout_s:
+                self.get_logger().warn(
+                    f'SBLP: waypoint stale after {age_s:.1f}s; regenerating.')
+                self._new_levy_target()
 
         speed, angular = self.core.pure_pursuit(
             self.current_x, self.current_y, self.current_yaw, self.target)

@@ -37,3 +37,4 @@ src/2_ugv_fleet_brain/bot_navigation/maps/continuous_costmap.tif
 .agents
 .obsidian/
 paper_data/
+.pytest_cache/
