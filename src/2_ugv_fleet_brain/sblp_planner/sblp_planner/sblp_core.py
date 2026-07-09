@@ -97,6 +97,10 @@ class SBLPConfig:
     # Occasional isotropic reorientation to guarantee full-plane coverage
     # (this preserves the mathematical Lévy character over long horizons).
     reorient_probability: float = 0.05
+    # Terrain gating: reject candidate waypoints whose terrain traversal cost
+    # (in [0, 1], 1 = lethal) exceeds this threshold. Only applied when a
+    # terrain-cost function is provided to SBLPCore.
+    terrain_cost_threshold: float = 0.7
     # Default patrol sector: 200 x 150 m rectangle centered on the odom origin.
     geofence_polygon: list = field(
         default_factory=lambda: [(-100.0, -75.0), (100.0, -75.0),
@@ -117,13 +121,33 @@ class Waypoint:
 # ── SBLP core ───────────────────────────────────────────────────────────────
 class SBLPCore:
     def __init__(self, config: SBLPConfig | None = None,
-                 rng: random.Random | None = None):
+                 rng: random.Random | None = None,
+                 terrain_cost_fn=None):
+        """``terrain_cost_fn(x, y) -> float in [0, 1]`` (1 = lethal), optional.
+
+        When provided, waypoint candidates whose terrain cost exceeds
+        ``config.terrain_cost_threshold`` are rejected, so the Lévy patrol never
+        selects a goal on impassable slopes. When ``None``, terrain gating is
+        skipped (geo-fence only).
+        """
         self.cfg = config or SBLPConfig()
         self.rng = rng or random.Random()
+        self.terrain_cost_fn = terrain_cost_fn
         # Runtime-mutable fields (stretched by Base Station micro-bursts).
         self.beta = float(self.cfg.levy_beta)
         self.l_max = float(self.cfg.l_max)
         self.polygon = reshape_flat_polygon(self.cfg.geofence_polygon)
+
+    def _terrain_ok(self, x: float, y: float) -> bool:
+        """True if terrain at (x, y) is traversable (or no cost fn is set)."""
+        if self.terrain_cost_fn is None:
+            return True
+        try:
+            return self.terrain_cost_fn(x, y) <= self.cfg.terrain_cost_threshold
+        except Exception:
+            # A costmap lookup failure should not crash patrol; treat as lethal
+            # so we conservatively reject the candidate.
+            return False
 
     # ── Lévy sampling ────────────────────────────────────────────────────
     def sample_levy_step(self) -> float:
@@ -169,7 +193,7 @@ class SBLPCore:
             heading = yaw + turn
             cx = x + step * math.cos(heading)
             cy = y + step * math.sin(heading)
-            if point_in_polygon(cx, cy, self.polygon):
+            if point_in_polygon(cx, cy, self.polygon) and self._terrain_ok(cx, cy):
                 return Waypoint(cx, cy, heading, 'levy_flight',
                                 attempts, step, turn)
 

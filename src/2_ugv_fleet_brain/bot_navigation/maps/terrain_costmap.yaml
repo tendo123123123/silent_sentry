@@ -1,0 +1,16 @@
+# A-priori terrain traversability map for the Nav2 global static layer.
+# Generated from the DEM slope via maps/generate_continuous.sh:
+#   255 (white) = flat / traversable, 0 (black) = lethal slope (>= 30 deg).
+# The map_server converts pixel -> occupancy as occ = (1 - pixel/255), so
+# traversable stays free and lethal slopes become obstacles for the Smac planner.
+#
+# The DEM is 900 x 300 px at 1.0 m/px. The robot spawns at the DEM centre, so
+# the map origin is placed at (-450, -150) to align the map centre with the
+# odom/map origin. Adjust origin if your spawn or DEM georeferencing differs.
+image: continuous_planner_map.pgm
+mode: trinary
+resolution: 1.0
+origin: [-450.0, -150.0, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.25

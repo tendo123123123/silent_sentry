@@ -550,10 +550,27 @@ class TerramechanicOdometryCore:
                     else:
                         self.is_stalled = False
 
-                    # Decoupled raw_odom from IMU: We use pure encoder velocity.
-                    # We DO NOT zero velocity based on stall detection because 
-                    # high-slip sand driving triggers false positives.
-                    self.current_linear_velocity = v_encoder
+                    # Hard-stall suppression (fixes odom inflation when the UGV
+                    # is stuck on an obstacle and the wheels spin freely).
+                    #
+                    # We distinguish two regimes that both show high wheel slip:
+                    #   * Sand slip  — wheels spin faster than truth, but the
+                    #     chassis IS translating (IMU shows motion). Here we keep
+                    #     the encoder velocity; the factor graph down-weights it
+                    #     via the inflated slip covariance.
+                    #   * Hard stall — encoder says "moving", slip is saturated,
+                    #     AND the IMU confirms the chassis is NOT translating,
+                    #     sustained past stall_duration_thresh. This is a genuine
+                    #     stick (obstacle/rock). Here the encoder velocity is
+                    #     phantom motion, so we collapse it toward the IMU-
+                    #     observed velocity (~0) to stop odometry from inflating.
+                    #
+                    # Because is_stalled requires imu_stationary, normal sand
+                    # driving (chassis moving) never trips this branch.
+                    if self.is_stalled:
+                        self.current_linear_velocity = self.v_true_imu
+                    else:
+                        self.current_linear_velocity = v_encoder
                 else:
                     self.is_stalled = False
                     self.stall_accumulator = 0.0

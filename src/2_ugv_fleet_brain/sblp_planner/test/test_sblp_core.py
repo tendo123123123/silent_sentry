@@ -203,6 +203,40 @@ def test_micro_burst_rejects_non_object():
         core.apply_micro_burst('[1, 2, 3]')
 
 
+def test_terrain_gating_rejects_lethal_waypoints():
+    """With a terrain-cost function, waypoints only land on traversable cells."""
+    # Lethal in the entire right half-plane (x > 0), traversable on the left.
+    def cost_fn(x, y):
+        return 1.0 if x > 0.0 else 0.0
+
+    cfg = SBLPConfig(geofence_polygon=SQUARE, terrain_cost_threshold=0.7)
+    core = SBLPCore(cfg, rng=random.Random(9), terrain_cost_fn=cost_fn)
+    for _ in range(300):
+        wp = core.generate_waypoint(-5.0, 0.0, math.pi)  # start left, face left
+        if wp.source == 'levy_flight':
+            assert wp.x <= 0.0  # never selects the lethal right half
+
+
+def test_terrain_gating_absent_allows_all():
+    """Without a cost function, terrain gating is skipped (geo-fence only)."""
+    core = _core(seed=10)
+    assert core.terrain_cost_fn is None
+    wp = core.generate_waypoint(0.0, 0.0, 0.0)
+    assert wp is not None
+
+
+def test_terrain_cost_lookup_failure_is_conservative():
+    """A raising cost function is treated as lethal (candidate rejected)."""
+    def bad(x, y):
+        raise RuntimeError('costmap unavailable')
+
+    cfg = SBLPConfig(geofence_polygon=SQUARE)
+    core = SBLPCore(cfg, rng=random.Random(1), terrain_cost_fn=bad)
+    # Every candidate is rejected → falls through to recovery.
+    wp = core.generate_waypoint(0.0, 0.0, 0.0)
+    assert wp.source == 'recovery'
+
+
 def test_micro_burst_polygon_takes_effect_on_sampling():
     """After stretching the polygon, waypoints respect the NEW bounds."""
     core = _core(seed=7)

@@ -27,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sblp_node = sblp_planner.sblp_node:main',
+            'sblp_goal_generator = sblp_planner.sblp_goal_generator:main',
         ],
     },
 )
