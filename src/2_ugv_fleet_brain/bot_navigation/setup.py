@@ -24,6 +24,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'ground_segmentation_node = bot_navigation.ground_segmentation_node:main',
         ],
     },
 )

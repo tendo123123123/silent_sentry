@@ -67,6 +67,10 @@ def generate_launch_description():
             default_value=os.path.join(pkg, 'maps', 'terrain_costmap.yaml'),
             description='Terrain traversability map served as the global static layer'),
 
+        # 3D LiDAR -> obstacle-only cloud (slopes removed) for the costmaps.
+        Node(package='bot_navigation', executable='ground_segmentation_node',
+             name='ground_segmentation_node', output='screen',
+             parameters=[{'use_sim_time': use_sim_time}]),
         Node(package='nav2_map_server', executable='map_server', name='map_server',
              output='screen',
              parameters=[configured_params, {'yaml_filename': map_yaml}],
