@@ -224,13 +224,17 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: true
-      # Remove robot_radius: 0.7
-      footprint: "[[-0.7, -0.4], [0.7, -0.4], [0.7, 0.4], [-0.7, 0.4]]"             # Conservative radius based on robot dimensions (1.4m x 0.8m)
-      # NOTE: the terrain static map spans 900 x 300 m. At 0.05 m this global
-      # costmap would be 18000x6000 = 108M cells, which OOMs / stalls activation
-      # (and blocks the whole Nav2 lifecycle bring-up). 0.25 m -> 3600x1200 =
-      # 4.3M cells, matching the terrain scale while remaining tractable.
-      resolution: 0.25
+      footprint: "[[-0.7, -0.4], [0.7, -0.4], [0.7, 0.4], [-0.7, 0.4]]"
+      # ROLLING WINDOW (CPU fix): a full-map global costmap over the 900x300 m
+      # terrain was 4.3M cells @0.25 m, starving Smac Hybrid-A* (planner ~2.5 Hz,
+      # robot stop-start). A 120x120 m window @0.3 m = 400x400 = 160k cells
+      # (~27x fewer) keeps the planner real-time. Half-window (60 m) covers the
+      # SBLP Levy step limit (l_max=60 m), so goals stay inside the window; the
+      # terrain static layer streams into the window as the robot moves.
+      rolling_window: true
+      width: 120
+      height: 120
+      resolution: 0.3
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
