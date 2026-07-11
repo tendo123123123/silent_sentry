@@ -46,6 +46,11 @@ class GroundSegmentationNode(Node):
         self.declare_parameter('max_height', 2.0)
         self.declare_parameter('min_points_per_cell', 2)
         self.declare_parameter('max_range', 30.0)
+        # Drop returns within this horizontal radius of the sensor: they are
+        # self-hits (robot body/mast/panel) and near-body ground that would
+        # otherwise be marked as obstacles INSIDE the footprint, trapping the
+        # controller in a permanent "collision ahead" state.
+        self.declare_parameter('self_filter_radius', 1.2)
 
         gp = self.get_parameter
         self.target_frame = gp('target_frame').value
@@ -55,6 +60,7 @@ class GroundSegmentationNode(Node):
         self.max_height = gp('max_height').value
         self.min_points_per_cell = gp('min_points_per_cell').value
         self.max_range = gp('max_range').value
+        self.self_filter_radius = gp('self_filter_radius').value
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
@@ -74,9 +80,11 @@ class GroundSegmentationNode(Node):
         if pts.shape[0] == 0:
             return
 
-        # Range gate (drop far returns that add noise to ground estimation).
+        # Range gate: drop far returns (noisy ground estimation) AND near
+        # returns within self_filter_radius (self-hits on the robot body/mast
+        # and near-body ground that would false-mark obstacles in the footprint).
         rng = np.linalg.norm(pts[:, :2], axis=1)
-        pts = pts[rng <= self.max_range]
+        pts = pts[(rng >= self.self_filter_radius) & (rng <= self.max_range)]
         if pts.shape[0] == 0:
             return
 
