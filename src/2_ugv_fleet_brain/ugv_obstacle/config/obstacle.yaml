@@ -1,0 +1,28 @@
+ugv_obstacle_node:
+  ros__parameters:
+    use_sim_time: true
+    # Global DEM (same file TRN uses). Set via launch to the installed path.
+    dem_path: ""
+    dem_res: 1.0
+    dem_origin_x: -450.0   # DEM bottom-left corner (map frame), matches TRN
+    dem_origin_y: -150.0
+    # Obstacle thresholds
+    tau_prior: 0.4         # height above a-priori DEM -> obstacle (m)
+    tau_local: 0.4         # local 3x3 neighbourhood jump -> obstacle (m)
+    low_conf_relax: 0.6    # extra tau_prior added when TRN confidence = 0
+    # Filtering
+    self_radius: 1.2       # drop self-hits within this radius (m)
+    max_range: 30.0
+    min_height: -2.0       # map-frame z band
+    max_height: 4.0
+    cell_size: 0.4         # local-jump grid cell (m)
+    min_points_per_cell: 2
+    map_frame: "map"
+    input_topic: "/scan/points"
+    output_topic: "/scan/obstacles"
+    default_confidence: 1.0
+    # grid_map output (robot-centric): /obstacle/grid (RViz grid_map plugin)
+    # and /obstacle/costmap (OccupancyGrid, Nav2 static-layer input, Option A).
+    publish_grid: true
+    grid_size: 40.0          # m, robot-centric window
+    grid_resolution: 0.25    # m/cell

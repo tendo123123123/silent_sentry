@@ -67,10 +67,20 @@ def generate_launch_description():
             default_value=os.path.join(pkg, 'maps', 'terrain_costmap.yaml'),
             description='Terrain traversability map served as the global static layer'),
 
-        # 3D LiDAR -> obstacle-only cloud (slopes removed) for the costmaps.
-        Node(package='bot_navigation', executable='ground_segmentation_node',
-             name='ground_segmentation_node', output='screen',
-             parameters=[{'use_sim_time': use_sim_time}]),
+        # 3D LiDAR -> obstacle-only cloud via DEM-prior differencing
+        # (slope-invariant, TRN-confidence-scaled). Same /scan/obstacles output
+        # as the old Python ground_segmentation_node, so costmap config is
+        # unchanged. DEM = same binary TRN uses.
+        Node(package='ugv_obstacle', executable='obstacle_node',
+             name='ugv_obstacle_node', output='screen',
+             parameters=[
+                 os.path.join(get_package_share_directory('ugv_obstacle'),
+                              'config', 'obstacle.yaml'),
+                 {'use_sim_time': use_sim_time,
+                  'dem_path': os.path.join(
+                      get_package_share_directory('bot_navigation'),
+                      'maps', 'synthetic_dem.bin')},
+             ]),
         Node(package='nav2_map_server', executable='map_server', name='map_server',
              output='screen',
              parameters=[configured_params, {'yaml_filename': map_yaml}],

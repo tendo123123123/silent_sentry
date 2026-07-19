@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>ugv_obstacle</name>
+  <version>0.1.0</version>
+  <description>
+    DEM-prior obstacle detector. Classifies 3D LiDAR returns as obstacles by
+    differencing against the a-priori global DEM (slope-invariant) with a
+    localization-robust local-jump fallback and TRN-confidence-scaled
+    thresholds. Publishes a slope-free obstacle cloud for the Nav2 costmap.
+  </description>
+  <maintainer email="adi.pachauri.444@gmail.com">Aditya Pachauri</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_sensor_msgs</depend>
+  <depend>eigen</depend>
+  <depend>grid_map_core</depend>
+  <depend>grid_map_ros</depend>
+  <depend>grid_map_msgs</depend>
+  <depend>grid_map_costmap_2d</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
