@@ -9,7 +9,11 @@ ugv_obstacle_node:
     # Obstacle thresholds
     tau_prior: 0.4         # height above a-priori DEM -> obstacle (m)
     tau_local: 0.4         # local 3x3 neighbourhood jump -> obstacle (m)
-    low_conf_relax: 0.6    # extra tau_prior added when TRN confidence = 0
+    # Extra tau_prior added when TRN confidence = 0. Lowered 0.6 -> 0.2 so the
+    # detector stays cautious (keeps marking obstacles) precisely when
+    # localization is shaky; the old 0.6 raised the threshold so much that
+    # real obstacles were dropped during low-confidence stretches.
+    low_conf_relax: 0.2
     # Filtering
     self_radius: 1.2       # drop self-hits within this radius (m)
     max_range: 30.0

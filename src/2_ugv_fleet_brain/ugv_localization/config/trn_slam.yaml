@@ -19,9 +19,14 @@ trn_slam_node:
     bilateral_sigma_space: 75.0          # filter sigma in spatial domain (px)
 
     # --- Dynamic ROI Cropping ---
-    base_search_radius: 5.0
+    # base/initial raised 5.0 -> 15.0 (code default). At 5 m, once dead-reckoning
+    # drift exceeded ~5 m the true correction peak fell OUTSIDE the search ROI,
+    # so the matcher locked onto a wrong local peak and error ran away
+    # (observed: ATE climbs past 6 m after ~100 s). 15 m keeps the true peak in
+    # view through normal drift; adaptive expansion still reaches max_search_radius.
+    base_search_radius: 15.0
     max_search_radius: 30.0
-    initial_search_radius: 5.0
+    initial_search_radius: 15.0
 
     # --- MCL Particle Filter ---
     num_particles: 800                   # number of particles (more = better coverage)
@@ -34,8 +39,15 @@ trn_slam_node:
     motion_noise_yaw_frac: 0.10          # yaw noise     = |dyaw| * frac (+ 0.005 rad floor)
 
     # --- Match Gating ---
-    entropy_threshold: 0.8
-    min_peak_quality: 0.65               # minimum NCC likelihood to accept correction (NCC scale: 0.5=uncorrelated, 1.0=perfect)
+    # entropy_threshold raised 0.8 -> 1.2: below this the local DEM is too
+    # featureless (flat sand) to match reliably, so the cycle aborts and the
+    # filter dead-reckons THROUGH the flat patch instead of accepting an
+    # aliased match on repetitive dunes (the cause of confident-but-wrong
+    # locks: MAD likelihood ~1.0 while ATE grows). Code default is 1.8; 1.2 is
+    # a middle ground — raise toward 1.8 if false locks persist, lower if the
+    # matcher aborts so often that dead-reckoning drift dominates.
+    entropy_threshold: 1.2
+    min_peak_quality: 0.70               # 0.65 -> 0.70: reject marginal matches; NCC scale 0.5=uncorrelated, 1.0=perfect
 
     # --- Coordinate Frames ---
     map_frame: "map"

@@ -157,10 +157,18 @@ controller_server:
       # "CMD: linear=0.00 -> corrected=0.00, angular=-0.08"). Must be false.
       use_rotate_to_heading: false
 
-      # --- Reversing Logic ---
+      # Reverse allowed (planner rarely emits it due to reverse_penalty=5.0),
+      # so RPP can execute the occasional reverse segment for tight extractions.
       allow_reversing: true
-      # Logic: RPP scales speed based on curvature. 
-      # We must ensure it doesn't scale reverse speed to zero.
+
+      # --- Collision safety ---
+      # Stop before hitting: project the commanded velocity forward and halt if
+      # it would collide within this horizon. Gives smooth slow-then-stop
+      # instead of driving into a freshly-sensed obstacle.
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 1.5
+
+      # RPP scales speed on curvature so sharp arcs slow down (smoother).
       use_regulated_linear_velocity_scaling: true
       regulated_linear_scaling_min_radius: 3.36   # Your R_min
       regulated_linear_scaling_min_speed: 0.4     # Minimum "crawl" speed so it doesn't get stuck
@@ -301,16 +309,20 @@ planner_server:
     publish_expansions: true
     GridBased:
       plugin: "nav2_smac_planner::SmacPlannerHybrid"
+      # REEDS_SHEPP keeps reverse available for tight spots (dead-ends,
+      # cornering), but reverse_penalty is high so the planner only reverses
+      # when a forward solution doesn't exist. Prevents the constant
+      # back-first behaviour while retaining reverse as a genuine last resort.
       motion_model_for_search: "REEDS_SHEPP"
       tolerance: 0.5
       minimum_turning_radius: 3.36
-      reverse_penalty: 1.0        # Lowered to make reverse paths more attractive
-      change_penalty: 0.8          # Reduced to allow more direction changes
+      reverse_penalty: 5.0         # strongly prefer forward; reverse only if needed
+      change_penalty: 0.8
       bend_penalty: 2.0
       non_straight_penalty: 1.0
       cost_penalty: 2.0
       allow_unknown: true
-      analytic_expansion_ratio: 2.0   # Lowered to enable reversing more often
+      analytic_expansion_ratio: 3.5    # default (was 2.0 to force reversing)
       analytic_expansion_max_length: 20.0
       angle_quantization_bins: 72
       search_info:
