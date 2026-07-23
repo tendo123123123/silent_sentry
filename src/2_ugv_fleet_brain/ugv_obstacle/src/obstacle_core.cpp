@@ -1,10 +1,12 @@
 #include "ugv_obstacle/obstacle_core.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <limits>
 #include <unordered_map>
+#include <vector>
 
 namespace ugv_obstacle {
 
@@ -119,6 +121,34 @@ std::vector<uint8_t> ObstacleCore::classify(const Eigen::MatrixXf& pts_map,
     }
   }
 
+  // Estimate the constant z-datum offset between map-frame LiDAR z and the
+  // a-priori DEM. TRN matches terrain SHAPE via (mean-normalised) NCC, so the
+  // map frame and the DEM need NOT share an absolute vertical datum. The
+  // absolute DEM-prior test below (z - h > tau) would otherwise fire on flat
+  // ground whenever that offset exceeds tau_prior, producing a phantom
+  // robot-fixed obstacle blob. Using each cell's minimum z (a ground proxy),
+  // the median of (z_min - dem) is a robust estimate of the offset; subtract
+  // it so DEM-prior reacts only to genuine positive deviations. The local-jump
+  // signal is neighbourhood-relative and already datum-free.
+  double dem_offset = 0.0;
+  if (rows_ >= 2 && cols_ >= 2) {
+    std::vector<double> offs;
+    offs.reserve(cell_min.size());
+    for (const auto& kv : cell_min) {
+      const int cx_i = static_cast<int>(kv.first >> 32);
+      const int cy_i = static_cast<int>(static_cast<int32_t>(kv.first & 0xffffffff));
+      const double cx = (cx_i + 0.5) * cfg_.cell_size;
+      const double cy = (cy_i + 0.5) * cfg_.cell_size;
+      const float h = dem_at(cx, cy);
+      if (std::isfinite(h)) offs.push_back(static_cast<double>(kv.second) - h);
+    }
+    if (offs.size() >= 8) {
+      const size_t mid = offs.size() / 2;
+      std::nth_element(offs.begin(), offs.begin() + mid, offs.end());
+      dem_offset = offs[mid];
+    }
+  }
+
   // Pass 2: classify.
   for (int i = 0; i < n; ++i) {
     if (!valid[i]) continue;
@@ -149,7 +179,7 @@ std::vector<uint8_t> ObstacleCore::classify(const Eigen::MatrixXf& pts_map,
     bool dem_obs = false;
     const float h = dem_at(x, y);
     if (std::isfinite(h)) {
-      dem_obs = enough && (z - h > tau_prior_eff);
+      dem_obs = enough && (z - (h + dem_offset) > tau_prior_eff);
     }
 
     mask[i] = (local_obs || dem_obs) ? 1 : 0;
