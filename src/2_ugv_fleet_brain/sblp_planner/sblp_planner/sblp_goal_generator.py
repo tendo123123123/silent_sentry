@@ -49,15 +49,18 @@ class SBLPGoalGenerator(Node):
         self.declare_parameter('max_linear_vel', 1.5)
         self.declare_parameter('max_angular_vel', 0.6)
         self.declare_parameter('levy_beta', 1.8)
-        self.declare_parameter('l_min', 8.0)
-        self.declare_parameter('l_max', 60.0)
+        self.declare_parameter('l_min', 6.0)
+        # l_max MUST stay < 0.6 * global costmap half-window (140m -> 70m half
+        # -> 42m cap) so Lévy goals land well inside the reachable rolling
+        # window; 60m == half-window caused constant "no valid path found".
+        self.declare_parameter('l_max', 35.0)
         self.declare_parameter('turn_sigma_rad', 1.4)
         self.declare_parameter('reorient_probability', 0.05)
         self.declare_parameter('max_rejection_attempts', 50)
         self.declare_parameter('seed', -1)
         self.declare_parameter('goal_frame', 'map')
         self.declare_parameter('base_frame', 'base_footprint')
-        self.declare_parameter('goal_timeout_s', 90.0)
+        self.declare_parameter('goal_timeout_s', 45.0)
         self.declare_parameter('geofence_polygon',
                                [-100.0, -75.0, 100.0, -75.0, 100.0, 75.0, -100.0, 75.0])
         # Terrain gating (optional): reject waypoints on lethal-slope terrain.
