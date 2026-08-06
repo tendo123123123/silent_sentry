@@ -19,14 +19,23 @@ trn_slam_node:
     bilateral_sigma_space: 75.0          # filter sigma in spatial domain (px)
 
     # --- Dynamic ROI Cropping ---
-    # base/initial raised 5.0 -> 15.0 (code default). At 5 m, once dead-reckoning
-    # drift exceeded ~5 m the true correction peak fell OUTSIDE the search ROI,
-    # so the matcher locked onto a wrong local peak and error ran away
-    # (observed: ATE climbs past 6 m after ~100 s). 15 m keeps the true peak in
-    # view through normal drift; adaptive expansion still reaches max_search_radius.
-    base_search_radius: 15.0
+    # DO NOT RAISE base/initial BACK TO 15.0. Commit 65bd054 deliberately
+    # lowered these 15.0 -> 5.0; they were briefly reverted to 15.0 and that
+    # measurably made drift worse. base_search_radius is NOT only an ROI gate --
+    # trn_core.cpp also uses it to scale the AMCL recovery injection:
+    #     rec_x(map_prior.x(), config_.base_search_radius * 0.5)
+    # so 5.0 -> sigma 2.5 m but 15.0 -> sigma 7.5 m, scattering 10% of the 800
+    # particles (amcl_random_fraction) at 3x the noise amplitude on EVERY
+    # resample. The published covariance is the posterior particle spread, so a
+    # 3x wider cloud inflates variance ~9x; after the fuser's 0.1 scaling the
+    # TRN prior becomes so loose (sigma ~4.9 m) that the factor graph
+    # effectively ignores it, and the fused estimate collapses onto raw wheel
+    # odometry. On self-similar dune terrain a wider search does not recover the
+    # true peak -- the NCC surface is nearly flat, so extra area only adds more
+    # equally-plausible wrong candidates.
+    base_search_radius: 5.0
     max_search_radius: 30.0
-    initial_search_radius: 15.0
+    initial_search_radius: 5.0
 
     # --- MCL Particle Filter ---
     num_particles: 800                   # number of particles (more = better coverage)
@@ -39,15 +48,12 @@ trn_slam_node:
     motion_noise_yaw_frac: 0.10          # yaw noise     = |dyaw| * frac (+ 0.005 rad floor)
 
     # --- Match Gating ---
-    # entropy_threshold raised 0.8 -> 1.2: below this the local DEM is too
-    # featureless (flat sand) to match reliably, so the cycle aborts and the
-    # filter dead-reckons THROUGH the flat patch instead of accepting an
-    # aliased match on repetitive dunes (the cause of confident-but-wrong
-    # locks: MAD likelihood ~1.0 while ATE grows). Code default is 1.8; 1.2 is
-    # a middle ground — raise toward 1.8 if false locks persist, lower if the
-    # matcher aborts so often that dead-reckoning drift dominates.
-    entropy_threshold: 1.2
-    min_peak_quality: 0.70               # 0.65 -> 0.70: reject marginal matches; NCC scale 0.5=uncorrelated, 1.0=perfect
+    # Restored to the pre-session baseline (0.8 / 0.65). These were briefly
+    # raised to 1.2 / 0.70 alongside the search-radius change; since that batch
+    # made drift worse, all four values are back at baseline so there is a clean
+    # reference to A/B against. Change ONE of these at a time, and measure ATE.
+    entropy_threshold: 0.8
+    min_peak_quality: 0.65               # minimum NCC likelihood to accept correction (NCC scale: 0.5=uncorrelated, 1.0=perfect)
 
     # --- Coordinate Frames ---
     map_frame: "map"
