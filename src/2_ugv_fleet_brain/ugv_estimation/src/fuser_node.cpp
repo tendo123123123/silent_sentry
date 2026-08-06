@@ -15,6 +15,8 @@
 #include <csignal>
 #include <execinfo.h>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <unistd.h>
 
 // ─── SIGSEGV crash handler ───────────────────────────────────────────────
@@ -537,7 +539,30 @@ int main(int argc, char** argv)
     signal(SIGABRT, crash_handler);
     signal(SIGFPE,  crash_handler);
     signal(SIGBUS,  crash_handler);
-    std::cerr << "[DIAG] fuser_node main(): crash handler installed" << std::endl;
+
+    // ─── [DIAG] tracing gate ─────────────────────────────────────────────
+    // The [DIAG] traces in this node and in se3_fuser_core use
+    // `std::cerr << ... << std::endl`, which is UNBUFFERED and flushes on every
+    // line. At the 3 Hz TRN correction rate that is ~45 synchronous terminal
+    // writes per cycle, which blocked this node's single-threaded executor and
+    // starved the 50 Hz TF publish. Nav2 then saw map->odom gaps up to ~1.7 s
+    // ("Transform data too old when converting from map to odom") and aborted
+    // its controller and costmap updates.
+    //
+    // Redirecting std::cerr to /dev/null keeps every trace statement intact but
+    // removes the terminal I/O cost. This changes LOGGING ONLY -- no estimation
+    // math is affected. Re-enable with SILENT_SENTRY_FUSER_DIAG=1.
+    // Note: the crash handler above writes via raw write(STDERR_FILENO, ...)
+    // and RCLCPP_* logging uses the C stderr stream, so both are unaffected.
+    static std::ofstream diag_sink;
+    if (std::getenv("SILENT_SENTRY_FUSER_DIAG") == nullptr) {
+        diag_sink.open("/dev/null");
+        if (diag_sink.is_open()) {
+            std::cerr.rdbuf(diag_sink.rdbuf());
+        }
+    } else {
+        std::cerr << "[DIAG] fuser_node main(): crash handler installed" << std::endl;
+    }
 
     rclcpp::init(argc, argv);
     auto node = std::shared_ptr<ugv_estimation::FuserNode>(new ugv_estimation::FuserNode());

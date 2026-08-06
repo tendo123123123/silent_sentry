@@ -81,7 +81,7 @@ on long spans; combined with the unreachable goal it wastes the full
 |-----------|-----|-------------|-----|
 | `resolution` (global_costmap) | `0.3` | **`0.4`** | 400×400 → 350×350 cells; ~25% fewer nodes |
 | `angle_quantization_bins` | `72` | **`48`** | Search space scales with bins; 48 (7.5°) is ample for R=3.36 m |
-| `primitive_search_max_duration_ms` | `1500` | **`800`** | Fail fast and let the BT replan instead of blocking |
+| `primitive_search_max_duration_ms` | `1500` | **`2000`** | 800 ms was tried and reverted: combined with broken inflation it made every search time out. Keep headroom |
 | `analytic_expansion_ratio` | `3.5` | `3.5` | Keep (already reverted from the reversing tweak) |
 | `tolerance` | `0.5` | `0.5` | Goal position tolerance; fine |
 | `cost_penalty` | `2.0` | `2.0` | Keep; raise only if paths hug obstacles |
@@ -113,17 +113,41 @@ inflation is too fat or a phantom/real obstacle sits on the only path.
 | `failure_tolerance` | controller_server | `0.3` | **`0.5` applied** | More slack before aborting to recovery |
 | `controller_frequency` | controller_server | `10.0` | `10.0` | Achievable; keep |
 
-### Costmap inflation (the usual collision-lock culprit)
+### Costmap inflation — ⚠️ HARD CONSTRAINT, read before touching
 
-Over-inflation closes the narrow gaps a car-like robot needs, so both the
-planner (`no path`) and controller (`collision ahead`) fail.
+> **The GLOBAL costmap `inflation_radius` MUST be ≥ the footprint's
+> circumscribed radius.** For the 1.4 × 0.8 m chassis that is
+> `√(0.7² + 0.4²) = 0.806 m`, reported by Nav2 as **0.82 m** (with padding).
+> **Never set global `inflation_radius` below 0.82.** Use **0.9**.
 
-| Parameter | Layer | Current | Suggested | Why |
-|-----------|-------|---------|-----------|-----|
-| `inflation_radius` | global inflation | `0.9` | **`0.6` applied** | 0.9 m around a 0.4 m half-width robot leaves little free space |
-| `cost_scaling_factor` | global inflation | `3.0` | `3.0` | Keep the falloff steep |
-| `inflation_radius` | local inflation | `0.5` | **`0.45` applied** | Just over robot half-width + margin |
-| `footprint` | both | `[[-0.7,-0.4]...]` | keep | Matches 1.4×0.8 m chassis |
+Smac Hybrid-A* uses the inflation potential field to avoid full-footprint SE2
+collision checks, only testing the complete footprint when the robot is within
+the possibly-inscribed radius of an obstacle. Break the constraint and that
+optimization is disabled:
+
+```
+[computeCircumscribedCost]: The inflation radius (0.600000) is smaller than the
+circumscribed radius (0.819878) ... This may significantly slow down planning times!
+[planner_server]: Inflation layer either not found or inflation is not set
+sufficiently for optimized non-circular collision checking capabilities.
+```
+
+Consequence chain (observed, cost a full debug cycle): lowering global
+`inflation_radius` to 0.6 disabled the potential field → every search became
+slow → searches exceeded `primitive_search_max_duration_ms` → **`no valid path
+found` on every goal** → SBLP timed out all 11 consecutive waypoints → robot
+never moved. Reducing inflation to "open up narrow gaps" is a trap here: it
+disables the very optimization that makes planning feasible.
+
+If you genuinely need tighter clearance, reduce the **footprint** (which lowers
+the circumscribed radius) rather than dropping inflation below it.
+
+| Parameter | Layer | Value | Rule |
+|-----------|-------|-------|------|
+| `inflation_radius` | **global** inflation | **`0.9`** | **≥ 0.82 (circumscribed). Do not lower.** |
+| `cost_scaling_factor` | global inflation | `3.0` | Keep the falloff steep |
+| `inflation_radius` | local inflation | **`0.45`** | Free to tune — RPP does not use the potential field |
+| `footprint` | both | `[[-0.7,-0.4]...]` | Matches 1.4×0.8 m chassis; changing it changes the 0.82 floor |
 
 ---
 
@@ -141,6 +165,53 @@ rarely. Tune so they don't waste time when they can't help.
 | `movement_time_allowance` (progress_checker) | nav2_params | `15.0` | **`10.0` applied** | Detect "stuck" faster |
 | `required_movement_radius` | nav2_params | `0.5` | `0.5` | Keep |
 | `goal_timeout_s` (SBLP) | sblp_goal_generator | `90.0` | **`45.0` applied** | Abandon a bad waypoint sooner; less time wedged |
+
+---
+
+## 4b. TF staleness — log I/O starving the TF publish
+
+Symptom:
+
+```
+[controller_server] [tf_help]: Transform data too old when converting from map to odom
+[controller_server] [tf_help]: Data time: 770s 090000000ns, Transform time: 768s 350000000ns
+[global_costmap] Message Filter dropping message: frame 'laser_link' at time 768.400 for
+   reason 'the timestamp on the message is earlier than all the data in the transform cache'
+```
+
+A ~1.7 s gap in `map→odom`. The TF stamps themselves are correct
+(`fuser_node` uses `get_clock()->now()`), so this is TF **starvation**, not bad
+stamping.
+
+**Cause:** `fuser_node.cpp` and `se3_fuser_core.cpp` trace with
+`std::cerr << ... << std::endl`. `std::cerr` is unbuffered and `std::endl`
+forces a flush, so each line is a synchronous terminal write. At the 3 Hz TRN
+correction rate that is ~45 lines/cycle ≈ 135 flushes/s, which blocks the
+node's single-threaded executor and stalls the 50 Hz TF broadcast. Nav2 then
+cannot transform and aborts controller + costmap updates.
+
+**Fix applied:** `std::cerr` is redirected to `/dev/null` in `main()` unless
+`SILENT_SENTRY_FUSER_DIAG=1` is set. Trace statements are left intact; this is
+a **logging-only** change, no estimation math is affected. The crash handler
+(raw `write(STDERR_FILENO, ...)`) and `RCLCPP_*` logging (C `stderr` stream) are
+unaffected.
+
+```bash
+# Re-enable the [DIAG] traces for debugging:
+SILENT_SENTRY_FUSER_DIAG=1 ros2 launch ugv_localization terramechanic_localization.launch.py
+```
+
+**Also applied — tolerance headroom for residual bursts:**
+
+| Parameter | Location | Was | Applied |
+|-----------|----------|-----|---------|
+| `transform_tolerance` | `FollowPath` (controller) | `0.5` | **`2.0`** |
+| `transform_tolerance` | `local_costmap` | `1.0` | **`2.0`** |
+| `transform_tolerance` | `global_costmap` | *(unset)* | **`2.0`** |
+| `transform_tolerance` | `behavior_server` | `0.2` | **`1.0`** |
+
+General lesson: **never leave unthrottled `std::cerr`/`std::endl` tracing in a
+real-time callback.** Use `RCLCPP_DEBUG` or throttled logging.
 
 ---
 
@@ -210,8 +281,13 @@ These target the deadlock directly. All are in the tree now:
 
 1. ✅ `sblp_goal_generator.py`: `l_max 60 → 35`, `l_min 8 → 6`.
 2. ✅ `nav2_params.yaml` global_costmap: `width/height 120 → 140`, `resolution 0.3 → 0.4`.
-3. ✅ `nav2_params.yaml` planner: `angle_quantization_bins 72 → 48`, `primitive_search_max_duration_ms 1500 → 800`.
-4. ✅ `nav2_params.yaml` inflation: global `inflation_radius 0.9 → 0.6`, local `0.5 → 0.45`.
+3. ✅ `nav2_params.yaml` planner: `angle_quantization_bins 72 → 48`.
+   ⚠️ `primitive_search_max_duration_ms 1500 → 800` was **reverted to 2000** — too
+   tight once searches slowed; it turned slow searches into hard failures.
+4. ⚠️ **REVERTED** — global `inflation_radius 0.9 → 0.6` broke the Smac potential
+   field (see §3 hard constraint) and caused `no valid path found` on every goal.
+   Global is back at **0.9**; local `0.5 → 0.45` is kept (valid — RPP does not use
+   the potential field).
 5. ✅ `nav2_params.yaml` controller: `max_allowed_time_to_collision_up_to_carrot 1.5 → 1.0`, `failure_tolerance 0.3 → 0.5`.
 6. ✅ `ackermann_to_bt.xml`: `number_of_retries 6 → 3`.
 7. ✅ `sblp_goal_generator.py`: `goal_timeout_s 90 → 45`.
@@ -220,6 +296,11 @@ Plus, from §4 and §6:
 
 8. ✅ `nav2_params.yaml`: `movement_time_allowance 15 → 10`.
 9. ✅ `obstacle.yaml`: `self_radius 1.2 → 1.5`, `min_points_per_cell 2 → 3`.
+
+From §4b (TF staleness):
+
+10. ✅ `fuser_node.cpp`: gate the `[DIAG]` `std::cerr` flood behind `SILENT_SENTRY_FUSER_DIAG`.
+11. ✅ `nav2_params.yaml`: `transform_tolerance` → 2.0 (FollowPath, local, global), 1.0 (behavior_server).
 
 Rebuild `bot_navigation` + `sblp_planner` + `ugv_obstacle`, relaunch nav2_trn +
 sblp_nav2.
@@ -253,5 +334,24 @@ worse. Change only in response to the stated symptom:
 1. Tune **geometry/reachability before speed before control before localization.**
 2. Change **one lever at a time**, watch one metric, then the next.
 3. `l_max < 0.6 × global half-window` — never break this.
-4. Keep `minimum_turning_radius` and `max_steering_angle` consistent.
-5. Prefer failing a goal fast (SBLP re-selects) over long recovery loops.
+4. **Global `inflation_radius` ≥ circumscribed radius (0.82 m)** — never break this.
+   Lowering it disables the Smac potential field and turns every plan into a
+   timeout. Shrink the footprint instead if you need clearance.
+5. Keep `minimum_turning_radius` and `max_steering_angle` consistent
+   (`0.9 / tan(0.2616) = 3.37 ≈ 3.36`).
+6. Prefer failing a goal fast (SBLP re-selects) over long recovery loops.
+7. **Never lower a timeout to "fail fast" while a slowdown is unexplained.** A
+   tight budget converts a soft slowdown into a hard failure and hides the real
+   cause (see §3: 800 ms + broken inflation = no paths at all).
+8. **No unthrottled `std::cerr`/`std::endl` in real-time callbacks** — it starves
+   TF and breaks Nav2 (see §4b).
+
+## 11. Hard constraints — quick reference
+
+| Constraint | Value | Breaking it causes |
+|------------|-------|--------------------|
+| global `inflation_radius` ≥ circumscribed radius | ≥ **0.82** (use 0.9) | Smac potential field disabled → `no valid path found` |
+| SBLP `l_max` ≤ 0.6 × global half-window | ≤ **42** (use 35) | Goals outside reachable window → `no valid path found` |
+| `minimum_turning_radius` == `wheelbase / tan(max_steering_angle)` | **3.36** ≈ 3.37 | Planner emits paths the vehicle cannot follow |
+| `max_lookahead_dist` ≤ local costmap half-size | ≤ **5.0** (use 3.5) | Carrot outside costmap → controller blind |
+| Ackermann: no in-place rotation | `use_rotate_to_heading: false` | `linear=0, angular≠0` → zero wheel velocity → robot freezes |

@@ -188,14 +188,18 @@ controller_server:
       # Logic: If the path is too sharp, RPP will normally stop. 
       # We want it to attempt the turn instead of timing out.
       max_angular_accel: 1.5
-      transform_tolerance: 0.5
+      # 0.5 -> 2.0: the map->odom TF from the factor-graph fuser arrives in
+      # bursts under load, producing gaps up to ~1.7 s ("Transform data too old
+      # when converting from map to odom"). 2.0 s rides over those gaps instead
+      # of aborting the controller.
+      transform_tolerance: 2.0
       
 local_costmap:
   local_costmap:
     ros__parameters:
       update_frequency: 5.0
       publish_frequency: 5.0
-      transform_tolerance: 1.0
+      transform_tolerance: 2.0   # 1.0 -> 2.0: absorb bursty map->odom TF (see FollowPath note)
       global_frame: odom
       robot_base_frame: base_footprint
       use_sim_time: true
@@ -246,6 +250,7 @@ global_costmap:
     ros__parameters:
       update_frequency: 1.0
       publish_frequency: 1.0
+      transform_tolerance: 2.0   # absorb bursty map->odom TF; also stops laser Message Filter drops
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: true
@@ -283,7 +288,13 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0      # Steeper cost scaling for better path planning
-        inflation_radius: 0.6        # 0.9 -> 0.6: 0.9m closed narrow gaps a car needs (no path/collision-ahead)
+        # MUST be >= the footprint's circumscribed radius (0.82 m for the
+        # 1.4x0.8 m chassis). Smac Hybrid-A* uses the inflation potential field
+        # to skip full-footprint SE2 collision checks; with 0.6 m it lost that
+        # optimization ("inflation radius is smaller than the circumscribed
+        # radius ... will substantially impact run-time performance") and then
+        # timed out -> "no valid path found" on every goal. Do not lower this.
+        inflation_radius: 0.9
       always_send_full_costmap: false
 
 map_server:
@@ -325,7 +336,11 @@ planner_server:
       analytic_expansion_max_length: 20.0
       angle_quantization_bins: 48     # 72 -> 48 (7.5°); smaller search space, faster
       search_info:
-        primitive_search_max_duration_ms: 800  # fail fast; BT replans at 1 Hz
+        # Back to 2000: 800 ms combined with the broken potential field (see
+        # inflation_radius) made every search time out. With inflation restored
+        # the search is fast again, and the headroom prevents spurious failures
+        # on long legs.
+        primitive_search_max_duration_ms: 2000
 
 smoother_server:
   ros__parameters:
@@ -357,7 +372,7 @@ behavior_server:
       plugin: "nav2_behaviors::Wait"
     global_frame: odom
     robot_base_frame: base_footprint
-    transform_tolerance: 0.2          # Increased tolerance for robustness
+    transform_tolerance: 1.0          # 0.2 -> 1.0: bursty TF broke backup/drive_on_heading
     use_sim_time: true
     simulate_ahead_time: 3.0          # Longer simulation for Ackermann stability
     max_rotational_vel: 0.6           # Reduced for smoother motion  
