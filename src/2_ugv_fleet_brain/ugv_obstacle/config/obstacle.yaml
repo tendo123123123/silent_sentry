@@ -15,12 +15,15 @@ ugv_obstacle_node:
     # real obstacles were dropped during low-confidence stretches.
     low_conf_relax: 0.2
     # Filtering
-    self_radius: 1.2       # drop self-hits within this radius (m)
+    # 1.2 -> 1.5: robot is 1.4x0.8 m and the LiDAR sits on a mast, so returns
+    # off the chassis/solar panel extend past 1.2 m. Wider self-filter kills
+    # the robot-fixed phantom blob at the source.
+    self_radius: 1.5       # drop self-hits within this radius (m)
     max_range: 30.0
     min_height: -2.0       # map-frame z band
     max_height: 4.0
     cell_size: 0.4         # local-jump grid cell (m)
-    min_points_per_cell: 2
+    min_points_per_cell: 3   # 2 -> 3: reject sparse LiDAR noise marking phantom cells
     map_frame: "map"
     input_topic: "/scan/points"
     output_topic: "/scan/obstacles"
