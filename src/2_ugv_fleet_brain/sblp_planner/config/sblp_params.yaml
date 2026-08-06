@@ -1,4 +1,12 @@
-sblp_planner:
+# NOTE ON THE NAMESPACE KEY
+# ==========================
+# This used to be keyed `sblp_planner:`, which matches NO running node -- the
+# raw-cmd_vel node is `sblp_node` and the Nav2 goal generator is
+# `sblp_goal_generator`. ROS 2 silently ignores parameter blocks whose node name
+# does not match, so every value here was dead and both nodes ran on their
+# in-code declared defaults. `/**` applies to any node name, which is what was
+# intended.
+/**:
   ros__parameters:
     max_linear_vel: 1.5
     max_angular_vel: 0.6
@@ -6,9 +14,12 @@ sblp_planner:
     levy_beta: 1.8
     # l_min MUST exceed 2 * r_min (r_min = max_linear/max_angular) so that
     # every Lévy step lands outside the UGV's minimum turning circle.
-    # With the defaults here, r_min = 2.5 m, so l_min >= 5 m; 8 m is safe.
-    l_min: 8.0
-    l_max: 60.0
+    # With the defaults here, r_min = 2.5 m, so l_min >= 5 m; 6 m is safe.
+    l_min: 6.0
+    # l_max MUST stay below 0.6 * global costmap half-window (140 m -> 70 m
+    # half -> 42 m cap). Was 60 m, which equalled the old half-window and put
+    # goals on the costmap boundary where no path exists.
+    l_max: 35.0
     waypoint_tolerance: 2.0
     waypoint_timeout_s: 30.0
     max_rejection_attempts: 50

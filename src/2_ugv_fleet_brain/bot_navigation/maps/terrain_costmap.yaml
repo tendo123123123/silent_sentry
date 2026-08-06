@@ -1,16 +1,45 @@
 # A-priori terrain traversability map for the Nav2 global static layer.
-# Generated from the DEM slope via maps/generate_continuous.sh:
-#   255 (white) = flat / traversable, 0 (black) = lethal slope (>= 30 deg).
-# The map_server converts pixel -> occupancy as occ = (1 - pixel/255), so
-# traversable stays free and lethal slopes become obstacles for the Smac planner.
+# Generated from the DEM slope via maps/generate_continuous.sh + calculate_costmap.py:
+#   cost = 255 - (slope / 30)^2 * 255      <-- QUADRATIC ramp
+# so 0 deg -> 255 (white/traversable) and 30 deg -> 0 (black/lethal).
+#
+# map_server converts pixel -> occupancy probability as:
+#   occ = 1 - pixel/255 = (slope / 30)^2
+#
+# *** THRESHOLDS MUST ACCOUNT FOR THE QUADRATIC RAMP ***
+# Because occ is the SQUARE of the normalised slope, a linear-looking
+# threshold maps to a much lower slope than intended:
+#
+#   occupied_thresh  slope = 30 * sqrt(thresh)
+#   ---------------  -------------------------
+#        0.65               24.19 deg   <-- previous value: NOT the documented 30 deg
+#        0.99               29.85 deg   <-- correct, matches the 30 deg design intent
+#
+# The old occupied_thresh: 0.65 silently made every slope above 24.2 deg lethal.
+# Measured effect on the 200x150 m patrol region:
+#   0.65 (24.2 deg): 20.99% lethal, free space in 4 DISCONNECTED components,
+#                    largest only 57.9% -> many goals were genuinely unreachable
+#                    and the Smac planner correctly reported "no valid path found".
+#   0.99 (29.9 deg): 12.78% lethal, free space in 1 connected component
+#                    covering 87.2% of the region -> navigable.
+#
+# mode: scale (was trinary). With the quadratic ramp and trinary bucketing,
+# every slope between free_thresh and occupied_thresh became UNKNOWN
+# (NO_INFORMATION) rather than costed ground -- 19.78% of the patrol region.
+# "scale" preserves the continuous gradient this map was designed for, mapping
+# intermediate slopes to graded cost 1-99 so the planner prefers gentle terrain
+# while still being able to cross it.
+#
+# free_thresh 0.11 -> slope 30*sqrt(0.11) = 9.95 deg: anything under ~10 deg is
+# free at zero cost; 10-30 deg is graded; above ~30 deg is lethal.
 #
 # The DEM is 900 x 300 px at 1.0 m/px. The robot spawns at the DEM centre, so
 # the map origin is placed at (-450, -150) to align the map centre with the
 # odom/map origin. Adjust origin if your spawn or DEM georeferencing differs.
 image: continuous_planner_map.pgm
-mode: trinary
+mode: scale
 resolution: 1.0
 origin: [-450.0, -150.0, 0.0]
 negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.25
+occupied_thresh: 0.99
+free_thresh: 0.11

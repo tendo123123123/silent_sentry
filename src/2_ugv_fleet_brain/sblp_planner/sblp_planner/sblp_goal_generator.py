@@ -70,6 +70,10 @@ class SBLPGoalGenerator(Node):
         self.declare_parameter('terrain_origin_y', -150.0)
         self.declare_parameter('terrain_resolution', 1.0)
         self.declare_parameter('terrain_cost_threshold', 0.7)
+        # True = match nav2_map_server's row order (image row 0 = max y), so
+        # SBLP agrees with the planner's static layer. See sblp_terrain.py for
+        # the unresolved TRN-vs-map_server orientation inconsistency.
+        self.declare_parameter('terrain_flip_y', True)
 
         gp = self.get_parameter
         seed = gp('seed').value
@@ -98,9 +102,13 @@ class SBLPGoalGenerator(Node):
                 path,
                 origin_x=gp('terrain_origin_x').value,
                 origin_y=gp('terrain_origin_y').value,
-                resolution=gp('terrain_resolution').value)
+                resolution=gp('terrain_resolution').value,
+                flip_y=gp('terrain_flip_y').value)
             terrain_fn = costmap.cost_at
-            self.get_logger().info(f'SBLP: terrain gating ON (costmap: {path})')
+            self.get_logger().info(
+                f'SBLP: terrain gating ON (costmap: {path}, '
+                f'flip_y={gp("terrain_flip_y").value}, '
+                f'threshold={gp("terrain_cost_threshold").value})')
 
         self.core = SBLPCore(config, rng=rng, terrain_cost_fn=terrain_fn)
 
