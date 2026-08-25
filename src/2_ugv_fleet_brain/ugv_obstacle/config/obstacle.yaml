@@ -7,23 +7,36 @@ ugv_obstacle_node:
     dem_origin_x: -450.0   # DEM bottom-left corner (map frame), matches TRN
     dem_origin_y: -150.0
     # Obstacle thresholds
-    tau_prior: 0.4         # height above a-priori DEM -> obstacle (m)
-    tau_local: 0.4         # local 3x3 neighbourhood jump -> obstacle (m)
+    # 0.4 -> 0.3: a 0.4 m threshold ignored the desert shrubs the UGV actually
+    # collides with. Wheel radius is 0.175 m, so anything above ~0.3 m is a
+    # genuine hazard rather than something the vehicle can drive over.
+    tau_prior: 0.3         # height above a-priori DEM -> obstacle (m)
+    tau_local: 0.3         # local 3x3 neighbourhood jump -> obstacle (m)
     # Extra tau_prior added when TRN confidence = 0. Lowered 0.6 -> 0.2 so the
     # detector stays cautious (keeps marking obstacles) precisely when
     # localization is shaky; the old 0.6 raised the threshold so much that
     # real obstacles were dropped during low-confidence stretches.
     low_conf_relax: 0.2
     # Filtering
-    # 1.2 -> 1.5: robot is 1.4x0.8 m and the LiDAR sits on a mast, so returns
-    # off the chassis/solar panel extend past 1.2 m. Wider self-filter kills
-    # the robot-fixed phantom blob at the source.
-    self_radius: 1.5       # drop self-hits within this radius (m)
+    # 1.5 -> 1.0. This radius is a BLIND ZONE, not just a filter: anything
+    # inside it is dropped from /scan/obstacles, and because the costmap keeps
+    # raytrace-clearing through that space, a previously-marked obstacle gets
+    # ERASED as the robot closes on it -- the robot then drives into it. The
+    # footprint's circumscribed radius is only sqrt(0.7^2+0.4^2) = 0.81 m, so
+    # 1.0 m is sufficient to reject genuine self-hits; 1.5 m was nearly double
+    # what is needed and left the front bumper blind for its last 0.8 m.
+    # Keep costmap raytrace_min_range >= this value so near obstacles are never
+    # cleared inside the blind zone.
+    self_radius: 1.0       # drop self-hits within this radius (m)
     max_range: 30.0
     min_height: -2.0       # map-frame z band
     max_height: 4.0
     cell_size: 0.4         # local-jump grid cell (m)
-    min_points_per_cell: 3   # 2 -> 3: reject sparse LiDAR noise marking phantom cells
+    # Back to 2. Raising this to 3 was meant to suppress noise, but thin
+    # vegetation returns only a couple of points per 0.4 m cell at range, so 3
+    # silently dropped real shrubs. The z-datum compensation in obstacle_core
+    # already removes the phantom-blob source that 3 was compensating for.
+    min_points_per_cell: 2
     map_frame: "map"
     input_topic: "/scan/points"
     output_topic: "/scan/obstacles"

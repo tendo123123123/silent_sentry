@@ -234,7 +234,12 @@ local_costmap:
           marking: true
           data_type: "PointCloud2"
           raytrace_max_range: 15.0
-          raytrace_min_range: 0.0
+          # MUST be >= ugv_obstacle self_radius (1.0 m). Points inside that
+          # radius are filtered out of /scan/obstacles, but with
+          # raytrace_min_range 0.0 the clearing rays still swept through the
+          # blind zone and ERASED obstacles the robot was about to hit. Not
+          # clearing inside 1.0 m preserves that obstacle memory on approach.
+          raytrace_min_range: 1.0
           obstacle_max_range: 12.0
           obstacle_min_range: 0.0
       static_layer:
@@ -279,7 +284,7 @@ global_costmap:
           marking: true
           data_type: "PointCloud2"
           raytrace_max_range: 15.0
-          raytrace_min_range: 0.0
+          raytrace_min_range: 1.0   # >= self_radius; see local_costmap note
           obstacle_max_range: 12.0
           obstacle_min_range: 0.0
       static_layer:
