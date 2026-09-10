@@ -34,12 +34,11 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     map_yaml = LaunchConfiguration('map')
 
-    # Nav2 servers WITHOUT amcl (TRN owns map->odom).
+    # Nav2 servers WITHOUT amcl (TRN owns map->odom) and WITHOUT global planner
+    # (RPP controller performs direct local navigation to SBLP waypoints).
     lifecycle_nodes = [
-        'map_server',
         'controller_server',
         'smoother_server',
-        'planner_server',
         'behavior_server',
         'bt_navigator',
         'waypoint_follower',
@@ -62,15 +61,8 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'params_file',
             default_value=os.path.join(pkg, 'config', 'nav2_params.yaml')),
-        DeclareLaunchArgument(
-            'map',
-            default_value=os.path.join(pkg, 'maps', 'terrain_costmap.yaml'),
-            description='Terrain traversability map served as the global static layer'),
 
         # 3D LiDAR -> obstacle-only cloud via DEM-prior differencing
-        # (slope-invariant, TRN-confidence-scaled). Same /scan/obstacles output
-        # as the old Python ground_segmentation_node, so costmap config is
-        # unchanged. DEM = same binary TRN uses.
         Node(package='ugv_obstacle', executable='obstacle_node',
              name='ugv_obstacle_node', output='screen',
              parameters=[
@@ -81,12 +73,6 @@ def generate_launch_description():
                       get_package_share_directory('bot_navigation'),
                       'maps', 'synthetic_dem.bin')},
              ]),
-        Node(package='nav2_map_server', executable='map_server', name='map_server',
-             output='screen',
-             parameters=[configured_params, {'yaml_filename': map_yaml}],
-             remappings=remappings),
-        Node(package='nav2_planner', executable='planner_server', name='planner_server',
-             output='screen', parameters=[configured_params], remappings=remappings),
         Node(package='nav2_controller', executable='controller_server',
              output='screen', parameters=[configured_params],
              remappings=remappings + [('cmd_vel', 'cmd_vel_nav'),

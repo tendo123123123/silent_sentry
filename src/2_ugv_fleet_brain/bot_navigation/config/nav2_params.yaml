@@ -242,10 +242,7 @@ local_costmap:
           raytrace_min_range: 1.0
           obstacle_max_range: 12.0
           obstacle_min_range: 0.0
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: true
-      # false: send only the update window each cycle instead of the whole
+      # static_layer: not used in local costmap (rolling window, obstacle-only).
       # costmap. Cuts serialization/publish load that was starving the
       # controller loop (2.2 Hz -> target).
       always_send_full_costmap: false
@@ -270,11 +267,17 @@ global_costmap:
       height: 140
       resolution: 0.4
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      # static_layer REMOVED: using it inside a rolling_window costmap causes
+      # SIGSEGV (exit code -11) in planner_server. The static layer's index
+      # arithmetic assumes fixed costmap origin/dimensions, but the rolling
+      # window shifts origin every cycle → out-of-bounds memory writes.
+      # Terrain slope awareness is preserved via ugv_obstacle's DEM-prior
+      # differencing, which publishes slope-lethal cells on /scan/obstacles.
+      plugins: ["obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
-        # 3D obstacle cloud (slopes removed by ground_segmentation_node).
+        # 3D obstacle cloud (slopes removed by ugv_obstacle DEM-prior node).
         observation_sources: pointcloud
         pointcloud:
           topic: /scan/obstacles
@@ -287,9 +290,6 @@ global_costmap:
           raytrace_min_range: 1.0   # >= self_radius; see local_costmap note
           obstacle_max_range: 12.0
           obstacle_min_range: 0.0
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0      # Steeper cost scaling for better path planning
