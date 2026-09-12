@@ -41,4 +41,6 @@ install(DIRECTORY launch config maps behavior_trees
   DESTINATION share/${PROJECT_NAME}
 )
 
+ament_export_libraries(goal_to_path_bt_node)
+
 ament_package()
