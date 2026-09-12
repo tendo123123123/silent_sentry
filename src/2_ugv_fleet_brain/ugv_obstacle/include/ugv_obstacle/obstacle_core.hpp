@@ -35,6 +35,9 @@ struct ObstacleConfig {
   double cell_size = 0.4;        // local-jump grid cell (m)
   int min_points_per_cell = 2;   // sparse cells not classified as obstacle
   double low_conf_relax = 0.6;   // extra tau_prior added when confidence = 0
+  double chassis_length = 1.4;   // robot chassis length (m, X axis)
+  double chassis_width = 0.8;    // robot chassis width (m, Y axis)
+  bool use_chassis_box_filter = true; // use OBB chassis filter around sensor/robot
 };
 
 class ObstacleCore {
