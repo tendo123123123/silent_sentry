@@ -62,6 +62,8 @@ bt_navigator:
     # compute_path_through_poses action server (planner_server), which is
     # intentionally absent in the plannerless TRN direct-RPP stack.
     navigators: ['navigate_to_pose']
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
     default_nav_to_pose_bt_xml: "$(find-pkg-share bot_navigation)/behavior_trees/ackermann_to_bt.xml"
     default_nav_through_poses_bt_xml: "$(find-pkg-share bot_navigation)/behavior_trees/ackermann_through_bt.xml"
     # plugin_lib_names:
