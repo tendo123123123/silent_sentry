@@ -47,9 +47,6 @@ class ObstacleNode : public rclcpp::Node {
     cfg.min_points_per_cell =
         declare_parameter<int>("min_points_per_cell", 2);
     cfg.low_conf_relax = declare_parameter<double>("low_conf_relax", 0.6);
-    cfg.chassis_length = declare_parameter<double>("chassis_length", 1.4);
-    cfg.chassis_width = declare_parameter<double>("chassis_width", 0.8);
-    cfg.use_chassis_box_filter = declare_parameter<bool>("use_chassis_box_filter", true);
 
     dem_path_ = declare_parameter<std::string>("dem_path", "");
     input_topic_ = declare_parameter<std::string>("input_topic", "/scan/points");
@@ -157,8 +154,7 @@ class ObstacleNode : public rclcpp::Node {
     }
     pub_->publish(out);
 
-    // Lazy grid publishing: only build GridMap & OccupancyGrid if someone is listening
-    if (publish_grid_ && (grid_pub_->get_subscription_count() > 0 || occ_pub_->get_subscription_count() > 0)) {
+    if (publish_grid_) {
       buildAndPublishGrid(pts_map, T.translation().x(), T.translation().y(),
                           msg->header.stamp);
     }
